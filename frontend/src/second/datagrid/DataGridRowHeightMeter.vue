@@ -1,14 +1,16 @@
 <template>
   <div>
     <table>
-      <tr>
-        <td v-resizeObserver="true" :resize="changeGridRowHeight">
-          title
-          <InlineButton square>
-            <FontIcon icon="icon chevron-down"/>
-          </InlineButton>
-        </td>
-      </tr>
+      <tbody>
+        <tr>
+          <td v-resizeObserver="true" :resize="changeGridRowHeight">
+            title
+            <InlineButton square>
+              <FontIcon icon="icon chevron-down"/>
+            </InlineButton>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </template>

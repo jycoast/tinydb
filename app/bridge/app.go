@@ -34,20 +34,11 @@ func NewApp() *App {
 	return Application
 }
 
-// startup is called when the app starts. The keeperCtx is saved
+// startup is called when the app starts. The tinydbCtx is saved
 // so we can call the runtime methods
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
-	logger.Infof("%s", fmt.Sprintf(`
-  _                             
- | |                            
- | | _____  ___ _ __   ___ _ __ 
- | |/ / _ \/ _ \ '_ \ / _ \ '__|
- |   <  __/  __/ |_) |  __/ |   
- |_|\_\___|\___| .__/ \___|_|   
-               | |              
-               |_|
-`))
+	logger.Infof("%s", fmt.Sprintf(`tinydb app startup`))
 }
 
 // shutdown is called at application termination

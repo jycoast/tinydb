@@ -25,7 +25,7 @@ export function configHtmlPlugin(env: ViteEnv, isBuild: boolean) {
                 // src: getAppConfigSrc(),
               },
               // 解决wails编译后本地src 资源加载配置文件404，外联改为内联
-              children: `window.__PRODUCTION__KEEPER__CONF__={"VITE_GLOB_APP_TITLE":"keeper","VITE_GLOB_APP_SHORT_NAME":"keeper","VITE_GLOB_API_URL":"/basic-api","VITE_GLOB_UPLOAD_URL":"/upload","VITE_GLOB_API_URL_PREFIX":""};Object.freeze(window.__PRODUCTION__KEEPER__CONF__);Object.defineProperty(window,"__PRODUCTION__KEEPER__CONF__",{configurable:false,writable:false,});`,
+              children: `window.__PRODUCTION__tinydb__CONF__={"VITE_GLOB_APP_TITLE":"tinydb","VITE_GLOB_APP_SHORT_NAME":"tinydb","VITE_GLOB_API_URL":"/basic-api","VITE_GLOB_UPLOAD_URL":"/upload","VITE_GLOB_API_URL_PREFIX":""};Object.freeze(window.__PRODUCTION__tinydb__CONF__);Object.defineProperty(window,"__PRODUCTION__tinydb__CONF__",{configurable:false,writable:false,});`,
             },
           ]
         : [],

@@ -13,11 +13,6 @@
 ![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/tinydb-2.png)
 ![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/dark.png)
 
-一个人的时间是有限的，作者正在尽最大努力开发功能，距离第一个发行版还有一些时日。`wails`将它看作为 Go 的快并且轻量的 `Electron` 替代品。 您可以使用 Go 的灵活性和强大功能，结合丰富的现代前端，轻松的构建应用程序。
-
-### 预览版
-[0.0.2.3-alpha.1](https://github.com/tiyongliu/tinydb/releases/tag/0.0.2.3-alpha.1)
-
 ## 功能
 - 使用`go`、`wails`、`vue3`构建桌面数据库可视化工具
 - 使用wails提供事件系统go和Javascript之间的通信
@@ -32,12 +27,5 @@ sh ./install.sh
 
 ## 2. run app
 ```shell
-wails dev #keeper同级目录下运行
+wails dev #tinydb同级目录下运行
 ```
-
-## 如果安装过程中遇到问题，可以参考wails官方文档
-
-## License
-© tiyongliu, 2022-03.14~time.Now
-
-Released under the [MIT License](./LICENSE)

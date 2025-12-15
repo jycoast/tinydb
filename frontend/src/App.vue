@@ -36,28 +36,38 @@ const {loadingPluginStore} = storeToRefs(bootstrap)
 
 async function loadApi() {
   try {
+    console.log('Loading API...');
     const connections = await connectionListApi()
-    if (connections) {
+    console.log('API response:', connections);
+    if (connections !== undefined && connections !== null) {
       loadedApi.value = true
-    }
-
-    if (loadedApi.value) {
+      console.log('API loaded successfully');
       subscribeConnectionPingers()
-    }
-
-    if (!loadedApi.value) {
-      console.log('API not initialized correctly, trying again in 1s');
+    } else {
+      console.log('API returned empty result, trying again in 1s');
       setTimeout(loadApi, 1000);
     }
   } catch (err) {
-    console.log('Error calling API, trying again in 1s', err);
+    console.error('Error calling API, trying again in 1s', err);
     setTimeout(loadApi, 1000);
   }
 }
 
 watchEffect(() => {
+  console.log('Loading state:', {
+    loadedApi: loadedApi.value,
+    pluginLoaded: loadingPluginStore.value.loaded,
+    loadingPackageName: loadingPluginStore.value.loadingPackageName
+  });
+  
   if (loadedApi.value && loadingPluginStore.value.loaded) {
+    console.log('App loaded, removing loading animation');
     setAppLoaded();
+    // 移除加载动画
+    const loadingEl = document.querySelector('.app-loading');
+    if (loadingEl) {
+      loadingEl.remove();
+    }
   }
 })
 

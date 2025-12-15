@@ -1,10 +1,10 @@
 import {isEmpty, keys, pick} from 'lodash-es'
 import {useInstalledPlugins} from '/@/api/bridge'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
-import {onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {ref, watch} from 'vue'
 import {ExtensionsDirectory} from "/@/second/typings/types/extensions";
-import mysql from './tinydb-plugin-mysql'
-import mongo from './tinydb-plugin-mongo'
+import mysql from './tinydb-plugin-mysql/index.js'
+import mongo from './tinydb-plugin-mongo/index.js'
 
 const plugins = {
   mysql,
@@ -16,31 +16,25 @@ export default function initPluginsProvider() {
   const bootstrap = useBootstrapStore()
   let pluginsDict = {}
 
-  onMounted(() => {
-    useInstalledPlugins({}, installedPlugins)
-  })
-
-  onBeforeUnmount(() => {
-    installedPlugins.value = null
-    pluginsDict = {}
-  })
-
+  // 立即调用，不等待 onMounted
+  useInstalledPlugins({}, installedPlugins)
 
   watch(() => installedPlugins.value, () => {
     loadPlugins(pluginsDict, installedPlugins.value, bootstrap)
       .then(newPlugins => {
-        if (isEmpty(newPlugins)) return
-        pluginsDict = pick(
-          {...pluginsDict, ...(newPlugins as object)},
-          installedPlugins.value.map(y => y.name)
-        )
+        if (!isEmpty(newPlugins)) {
+          pluginsDict = pick(
+            {...pluginsDict, ...(newPlugins as object)},
+            installedPlugins.value.map(y => y.name)
+          )
+        }
       })
       .then(() => {
         bootstrap.setExtensions(
           buildExtensions(buildPlugins(installedPlugins.value))
         )
       })
-  })
+  }, { immediate: true })
 
   function buildPlugins(installedPlugins) {
     return (installedPlugins || [])
@@ -55,26 +49,46 @@ export default function initPluginsProvider() {
 
 async function loadPlugins(pluginsDict, installedPlugins, bootstrap) {
   const newPlugins = {}
-  for (const installed of installedPlugins || []) {
+  
+  console.log('Loading plugins, installedPlugins:', installedPlugins);
+  
+  // 如果没有安装的插件，直接设置为已加载
+  if (!installedPlugins || installedPlugins.length === 0) {
+    console.log('No plugins installed, setting loaded to true');
+    bootstrap.setLoadingPluginStore({
+      loaded: true,
+      loadingPackageName: null
+    })
+    return newPlugins
+  }
+
+  for (const installed of installedPlugins) {
     if (!keys(pluginsDict).includes(installed.name)) {
+      console.log('Loading plugin:', installed.name);
       bootstrap.setLoadingPluginStore({
         loaded: false,
         loadingPackageName: installed.name
       })
 
-      //这种方法开发环境可以，编译后无法访问。
-      // const defaultFrontend = await import(`./tinydb-plugin-${installed.name}`)
-      const defaultFrontend = await plugins[installed.name]
-      newPlugins[installed.name] = defaultFrontend ?? {}
+      try {
+        //这种方法开发环境可以，编译后无法访问。
+        // const defaultFrontend = await import(`./tinydb-plugin-${installed.name}`)
+        const defaultFrontend = await plugins[installed.name]
+        newPlugins[installed.name] = defaultFrontend ?? {}
+        console.log('Plugin loaded:', installed.name, defaultFrontend);
+      } catch (err) {
+        console.error('Error loading plugin:', installed.name, err);
+        newPlugins[installed.name] = {}
+      }
     }
   }
 
-  if (installedPlugins) {
-    bootstrap.setLoadingPluginStore({
-      loaded: true,
-      loadingPackageName: null
-    })
-  }
+  // 确保在所有情况下都设置 loaded 为 true
+  console.log('All plugins loaded, setting loaded to true');
+  bootstrap.setLoadingPluginStore({
+    loaded: true,
+    loadingPackageName: null
+  })
 
   return newPlugins
 }
