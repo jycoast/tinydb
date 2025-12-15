@@ -1,0 +1,13 @@
+package standard
+
+import "tinydb/app/db/standard/modules"
+
+// Standard
+type SQL interface {
+	Dialect() string
+	Ping() error
+	Version() (*modules.Version, error)
+	Close() error
+	ListDatabases() (interface{}, error)
+	Query(sql string) (interface{}, error)
+}

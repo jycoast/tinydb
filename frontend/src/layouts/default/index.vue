@@ -1,0 +1,227 @@
+<template>
+  <div class="not-supported">
+    <div class="m-5 big-icon">
+      <WarningOutlined/>
+    </div>
+    <div class="m-3">Sorry, tinydb is not supported on mobile devices.</div>
+    <div class="m-3">Please visit <a href="https://github.com/tiyongliu/tinydb">tinydb</a> for more
+      info.
+    </div>
+  </div>
+  <div class="root tinydb-screen">
+    <div class="iconbar">
+      <WidgetIconPanel/>
+    </div>
+    <div class="statusbar">
+      <StatusBar/>
+    </div>
+    <div v-if="selectedWidget" class="leftpanel">
+      <WidgetContainer/>
+    </div>
+    <div class="tabs">
+      <TabsPanel/>
+    </div>
+    <div class="content">
+      <TabRegister/>
+    </div>
+    <div v-if="selectedWidget" class="horizontal-split-handle splitter"
+         v-splitterDrag="'clientX'"
+         :resizeSplitter="(e) => localeStore.updateLeftPanelWidth(x => x + e.detail)">
+    </div>
+    <div class="snackbar-container">snackbar-container</div>
+  </div>
+</template>
+
+<script lang="ts">
+import {defineComponent, onMounted, ref, watch} from 'vue'
+import {storeToRefs} from 'pinia'
+import {debounce} from 'lodash-es'
+import {useLocaleStore} from '/@/store/modules/locale'
+import {subscribeRecentDatabaseSwitch} from '/@/api/recentDatabaseSwitch'
+import {subscribeCurrentDbByTab} from '/@/api/changeCurrentDbByTab'
+import WidgetContainer from '/@/second/widgets/WidgetContainer.vue'
+import TabsPanel from '/@/second/widgets/TabsPanel.vue'
+import TabRegister from './TabRegister.vue'
+import StatusBar from '/@/second/widgets/StatusBar.vue'
+import {WarningOutlined} from '@ant-design/icons-vue'
+import WidgetIconPanel from '/@/second/widgets/WidgetIconPanel.vue'
+import bus from '/@/second/utility/bus'
+
+export default defineComponent({
+  name: 'DefaultLayout',
+  components: {
+    WidgetContainer,
+    WarningOutlined,
+    WidgetIconPanel,
+    StatusBar,
+    TabsPanel,
+    TabRegister,
+  },
+  setup() {
+    const excludeFirst = ref(false)
+    const localeStore = useLocaleStore()
+    const {selectedWidget, leftPanelWidth, visibleTitleBar} = storeToRefs(localeStore)
+    window.addEventListener('resize', debounce(() => {
+      if (excludeFirst.value) {
+        bus.emitter.emit(bus.resize)
+      }
+    }, 300))
+
+    onMounted(() => excludeFirst.value = true)
+
+    watch(() => selectedWidget.value, () => {
+      localeStore.setCssVariable(selectedWidget.value, x => (x ? 1 : 0), '--dim-visible-left-panel')
+    }, {immediate: true})
+
+    watch(() => leftPanelWidth.value, () => {
+      localeStore.setCssVariable(leftPanelWidth.value, x => `${x}px`, '--dim-left-panel-width')
+    }, {immediate: true})
+
+    watch(() => visibleTitleBar.value, () => {
+      localeStore.setCssVariable(visibleTitleBar.value, x => (x ? 1 : 0), '--dim-visible-titlebar')
+    }, {immediate: true})
+
+    subscribeCurrentDbByTab()
+    subscribeRecentDatabaseSwitch()
+
+    return {
+      selectedWidget,
+      localeStore
+    };
+  },
+});
+</script>
+
+<style scoped>
+.root {
+  color: var(--theme-font-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.iconbar {
+  position: fixed;
+  display: flex;
+  left: 0;
+  top: var(--dim-header-top);
+  bottom: var(--dim-statusbar-height);
+  width: var(--dim-widget-icon-size);
+  background: var(--theme-bg-inv-1);
+  border-right: 1px solid var(--theme-border);
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+}
+
+.statusbar {
+  position: fixed;
+  background: var(--theme-bg-statusbar-inv);
+  height: var(--dim-statusbar-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+.leftpanel {
+  position: fixed;
+  top: var(--dim-header-top);
+  left: var(--dim-widget-icon-size);
+  bottom: var(--dim-statusbar-height);
+  width: var(--dim-left-panel-width);
+  background-color: var(--theme-bg-1);
+  display: flex;
+  border-right: 1px solid var(--theme-border);
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.05);
+  z-index: 5;
+}
+
+.tabs {
+  position: fixed;
+  top: var(--dim-header-top);
+  left: var(--dim-content-left);
+  height: var(--dim-tabs-panel-height);
+  right: 0;
+  background-color: var(--theme-bg-1);
+  border-top: 1px solid var(--theme-border);
+  border-bottom: 1px solid var(--theme-border);
+  z-index: 5;
+}
+
+.content {
+  position: fixed;
+  top: var(--dim-content-top);
+  left: var(--dim-content-left);
+  bottom: var(--dim-statusbar-height);
+  right: 0;
+  background-color: var(--theme-bg-1);
+  overflow: hidden;
+}
+
+.commads {
+  position: fixed;
+  top: var(--dim-header-top);
+  left: var(--dim-widget-icon-size);
+}
+
+.toolbar {
+  position: fixed;
+  top: var(--dim-toolbar-top);
+  height: var(--dim-toolbar-height);
+  left: 0;
+  right: 0;
+  background: var(--theme-bg-1);
+}
+
+.splitter {
+  position: absolute;
+  top: var(--dim-header-top);
+  bottom: var(--dim-statusbar-height);
+  left: calc(var(--dim-widget-icon-size) + var(--dim-left-panel-width));
+  width: var(--dim-splitter-thickness);
+  background: transparent;
+  cursor: col-resize;
+  z-index: 15;
+  transition: background-color 0.2s ease;
+}
+
+.splitter:hover {
+  background: var(--theme-bg-selected);
+}
+
+.snackbar-container {
+  position: fixed;
+  right: 0;
+  bottom: var(--dim-statusbar-height);
+}
+
+.titlebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--dim-titlebar-height);
+}
+
+.not-supported {
+  display: none;
+}
+
+@media only screen and (max-width: 600px) {
+  .tinydb-screen:not(.isElectron) {
+    display: none;
+  }
+
+  .not-supported:not(.isElectron) {
+    display: block;
+  }
+}
+
+.not-supported {
+  text-align: center;
+}
+
+.big-icon {
+  font-size: 20pt;
+}
+</style>

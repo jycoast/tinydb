@@ -1,2 +1,43 @@
-# tinydb
-轻量级数据库客户端
+![Go reference](https://img.shields.io/badge/go-v1.18-blue?logo=go&logoColor=white)
+[![wails](https://img.shields.io/badge/wails-v2.3.1-brightgreen.svg)](https://wails.io)
+[![vue3](https://img.shields.io/badge/vue-v3.2.0-7289da.svg?logo=v&logoColor=42b883)](https://vuejs.org/)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![dagate](https://img.shields.io/badge/dbgate-reference-brightgreen?&logoColor=white)](https://github.com/dbgate/dbgate)
+[![styled with prettier](https://img.shields.io/badge/vben_admin-reference-ff69b4.svg)](https://vvbin.cn/doc-next/)
+
+
+使用`go`、`wails`、`vue3`，目前只开发开发桌面端，目前仅支持`mysql`、`mongodb`、后续会持续更新其他数据库的支持，会兼容`window`、`macOs`、`linux`，由于我有正常的工作，都是利用空闲时间晚上跟周末开发。
+
+
+![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/tinydb.png)
+![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/tinydb-2.png)
+![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/dark.png)
+
+一个人的时间是有限的，作者正在尽最大努力开发功能，距离第一个发行版还有一些时日。`wails`将它看作为 Go 的快并且轻量的 `Electron` 替代品。 您可以使用 Go 的灵活性和强大功能，结合丰富的现代前端，轻松的构建应用程序。
+
+### 预览版
+[0.0.2.3-alpha.1](https://github.com/tiyongliu/tinydb/releases/tag/0.0.2.3-alpha.1)
+
+## 功能
+- 使用`go`、`wails`、`vue3`构建桌面数据库可视化工具
+- 使用wails提供事件系统go和Javascript之间的通信
+- 目前仅支持`mongodb`、`mysql`的使用
+- `windows` `macOs` `lunux` 发行版
+
+## 1. git bash open script to install
+```shell
+cd script
+sh ./install.sh
+```
+
+## 2. run app
+```shell
+wails dev #keeper同级目录下运行
+```
+
+## 如果安装过程中遇到问题，可以参考wails官方文档
+
+## License
+© tiyongliu, 2022-03.14~time.Now
+
+Released under the [MIT License](./LICENSE)

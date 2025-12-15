@@ -1,0 +1,46 @@
+package db
+
+import (
+	"errors"
+)
+
+// Error messages
+var (
+	ErrMissingDriverName = errors.New(`tinydb: missing database driver name`)
+	ErrNotConnected      = errors.New(`tinydb: not connected to a database`)
+	ErrNilRecord         = errors.New(`tinydb: invalid item (nil)`)
+	ErrInvalidConnection = errors.New(`tinydb: invalid connection`)
+	ErrInvalidDatabase   = errors.New(`tinydb: invalid database`)
+	ErrInvalidCollection = errors.New(`tinydb: invalid collection`)
+
+	ErrMissingAdapter           = errors.New(`tinydb: missing adapter`)
+	ErrAlreadyWithinTransaction = errors.New(`tinydb: already within a transaction`)
+	ErrCollectionDoesNotExist   = errors.New(`tinydb: collection does not exist`)
+	ErrExpectingNonNilModel     = errors.New(`tinydb: expecting non nil model`)
+	ErrExpectingPointerToStruct = errors.New(`tinydb: expecting pointer to struct`)
+	ErrGivingUpTryingToConnect  = errors.New(`tinydb: giving up trying to connect: too many clients`)
+	ErrMissingCollectionName    = errors.New(`tinydb: missing collection name`)
+	ErrMissingConditions        = errors.New(`tinydb: missing selector conditions`)
+	ErrMissingConnURL           = errors.New(`tinydb: missing DSN`)
+	ErrMissingDatabaseName      = errors.New(`tinydb: missing database name`)
+	ErrNoMoreRows               = errors.New(`tinydb: no more rows in this result set`)
+	ErrNotImplemented           = errors.New(`tinydb: call not implemented`)
+	ErrQueryIsPending           = errors.New(`tinydb: can't execute this instruction while the result set is still open`)
+	ErrQueryLimitParam          = errors.New(`tinydb: a query can accept only one limit parameter`)
+	ErrQueryOffsetParam         = errors.New(`tinydb: a query can accept only one offset parameter`)
+	ErrQuerySortParam           = errors.New(`tinydb: a query can accept only one order-by parameter`)
+	ErrSockerOrHost             = errors.New(`tinydb: you may connect either to a UNIX socket or a TCP address, but not both`)
+	ErrTooManyClients           = errors.New(`tinydb: can't connect to database server: too many clients`)
+	ErrUndefined                = errors.New(`tinydb: value is undefined`)
+	ErrUnknownConditionType     = errors.New(`tinydb: arguments of type %T can't be used as constraints`)
+	ErrUnsupported              = errors.New(`tinydb: action is not supported by the DBMS`)
+	ErrUnsupportedDestination   = errors.New(`tinydb: unsupported destination type`)
+	ErrUnsupportedType          = errors.New(`tinydb: type does not support marshaling`)
+	ErrUnsupportedValue         = errors.New(`tinydb: value does not support unmarshaling`)
+	ErrRecordIDIsZero           = errors.New(`tinydb: item ID is not defined`)
+	ErrMissingPrimaryKeys       = errors.New(`tinydb: collection %q has no primary keys`)
+	ErrWarnSlowQuery            = errors.New(`tinydb: slow query`)
+	ErrTransactionAborted       = errors.New(`tinydb: transaction was aborted`)
+	ErrNotWithinTransaction     = errors.New(`tinydb: not within transaction`)
+	ErrNotSupportedByAdapter    = errors.New(`tinydb: not supported by adapter`)
+)
