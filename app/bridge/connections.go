@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"path"
+	"strings"
 	"tinydb/app/db/adapter"
 	"tinydb/app/internal"
 	"tinydb/app/pkg/serializer"
@@ -50,15 +51,46 @@ func (conn *Connections) Test(connection map[string]interface{}) *serializer.Res
 		return serializer.Fail(serializer.ParamsErr)
 	}
 
+	// Log connection parameters for debugging (without password)
+	logParams := make(map[string]interface{})
+	for k, v := range connection {
+		if k == "password" {
+			logParams[k] = "***"
+		} else {
+			logParams[k] = v
+		}
+	}
+	fmt.Printf("Testing connection with params: %+v\n", logParams)
+
 	driver, err := adapter.NewCompatDriver().Open(connection)
 	if err != nil {
+		errorMsg := err.Error()
+
+		// Provide helpful suggestions for common errors
+		if strings.Contains(errorMsg, "Access denied") {
+			errorMsg = fmt.Sprintf(
+				"连接被拒绝：%v\n\n"+
+					"这通常是 MySQL 用户权限问题。请检查：\n"+
+					"1. 用户是否有从您的 IP 地址连接的权限\n"+
+					"2. 在 MySQL 服务器上执行：\n"+
+					"   GRANT ALL PRIVILEGES ON *.* TO 'root'@'%%' IDENTIFIED BY 'your_password';\n"+
+					"   FLUSH PRIVILEGES;\n"+
+					"3. 或者创建一个新用户并授权从任何 IP 连接\n\n"+
+					"连接参数：%+v",
+				err, logParams,
+			)
+		} else {
+			errorMsg = fmt.Sprintf("连接失败：%v\n连接参数：%+v", err, logParams)
+		}
+
 		runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
 			Type:          runtime.ErrorDialog,
-			Title:         "Error",
-			Message:       err.Error(),
+			Title:         "连接错误",
+			Message:       errorMsg,
 			Buttons:       []string{oK},
 			DefaultButton: oK,
 		})
+		fmt.Printf("Connection error: %v\n", err)
 		return serializer.Fail(err.Error())
 	}
 	version, err := driver.Version()

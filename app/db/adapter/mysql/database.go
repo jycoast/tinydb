@@ -2,11 +2,13 @@ package mysql
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 	"tinydb/app/db"
@@ -62,14 +64,25 @@ func (s *Source) open() error {
 		},
 	)
 
+	dsn := s.connURL.String()
+	// Log DSN without password for debugging
+	logDSN := dsn
+	if idx := strings.Index(dsn, "@"); idx > 0 {
+		if pwdIdx := strings.Index(dsn[:idx], ":"); pwdIdx > 0 {
+			logDSN = dsn[:pwdIdx+1] + "***" + dsn[idx:]
+		}
+	}
+	log.Printf("MySQL DSN: %s\n", logDSN)
+
 	_db, err := gorm.Open(mysql.New(mysql.Config{
 		DriverName: Adapter,
-		DSN:        s.connURL.String(),
+		DSN:        dsn,
 	}), &gorm.Config{
 		Logger: newLogger,
 	})
 	if err != nil {
-		return err
+		log.Printf("MySQL connection error: %v\n", err)
+		return fmt.Errorf("failed to connect to MySQL: %w", err)
 	}
 	s.sqlDB = _db
 	return nil

@@ -36,14 +36,28 @@ func (c ConnectionURL) String() (s string) {
 	} else if c.Host != "" {
 		host, port, err := net.SplitHostPort(c.Host)
 		if err != nil {
+			// Host doesn't contain port, use Host and Port field
 			host = c.Host
-			port = "3306"
+			if c.Port != "" {
+				port = c.Port
+			} else {
+				port = "3306"
+			}
+		} else {
+			// Host contains port, but if Port field is set, use it instead
+			if c.Port != "" {
+				port = c.Port
+			}
 		}
 		s = s + fmt.Sprintf("tcp(%s:%s)", host, port)
 	}
 
-	// Adding database
-	s = s + "/" + c.Database
+	// Adding database (use empty string if not specified)
+	if c.Database != "" {
+		s = s + "/" + c.Database
+	} else {
+		s = s + "/"
+	}
 
 	// Do we have any options?
 	if c.Options == nil {
@@ -79,24 +93,48 @@ func ParseSetting(connection map[string]interface{}) (*ConnectionURL, error) {
 		return nil, db.ErrInvalidConnection
 	}
 
-	marshal, err := json.Marshal(&connection)
+	// Handle field name mapping: support both "user"/"username" and "server"/"host"
+	normalized := make(map[string]interface{})
+	for k, v := range connection {
+		normalized[k] = v
+	}
+
+	// Map "user" to "username" if present
+	if user, ok := connection["user"]; ok && connection["username"] == nil {
+		normalized["username"] = user
+	}
+
+	// Map "server" to "host" if present
+	if server, ok := connection["server"]; ok && connection["host"] == nil {
+		normalized["host"] = server
+	}
+
+	marshal, err := json.Marshal(&normalized)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal connection: %w", err)
 	}
 	urlDSN := &ConnectionURL{}
 	err = json.Unmarshal(marshal, urlDSN)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal connection: %w", err)
 	}
 
+	// Log connection details (without password) for debugging
+	fmt.Printf("Parsed MySQL connection: Host=%s, Port=%s, User=%s, Database=%s, Password=%s\n",
+		urlDSN.Host, urlDSN.Port, urlDSN.User, urlDSN.Database,
+		func() string {
+			if urlDSN.Password != "" {
+				return "***"
+			}
+			return "(empty)"
+		}())
+
+	// Validate required fields (password can be empty for some configurations)
 	if urlDSN.User == "" {
-		return nil, fmt.Errorf("lack of user")
+		return nil, fmt.Errorf("lack of user/username")
 	}
-	if urlDSN.Password == "" {
-		return nil, fmt.Errorf("lack of password")
-	}
-	if urlDSN.Host == "" {
-		return nil, fmt.Errorf("lack of host")
+	if urlDSN.Host == "" && urlDSN.Socket == "" {
+		return nil, fmt.Errorf("lack of host/server or socket")
 	}
 
 	return urlDSN, nil
