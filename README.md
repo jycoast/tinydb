@@ -6,7 +6,7 @@
 [![styled with prettier](https://img.shields.io/badge/vben_admin-reference-ff69b4.svg)](https://vvbin.cn/doc-next/)
 
 
-使用`go`、`wails`、`vue3`，目前只开发开发桌面端，目前仅支持`mysql`、`mongodb`、后续会持续更新其他数据库的支持，会兼容`window`、`macOs`、`linux`，由于我有正常的工作，都是利用空闲时间晚上跟周末开发。
+使用`go`、`wails`、`vue3`，目前只开发开发桌面端，目前仅支持`mysql`、`mongodb`。
 
 
 ![](https://cdn.jsdelivr.net/gh/422720735/easy_go@master/tinydb.png)

@@ -9,6 +9,12 @@
     </div>
   </div>
   <div class="root tinydb-screen">
+    <div class="menu-bar-container">
+      <MenuBar/>
+    </div>
+    <div class="toolbar-container">
+      <ToolBar/>
+    </div>
     <div class="iconbar">
       <WidgetIconPanel/>
     </div>
@@ -45,6 +51,8 @@ import TabRegister from './TabRegister.vue'
 import StatusBar from '/@/second/widgets/StatusBar.vue'
 import {WarningOutlined} from '@ant-design/icons-vue'
 import WidgetIconPanel from '/@/second/widgets/WidgetIconPanel.vue'
+import MenuBar from './MenuBar.vue'
+import ToolBar from './ToolBar.vue'
 import bus from '/@/second/utility/bus'
 
 export default defineComponent({
@@ -56,6 +64,8 @@ export default defineComponent({
     StatusBar,
     TabsPanel,
     TabRegister,
+    MenuBar,
+    ToolBar,
   },
   setup() {
     const excludeFirst = ref(false)
@@ -96,6 +106,28 @@ export default defineComponent({
 .root {
   color: var(--theme-font-1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.menu-bar-container {
+  position: fixed;
+  top: calc(var(--dim-titlebar-height) * var(--dim-visible-titlebar));
+  left: 0;
+  right: 0;
+  height: var(--dim-menu-bar-height);
+  background: var(--theme-bg-1);
+  border-bottom: 1px solid var(--theme-border);
+  z-index: 20;
+}
+
+.toolbar-container {
+  position: fixed;
+  top: calc(var(--dim-titlebar-height) * var(--dim-visible-titlebar) + var(--dim-menu-bar-height));
+  left: 0;
+  right: 0;
+  height: var(--dim-toolbar-height);
+  background: var(--theme-bg-1);
+  border-bottom: 1px solid var(--theme-border);
+  z-index: 19;
 }
 
 .iconbar {
