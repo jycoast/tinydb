@@ -15,13 +15,13 @@
   --dim-visible-toolbar: 1; /* set from JS */
   --dim-visible-titlebar: 0; /* set from JS */
 
-  --dim-menu-bar-height: 0px;
+  --dim-menu-bar-height: 28px;
   --dim-toolbar-height: 36px;
   --dim-toolstrip-height: 28px;
   --dim-titlebar-height: 30px;
-  --dim-toolbar-top: calc(var(--dim-titlebar-height) * var(--dim-visible-titlebar));
+  --dim-toolbar-top: calc(var(--dim-titlebar-height) * var(--dim-visible-titlebar) + var(--dim-menu-bar-height));
   --dim-header-top: calc(
-    var(--dim-titlebar-height) * var(--dim-visible-titlebar) + var(--dim-toolbar-height) * var(--dim-visible-toolbar)
+    var(--dim-titlebar-height) * var(--dim-visible-titlebar) + var(--dim-menu-bar-height) + var(--dim-toolbar-height) * var(--dim-visible-toolbar)
   );
   --dim-content-top: calc(var(--dim-header-top) + var(--dim-tabs-panel-height));
 

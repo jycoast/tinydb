@@ -272,24 +272,62 @@ export function disconnectServerConnection(conid, showConfirmation = true) {
 }
 
 export function openConnection(connection, bootstrap) {
-
-  if (connection!.singleDatabase) {
-    bootstrap.setCurrentDatabase({
-      connection: connection!,
-      name: connection!.defaultDatabase
-    } as unknown as IPinnedDatabasesItem)
-    void databaseConnectionsRefreshApi({
-      conid: connection._id!,
-      database: connection.defaultDatabase!,
-      keepOpen: true
-    })
-    bootstrap.updateOpenedSingleDatabaseConnections(x => uniq([...x, connection._id]))
-  } else {
-    bootstrap.updateOpenedConnections(x => uniq([...x, connection!._id]))
-    void serverConnectionsRefreshApi({
-      conid: connection!._id,
-      keepOpen: true,
-    })
-    bootstrap.updateExpandedConnections(x => uniq([...x, connection._id]))
-  }
+  // 使用立即执行的异步函数来处理错误，不阻塞 UI
+  ;(async () => {
+    try {
+      if (connection!.singleDatabase) {
+        bootstrap.setCurrentDatabase({
+          connection: connection!,
+          name: connection!.defaultDatabase
+        } as unknown as IPinnedDatabasesItem)
+        const result = await databaseConnectionsRefreshApi({
+          conid: connection._id!,
+          database: connection.defaultDatabase!,
+          keepOpen: true
+        })
+        // 检查是否有错误信息
+        if (result && (result as any).errorMessage) {
+          const { useMessage } = await import('/@/hooks/web/useMessage')
+          const { notification } = useMessage()
+          notification.error({
+            message: '连接失败',
+            description: (result as any).errorMessage,
+            duration: 5,
+          })
+          return
+        }
+        bootstrap.updateOpenedSingleDatabaseConnections(x => uniq([...x, connection._id]))
+      } else {
+        bootstrap.updateOpenedConnections(x => uniq([...x, connection!._id]))
+        const result = await serverConnectionsRefreshApi({
+          conid: connection!._id,
+          keepOpen: true,
+        })
+        // 检查是否有错误信息
+        if (result && (result as any).errorMessage) {
+          const { useMessage } = await import('/@/hooks/web/useMessage')
+          const { notification } = useMessage()
+          notification.error({
+            message: '连接失败',
+            description: (result as any).errorMessage,
+            duration: 5,
+          })
+          return
+        }
+        bootstrap.updateExpandedConnections(x => uniq([...x, connection._id]))
+      }
+    } catch (e: any) {
+      // 动态导入 useMessage 以避免循环依赖
+      import('/@/hooks/web/useMessage').then(({ useMessage }) => {
+        const { notification } = useMessage()
+        const errMsg = e?.message || e?.toString() || '连接失败，请检查连接参数'
+        notification.error({
+          message: '连接失败',
+          description: errMsg,
+          duration: 5,
+        })
+      }).catch(console.error)
+      console.error('Connection error:', e)
+    }
+  })()
 }

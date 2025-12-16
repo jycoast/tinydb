@@ -1,17 +1,23 @@
 <template>
-  <div class="toolbar">
-    <div class="toolbar-group" v-for="group in toolbarGroups" :key="group.key">
-      <ToolbarButton
-        v-for="item in group.items"
-        :key="item.id"
-        :icon="item.icon"
-        :title="item.toolbarName || item.name"
-        :disabled="item.disabled"
-        @click="handleToolbarClick(item)"
-      >
-        {{ item.toolbarName || item.name }}
-      </ToolbarButton>
-    </div>
+  <div style="width: 100%; height: 100%; display: flex; align-items: center; padding: 4px 8px; position: relative; z-index: 201;">
+    <Space :size="0" style="width: 100%;">
+      <Space v-for="group in toolbarGroups" :key="group.key" :size="0" style="border-right: 1px solid var(--theme-border); padding-right: 8px; margin-right: 8px;">
+        <Button
+          v-for="item in group.items"
+          :key="item.id"
+          :disabled="item.disabled"
+          :title="item.toolbarName || item.name"
+          type="text"
+          style="pointer-events: auto;"
+          @click="handleToolbarClick(item)"
+        >
+          <template v-if="item.icon">
+            <FontIcon :icon="item.icon" style="margin-right: 4px;" />
+          </template>
+          {{ item.toolbarName || item.name }}
+        </Button>
+      </Space>
+    </Space>
   </div>
 </template>
 
@@ -19,7 +25,8 @@
 import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
-import ToolbarButton from '/@/second/buttons/ToolbarButton.vue'
+import { Button, Space } from 'ant-design-vue'
+import FontIcon from '/@/second/icons/FontIcon.vue'
 import runCommand from '/@/second/commands/runCommand'
 
 const bootstrap = useBootstrapStore()
@@ -85,46 +92,4 @@ function handleToolbarClick(item: any) {
 }
 </script>
 
-<style scoped>
-.toolbar {
-  display: flex;
-  height: 100%;
-  background: var(--theme-bg-1);
-  border-bottom: 1px solid var(--theme-border);
-  align-items: center;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  border-right: 1px solid var(--theme-border);
-  padding-right: 4px;
-  margin-right: 4px;
-}
-
-.toolbar-group:last-child {
-  border-right: none;
-  margin-right: 0;
-}
-
-/* 滚动条样式 */
-.toolbar::-webkit-scrollbar {
-  height: 4px;
-}
-
-.toolbar::-webkit-scrollbar-track {
-  background: var(--theme-bg-1);
-}
-
-.toolbar::-webkit-scrollbar-thumb {
-  background: var(--theme-border);
-  border-radius: 2px;
-}
-
-.toolbar::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-font-3);
-}
-</style>
 

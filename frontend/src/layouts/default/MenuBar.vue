@@ -1,5 +1,5 @@
 <template>
-  <div class="menu-bar">
+  <div class="menu-bar-container">
     <div class="menu-item" v-for="menu in menus" :key="menu.key">
       <span class="menu-label" @click="handleMenuClick(menu)">{{ menu.label }}</span>
       <div v-if="menu.showDropdown && menu.children" class="menu-dropdown" @click.stop>
@@ -140,44 +140,58 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.menu-bar {
-  display: flex;
+.menu-bar-container {
+  width: 100%;
   height: 100%;
-  background: var(--theme-bg-1);
-  border-bottom: 1px solid var(--theme-border);
-  user-select: none;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  position: relative;
+  z-index: 300;
+  background: #ffffff; /* 白色背景，与系统主题一致 */
+  border-bottom: 1px solid #d9d9d9;
 }
 
 .menu-item {
   position: relative;
-  padding: 0 12px;
+  padding: 0;
   display: flex;
   align-items: center;
   cursor: pointer;
+  user-select: none;
+  height: 100%;
 }
 
 .menu-label {
   font-size: 13px;
-  color: var(--theme-font-1);
-  padding: 4px 8px;
-  border-radius: 3px;
+  color: #1f1f1f; /* 深色文字，适配白色背景 */
+  padding: 4px 12px;
+  border-radius: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
 }
 
 .menu-item:hover .menu-label {
-  background: var(--theme-bg-2);
+  background: #f5f5f5; /* 悬停时的浅灰色背景 */
+}
+
+.menu-item:active .menu-label {
+  background: #e8e8e8; /* 点击时的稍深背景 */
 }
 
 .menu-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 180px;
-  background: var(--theme-bg-1);
-  border: 1px solid var(--theme-border);
+  min-width: 200px;
+  background: #ffffff; /* 下拉菜单使用白色背景 */
+  border: 1px solid #d9d9d9;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  margin-top: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000; /* 确保下拉菜单在最上层，覆盖工具栏 */
+  margin-top: 0;
   padding: 4px 0;
 }
 
@@ -187,25 +201,26 @@ onUnmounted(() => {
   align-items: center;
   padding: 6px 16px;
   font-size: 13px;
-  color: var(--theme-font-1);
+  color: #1f1f1f; /* 深色文字 */
   cursor: pointer;
   white-space: nowrap;
+  transition: background-color 0.2s;
 }
 
 .menu-dropdown-item:hover:not(.disabled):not(.divider) {
-  background: var(--theme-bg-2);
+  background: #f5f5f5; /* 悬停时的浅灰色背景 */
 }
 
 .menu-dropdown-item.disabled {
-  color: var(--theme-font-3);
+  color: #a8a8a8;
   cursor: not-allowed;
 }
 
 .menu-dropdown-item.divider {
   height: 1px;
   padding: 0;
-  margin: 4px 0;
-  background: var(--theme-border);
+  margin: 4px 8px;
+  background: #e8e8e8;
   cursor: default;
 }
 
@@ -215,7 +230,7 @@ onUnmounted(() => {
 
 .menu-item-shortcut {
   margin-left: 24px;
-  color: var(--theme-font-3);
+  color: #787878;
   font-size: 12px;
 }
 </style>

@@ -36,6 +36,21 @@ const {loadingPluginStore} = storeToRefs(bootstrap)
 
 async function loadApi() {
   try {
+    // 等待 window.go 可用
+    if (!window['go']) {
+      console.log('Waiting for window.go to be available...');
+      let waitCount = 0
+      while (!window['go'] && waitCount < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        waitCount++
+      }
+      if (!window['go']) {
+        console.error('window.go is not available after 5 seconds');
+        setTimeout(loadApi, 1000);
+        return
+      }
+    }
+    
     console.log('Loading API...');
     const connections = await connectionListApi()
     console.log('API response:', connections);

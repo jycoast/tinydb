@@ -8,51 +8,67 @@
       info.
     </div>
   </div>
-  <div class="root tinydb-screen">
-    <Layout class="app-shell">
-      <LayoutHeader class="app-header">
-        <ToolBar/>
-      </LayoutHeader>
+  <Layout class="root tinydb-screen" style="height: 100vh; width: 100vw;">
+    <!-- 顶部菜单栏 -->
+    <LayoutHeader style="height: var(--dim-menu-bar-height); line-height: var(--dim-menu-bar-height); padding: 0; position: relative; z-index: 300; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
+      <MenuBar/>
+    </LayoutHeader>
+    
+    <!-- 工具栏 -->
+    <LayoutHeader style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
+      <ToolBar/>
+    </LayoutHeader>
 
-      <Layout class="app-body">
-        <LayoutSider class="app-iconbar" :width="iconbarWidth" :trigger="null" :collapsible="false">
+    <!-- 主体内容 -->
+    <Layout style="flex: 1; min-height: 0;">
+      <!-- 左侧图标栏 -->
+      <LayoutSider :width="iconbarWidth" :trigger="null" :collapsible="false" style="overflow: hidden;">
+        <div style="height: 100%; display: flex; flex-direction: column; overflow: auto;">
           <WidgetIconPanel/>
-        </LayoutSider>
+        </div>
+      </LayoutSider>
 
+      <!-- 左侧面板（可选） -->
+      <template v-if="selectedWidget">
         <LayoutSider
-          v-if="selectedWidget"
-          class="app-leftpanel"
           :width="leftPanelWidthPx"
           :trigger="null"
           :collapsible="false"
+          style="overflow: hidden;"
         >
-          <WidgetContainer/>
+          <div style="height: 100%; display: flex; flex-direction: column; overflow: auto;">
+            <WidgetContainer/>
+          </div>
         </LayoutSider>
-
+        <!-- 分割条 -->
         <div
-          v-if="selectedWidget"
-          class="app-splitter horizontal-split-handle"
+          class="splitter"
           v-splitterDrag="'clientX'"
           :resizeSplitter="(e) => localeStore.updateLeftPanelWidth(x => x + e.detail)"
         />
+      </template>
 
-        <Layout class="app-main">
-          <div class="app-tabs">
-            <TabsPanel/>
-          </div>
-          <LayoutContent class="app-content">
-            <TabRegister/>
-          </LayoutContent>
-        </Layout>
+      <!-- 主内容区 -->
+      <Layout style="flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;">
+        <!-- 标签页栏 -->
+        <div style="flex: 0 0 var(--dim-tabs-panel-height); height: var(--dim-tabs-panel-height); overflow: hidden;">
+          <TabsPanel/>
+        </div>
+        <!-- 标签页内容 -->
+        <LayoutContent style="flex: 1; min-height: 0; position: relative; overflow: hidden;">
+          <TabRegister/>
+        </LayoutContent>
       </Layout>
-
-      <LayoutFooter class="app-statusbar">
-        <StatusBar/>
-      </LayoutFooter>
-
-      <div class="snackbar-container"></div>
     </Layout>
-  </div>
+
+    <!-- 底部状态栏 -->
+    <LayoutFooter style="height: var(--dim-statusbar-height); padding: 0; position: relative; z-index: 200; display: flex; align-items: stretch; overflow: visible;">
+      <StatusBar/>
+    </LayoutFooter>
+
+    <!-- 通知容器 -->
+    <div class="snackbar-container"></div>
+  </Layout>
 </template>
 
 <script lang="ts" setup>
@@ -69,6 +85,7 @@ import StatusBar from '/@/second/widgets/StatusBar.vue'
 import {WarningOutlined} from '@ant-design/icons-vue'
 import WidgetIconPanel from '/@/second/widgets/WidgetIconPanel.vue'
 import ToolBar from './ToolBar.vue'
+import MenuBar from './MenuBar.vue'
 import bus from '/@/second/utility/bus'
 import {Layout} from 'ant-design-vue'
 
@@ -113,106 +130,21 @@ subscribeRecentDatabaseSwitch()
 .root {
   color: var(--theme-font-1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  height: 100vh;
-  width: 100vw;
 }
 
-/* 新主布局：ant Layout */
-.app-shell {
-  height: 100%;
-  width: 100%;
-  background: var(--theme-bg-0);
-}
-
-.app-header {
-  height: var(--dim-toolbar-height);
-  line-height: var(--dim-toolbar-height);
-  padding: 0;
-  background: var(--theme-bg-1);
-  border-bottom: 1px solid var(--theme-border);
-}
-
-.app-body {
-  flex: 1;
-  min-height: 0;
-  background: var(--theme-bg-0);
-}
-
-.app-iconbar {
-  background: var(--theme-bg-inv-1);
-  border-right: 1px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.app-leftpanel {
-  background: var(--theme-bg-1);
-  border-right: 1px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* antd Sider 内部容器需要显式变成 flex 才能正确滚动 */
-.app-iconbar :deep(.ant-layout-sider-children),
-.app-leftpanel :deep(.ant-layout-sider-children) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  /* allow left panel to scroll */
-  overflow: auto;
-}
-
-.app-splitter {
+/* 分割条样式 */
+.splitter {
   flex: 0 0 var(--dim-splitter-thickness);
   width: var(--dim-splitter-thickness);
   background: transparent;
   cursor: col-resize;
 }
 
-.app-splitter:hover {
+.splitter:hover {
   background: var(--theme-bg-selected);
 }
 
-.app-main {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  background: var(--theme-bg-0);
-  display: flex;
-  flex-direction: column;
-}
-
-.app-tabs {
-  flex: 0 0 var(--dim-tabs-panel-height);
-  height: var(--dim-tabs-panel-height);
-  background: var(--theme-bg-1);
-  border-bottom: 1px solid var(--theme-border);
-  position: relative; /* 给 TabsPanel 内部定位提供参照 */
-  overflow: hidden;
-}
-
-.app-content {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  position: relative; /* 给 TabContent 的 absolute 提供参照 */
-  overflow: hidden;
-  background: var(--theme-bg-0);
-}
-
-.app-statusbar {
-  height: var(--dim-statusbar-height);
-  padding: 0;
-  background: var(--theme-bg-statusbar-inv);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: stretch;
-}
-
+/* 通知容器 */
 .snackbar-container {
   position: fixed;
   right: 16px;
@@ -232,22 +164,18 @@ subscribeRecentDatabaseSwitch()
   pointer-events: auto;
 }
 
-/* 隐藏 snackbar-container 的文本内容（如果只是占位符） */
 .snackbar-container:empty::before {
   content: '';
   display: none;
 }
 
-.titlebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--dim-titlebar-height);
-}
-
 .not-supported {
   display: none;
+  text-align: center;
+}
+
+.big-icon {
+  font-size: 20pt;
 }
 
 @media only screen and (max-width: 600px) {
@@ -258,13 +186,5 @@ subscribeRecentDatabaseSwitch()
   .not-supported:not(.isElectron) {
     display: block;
   }
-}
-
-.not-supported {
-  text-align: center;
-}
-
-.big-icon {
-  font-size: 20pt;
 }
 </style>

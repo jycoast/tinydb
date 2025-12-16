@@ -169,6 +169,8 @@ export default defineComponent({
   flex: 1;
   font-size: 11px;
   padding: 0 8px;
+  width: 100%;
+  height: 100%;
 }
 .container {
   display: flex;

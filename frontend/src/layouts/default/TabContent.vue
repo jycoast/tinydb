@@ -50,7 +50,8 @@ export default defineComponent({
   right: 0;
   bottom: 0;
   display: flex;
-  z-index: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .tabVisible {
@@ -63,5 +64,14 @@ export default defineComponent({
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
+}
+
+/* 确保标签页内容不会遮挡顶部和底部 */
+.tab-content-host {
+  pointer-events: none;
+}
+
+.tab-content-host.tabVisible {
+  pointer-events: auto;
 }
 </style>
