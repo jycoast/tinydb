@@ -30,8 +30,12 @@ func NewCompatDriver() Driver {
 }
 
 func (s *sessionWithContext) Open(storedConnection map[string]interface{}) (db.Session, error) {
-	if !utility.IsExist(filepath.Join(utility.DataDir(), "connections.jsonl")) {
-		return nil, errors.New("connections file missing")
+	// Only check for connections file if we're loading a saved connection (has _id)
+	// For new connections being tested, the file may not exist yet
+	if storedConnection[uuid] != nil && storedConnection[uuid].(string) != "" {
+		if !utility.IsExist(filepath.Join(utility.DataDir(), "connections.jsonl")) {
+			return nil, errors.New("connections file missing")
+		}
 	}
 	return createSession(internal.DecryptConnection(loadConnection(storedConnection)))
 }

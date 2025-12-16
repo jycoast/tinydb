@@ -3,6 +3,7 @@ package sideQuests
 import (
 	"context"
 	"errors"
+	"time"
 	"github.com/samber/lo"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"tinydb/app/db"
@@ -171,16 +172,36 @@ func (msg *DatabaseConnection) handleIncrementalRefresh(ch chan *schema.EchoMess
 
 func (msg *DatabaseConnection) HandleSqlSelect(
 	ctx context.Context, conn *schema.OpenedDatabaseConnection, selectParams interface{}) *schema.EchoMessage {
-	ch := make(chan *schema.EchoMessage, 2)
+	// Fast-path: if frontend already passed raw SQL like { sql: "select 1" }, run directly.
+	switch v := selectParams.(type) {
+	case map[string]interface{}:
+		if raw, ok := v["sql"]; ok {
+			if sqlStr, ok2 := raw.(string); ok2 && sqlStr != "" {
+				driver, err := stash.GetStorageSession().GetItem(conn.Conid, conn.Database)
+				if err != nil {
+					return &schema.EchoMessage{MsgType: "response", Err: err}
+				}
+				return msg.handleQueryData(driver, sqlStr, true)
+			}
+		}
+	case string:
+		if v != "" {
+			driver, err := stash.GetStorageSession().GetItem(conn.Conid, conn.Database)
+			if err != nil {
+				return &schema.EchoMessage{MsgType: "response", Err: err}
+			}
+			return msg.handleQueryData(driver, v, true)
+		}
+	}
+
+	// Legacy path: ask frontend to convert Select -> SQL via runtime event.
+	ch := make(chan *schema.EchoMessage, 1)
 	runtime.EventsEmit(ctx, "handleSqlSelect", selectParams)
 	runtime.EventsOnce(ctx, "handleSqlSelectReturn", func(sql ...interface{}) {
 		utility.WithRecover(func() {
 			driver, err := stash.GetStorageSession().GetItem(conn.Conid, conn.Database)
 			if err != nil {
-				ch <- &schema.EchoMessage{
-					MsgType: "response",
-					Err:     err,
-				}
+				ch <- &schema.EchoMessage{MsgType: "response", Err: err}
 				return
 			}
 			ch <- msg.handleQueryData(driver, sql[0].(string), true)
@@ -192,7 +213,17 @@ func (msg *DatabaseConnection) HandleSqlSelect(
 		})
 	})
 	defer close(ch)
-	return <-ch
+
+	// Never hang forever: timeout if frontend doesn't respond.
+	select {
+	case resp := <-ch:
+		return resp
+	case <-time.After(8 * time.Second):
+		return &schema.EchoMessage{
+			MsgType: "response",
+			Err:     errors.New("sql select timeout: frontend did not return SQL"),
+		}
+	}
 }
 
 func (msg *DatabaseConnection) handleQueryData(driver db.Session, sql string, skipReadonlyCheck bool) *schema.EchoMessage {

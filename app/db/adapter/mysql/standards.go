@@ -78,22 +78,33 @@ func (s *Source) ListDatabases() (interface{}, error) {
 }
 
 func (s *Source) Query(sql string) (interface{}, error) {
-	rows := make([]map[string]interface{}, 0)
-	list, err := s.sqlDB.Raw(sql).Rows()
-	defer list.Close()
+	// Protect the app from returning huge result sets (Wails marshalling + UI rendering can hang).
+	const maxRows = 2000
+
+	resultRows := make([]map[string]interface{}, 0, 64)
+	sqlQuery, err := execute(s.sqlDB, sql)
 	if err != nil {
 		logger.Errorf("get mysql query failed: %v", err)
-		return rows, err
+		return &modules.MysqlRowsResult{Rows: resultRows, Columns: []*modules.Column{}}, err
+	}
+	defer sqlQuery.Rows.Close()
+
+	count := 0
+	for sqlQuery.Rows.Next() {
+		var row map[string]interface{}
+		if err = s.sqlDB.ScanRows(sqlQuery.Rows, &row); err != nil {
+			logger.Errorf("get mysql query row scanRows failed: %v", err)
+			return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: sqlQuery.Columns}, err
+		}
+		resultRows = append(resultRows, row)
+		count++
+		if count >= maxRows {
+			break
+		}
 	}
 
-	for list.Next() {
-		var row map[string]interface{}
-		err = s.sqlDB.ScanRows(list, &row)
-		if err != nil {
-			logger.Errorf("get mysql query row scanRows failed: %v", err)
-			return make([]map[string]interface{}, 0), err
-		}
-		rows = append(rows, row)
-	}
-	return rows, nil
+	return &modules.MysqlRowsResult{
+		Rows:    resultRows,
+		Columns: sqlQuery.Columns,
+	}, nil
 }

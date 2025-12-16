@@ -123,13 +123,20 @@ pnpm run build
 
 ### 步骤 5：返回项目根目录并启动开发模式
 
+**重要**：`wails dev` 命令必须在项目根目录运行，不能在 `frontend` 目录运行！
+
 ```powershell
-# 返回项目根目录
+# 返回项目根目录（如果当前在 frontend 目录）
 cd ..
+
+# 或者直接切换到项目根目录
+cd E:\github\tinydb
 
 # 启动开发模式
 wails dev
 ```
+
+**注意**：`wails.json` 文件位于项目根目录，Wails 需要在这个目录下运行才能找到配置文件。
 
 ---
 
@@ -216,6 +223,10 @@ wails dev
 
 ### 问题 2：前端依赖安装失败
 
+**可能原因**：
+1. 网络问题
+2. husky install 失败（Windows 上常见）
+
 **解决方案**：
 ```powershell
 cd frontend
@@ -226,6 +237,14 @@ Remove-Item -Force pnpm-lock.yaml -ErrorAction SilentlyContinue
 # 使用国内镜像重新安装
 pnpm install --registry https://registry.npmmirror.com
 ```
+
+**如果遇到 husky install 错误**：
+- 项目已配置为在 husky install 失败时继续安装，不会中断整个安装过程
+- 如果仍然失败，可以跳过脚本执行：
+  ```powershell
+  npm install --ignore-scripts
+  ```
+  然后手动安装其他依赖（如果需要）
 
 ### 问题 3：Go 依赖下载慢
 
@@ -238,7 +257,20 @@ go mod download
 
 ### 问题 4：`wails dev` 启动失败
 
-**可能原因**：
+**错误信息**：`open E:\github\tinydb\frontend\wails.json: The system cannot find the file specified.`
+
+**原因**：在 `frontend` 目录下运行了 `wails dev`，但 `wails.json` 文件在项目根目录。
+
+**解决方案**：
+```powershell
+# 返回到项目根目录
+cd E:\github\tinydb
+
+# 然后运行
+wails dev
+```
+
+**其他可能原因**：
 1. 前端未构建：先运行 `cd frontend && pnpm run build`
 2. 端口被占用：检查 3100 端口是否被占用
 3. Wails 版本不匹配：运行 `wails update`
@@ -338,6 +370,4 @@ go clean -modcache
 完成以上步骤后，运行 `wails dev` 即可启动项目！
 
 ---
-
-*最后更新：2024年*
 

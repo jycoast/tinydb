@@ -320,11 +320,9 @@ export default defineComponent({
 
 <style scoped>
 .root {
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   background: var(--theme-bg-1);
 }
 
@@ -349,15 +347,12 @@ export default defineComponent({
 }
 
 .tabs {
-  height: var(--dim-tabs-panel-height);
+  height: 100%;
   display: flex;
   overflow-x: auto;
   overflow-y: hidden;
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 40px;
-  bottom: 0;
+  position: relative;
+  width: calc(100% - 40px);
   scrollbar-width: thin;
   scrollbar-color: var(--theme-border) transparent;
 }

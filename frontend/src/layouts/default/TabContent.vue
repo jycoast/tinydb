@@ -1,5 +1,5 @@
 <template>
-  <div :class="tabVisible ? 'tabVisible' : ''">
+  <div class="tab-content-host" :class="tabVisible ? 'tabVisible' : ''">
     <component :is="tabComponent" v-bind="$attrs" :tabid="tabid" :tabVisible="tabVisible"/>
   </div>
 </template>
@@ -43,20 +43,25 @@ export default defineComponent({
 </script>
 
 <style scoped>
-div {
+.tab-content-host {
   position: absolute;
   left: 0;
   top: 0;
   right: 0;
   bottom: 0;
   display: flex;
+  z-index: 1;
 }
 
 .tabVisible {
   visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
 }
 
-:not(.tabVisible) {
+.tab-content-host:not(.tabVisible) {
   visibility: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 </style>

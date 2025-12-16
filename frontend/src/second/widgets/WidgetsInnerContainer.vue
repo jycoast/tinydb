@@ -6,9 +6,10 @@
 
 <style scoped>
 .widgetsInnerContainer {
-  flex: 1 1;
-  overflow-x: auto;
-  overflow-y: auto;
-  width: var(--dim-left-panel-width);
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
 }
 </style>

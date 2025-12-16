@@ -76,8 +76,12 @@ onMounted(() => {
   const removed = document.getElementById('starting_dbgate_zero');
   if (removed) removed.remove();
 
-  if (window.runtime) {
+  // Wails runtime events are provided via /wailsjs/runtime; window.runtime may be undefined in some environments.
+  // If we don't register these handlers, backend SqlSelect waits forever for 'handleSqlSelectReturn'.
+  try {
     dispatchRuntimeEvent()
+  } catch (e) {
+    console.warn('dispatchRuntimeEvent failed (non-wails environment?)', e)
   }
 })
 </script>

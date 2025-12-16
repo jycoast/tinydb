@@ -1,4 +1,4 @@
-import {defineComponent, onMounted, onBeforeUnmount, PropType, ref, toRefs} from 'vue'
+import {defineComponent, onMounted, onBeforeUnmount, PropType, ref, toRefs, nextTick} from 'vue'
 import {useBootstrapStore} from "/@/store/modules/bootstrap";
 import queryParserWorkerFallback from './queryParserWorkerFallback'
 import * as ace from 'ace-builds/src-noconflict/ace'
@@ -62,7 +62,6 @@ interface IPart {
   trimStart: {line: string}
   text: string
 }
-const aceContainer = `{position: absolute; left: 0; top: 0; right: 0; bottom: 0;}`
 export default defineComponent({
   name: "AceEditor",
   emits: ['init', 'focus', 'input'],
@@ -100,14 +99,14 @@ export default defineComponent({
     const EDITOR_ID = `svelte-ace-editor-div:${Math.floor(Math.random() * 10000000000)}`
     const {value, mode, readOnly, splitterOptions, currentPart, options, menu} = toRefs(props)
     const editor = ref<Nullable<ace.Editor>>()
-    const clientWidth = ref(0)
-    const clientHeight = ref(0)
+    const containerRef = ref<HTMLElement | null>(null)
     const contentBackup = ref<string>('')
     const queryParts = ref<IPart[]>([])
     const queryParserWorker = ref<Nullable<{
       text: string;
       options: {returnRichInfo: boolean};
     } | string>>(null)
+    const resizeObserver = ref<ResizeObserver | null>(null)
 
     const stdOptions = {
       showPrintMargin: false,
@@ -209,9 +208,55 @@ export default defineComponent({
 
       }
 
-      onMounted(() => {
-        editor.value = ace.edit(EDITOR_ID)
-        emit('init', editor.value)
+      function resizeEditor() {
+        if (editor.value && containerRef.value) {
+          const rect = containerRef.value.getBoundingClientRect()
+          if (rect.width > 0 && rect.height > 0) {
+            editor.value.resize()
+          }
+        }
+      }
+
+      let initAttempts = 0
+      const MAX_INIT_ATTEMPTS = 100 // 最多尝试10秒（100 * 100ms）
+      let isInitialized = false
+
+      function initEditor() {
+        if (isInitialized) return
+        
+        initAttempts++
+        if (initAttempts > MAX_INIT_ATTEMPTS) {
+          console.error('Failed to initialize AceEditor after maximum attempts')
+          return
+        }
+
+        if (!containerRef.value) {
+          // 如果容器还没有准备好，延迟初始化
+          setTimeout(initEditor, 100)
+          return
+        }
+        
+        const rect = containerRef.value.getBoundingClientRect()
+        const computedStyle = window.getComputedStyle(containerRef.value)
+        const isDisplayed = computedStyle.display !== 'none'
+        const isVisibleStyle = computedStyle.visibility !== 'hidden'
+        
+        // 如果容器不可见，延迟初始化（但允许初始化，因为 visibility: hidden 时 offsetParent 可能为 null）
+        if (!isDisplayed || (isVisibleStyle === false && rect.width === 0 && rect.height === 0)) {
+          setTimeout(initEditor, 100)
+          return
+        }
+
+        // 容器准备好了，初始化编辑器（即使尺寸为0也可以初始化，后续会resize）
+        try {
+          editor.value = ace.edit(EDITOR_ID)
+          isInitialized = true
+          emit('init', editor.value)
+        } catch (error) {
+          console.error('Failed to initialize AceEditor:', error)
+          setTimeout(initEditor, 100)
+          return
+        }
 
         editor.value.$blockScrolling = Infinity
         editor.value.getSession().setMode('ace/mode/' + mode.value)
@@ -230,6 +275,38 @@ export default defineComponent({
         editor.value.keyBinding.addKeyboardHandler(handleKeyDown);
         changedQueryParts()
 
+        // 初始化时调整大小（延迟一下确保编辑器完全初始化）
+        setTimeout(() => {
+          resizeEditor()
+          // 如果容器尺寸为0，继续尝试
+          if (containerRef.value) {
+            const rect = containerRef.value.getBoundingClientRect()
+            if (rect.width === 0 || rect.height === 0) {
+              // 延迟再次尝试 resize
+              setTimeout(() => resizeEditor(), 200)
+            }
+          }
+        }, 100)
+
+        // 监听窗口大小变化
+        resizeObserver.value = new ResizeObserver(() => {
+          resizeEditor()
+        })
+        if (containerRef.value) {
+          resizeObserver.value.observe(containerRef.value)
+        }
+        
+        // 也监听窗口 resize 事件
+        const handleWindowResize = () => {
+          resizeEditor()
+        }
+        window.addEventListener('resize', handleWindowResize)
+        
+        // 清理函数
+        onBeforeUnmount(() => {
+          window.removeEventListener('resize', handleWindowResize)
+        })
+
         editor.value.on('guttermousedown', e => {
           const row = e.getDocumentPosition().row
           const part = (queryParts.value || []).find(part => part.trimStart.line == row)
@@ -242,9 +319,45 @@ export default defineComponent({
         },
           true
         )
+      }
+
+      onMounted(() => {
+        // 使用多种方式确保容器准备好
+        nextTick(() => {
+          // 立即尝试一次
+          initEditor()
+          
+          // 也监听 DOM 变化
+          const observer = new MutationObserver(() => {
+            if (!editor.value && containerRef.value) {
+              const rect = containerRef.value.getBoundingClientRect()
+              if (rect.width > 0 && rect.height > 0) {
+                initEditor()
+              }
+            }
+          })
+          
+          if (containerRef.value) {
+            observer.observe(containerRef.value, {
+              attributes: true,
+              attributeFilter: ['style', 'class'],
+              childList: true,
+              subtree: true
+            })
+          }
+          
+          // 清理 observer
+          onBeforeUnmount(() => {
+            observer.disconnect()
+          })
+        })
       })
 
     onBeforeUnmount(() => {
+      if (resizeObserver.value) {
+        resizeObserver.value.disconnect()
+        resizeObserver.value = null
+      }
       if (editor.value) {
         editor.value.container.removeEventListener('contextmenu', handleContextMenu);
         editor.value.keyBinding.removeKeyboardHandler(handleKeyDown);
@@ -254,9 +367,34 @@ export default defineComponent({
     })
 
       return () => (
-        <div style={aceContainer}>
-          <div id={EDITOR_ID}
-               style={`width: ${clientWidth.value}px;height: ${clientHeight.value}px`}></div>
+        <div 
+          ref={containerRef}
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: '100%',
+            height: '100%',
+            minWidth: '100px',
+            minHeight: '100px'
+          }}
+        >
+          <div 
+            id={EDITOR_ID}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: '100%',
+              minWidth: '100px',
+              minHeight: '100px'
+            }}
+          ></div>
         </div>
       )
     }
