@@ -15,7 +15,7 @@
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('sql')">
       <div class="m-1"></div>
-      <AButton size="small" @click="runCommand('new.table')">New table</AButton>
+      <AButton size="small" @click="handleNewTable">New table</AButton>
     </template>
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('document')">
@@ -61,6 +61,8 @@
     />
   </WidgetsInnerContainer>
 
+  <CreateTableModal :onRegister="registerCreateTableModal" />
+
 </template>
 
 <script lang="ts">
@@ -86,6 +88,8 @@ import {useClusterApiStore} from '/@/store/modules/clusterApi'
 
 import {Button, Input, Space, Tooltip} from 'ant-design-vue'
 import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
+import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
+import { useModal } from '/@/components/Modal'
 
 export default defineComponent({
   name: "SqlObjectList",
@@ -115,6 +119,14 @@ export default defineComponent({
     const flag = ref(true)
     const clusterApi = useClusterApiStore()
     const {connection} = storeToRefs(clusterApi)
+
+    const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
+
+    const handleNewTable = () => {
+      if (unref(conid) && unref(database)) {
+        openCreateTableModal(true, { conid: unref(conid), database: unref(database) })
+      }
+    }
 
     const handleRefreshDatabase = async () => {
       try {
@@ -190,6 +202,7 @@ export default defineComponent({
       ...toRefs(props),
       handleRefreshDatabase,
       runCommand,
+      handleNewTable,
       objectList,
       objects,
       databaseObjectAppObject: DatabaseObjectAppObject,
@@ -198,6 +211,7 @@ export default defineComponent({
       handleExpandable,
       chevronExpandIcon,
       driver,
+      registerCreateTableModal: registerCreateTableModal,
     }
   }
 })

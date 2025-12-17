@@ -16,6 +16,8 @@ import {
   serverConnectionsRefreshApi
 } from '/@/api/simpleApis'
 import openNewTab from '/@/second/utility/openNewTab'
+import CreateDatabaseModal from '/@/second/modals/CreateDatabaseModal.vue'
+import { useModal } from '/@/components/Modal'
 
 export default defineComponent({
   name: 'ConnectionAppObject',
@@ -145,6 +147,12 @@ export default defineComponent({
 
     }
 
+    const [registerCreateDatabaseModal, { openModal: openCreateDatabaseModal }] = useModal()
+    
+    const handleCreateDatabase = () => {
+      openCreateDatabaseModal(true, { conid: data.value?._id })
+    }
+
     const getContextMenu = () => {
       const driver = extensions.value && extensions.value?.drivers.find(x => x.engine == data.value?.engine);
       const handleRefresh = () => {
@@ -152,10 +160,6 @@ export default defineComponent({
       }
       const handleDisconnect = () => {
         disconnectServerConnection(data.value?._id);
-      }
-
-      const handleCreateDatabase = () => {
-
       }
 
       const handleServerSummary = () => {
@@ -234,22 +238,27 @@ export default defineComponent({
 
     return () => {
       const {...restProps} = attrs
-      return <AppObjectCore
-        {...restProps}
-        data={data.value as ConnectionsWithStatus}
-        title={getConnectionLabel(data.value)}
-        icon={data.value!.singleDatabase ? 'img database' : 'img server'}
-        isBold={data.value!.singleDatabase
-          ? get(currentDatabase.value, 'connection._id') == data.value!._id && get(currentDatabase.value, 'name') == data.value!.defaultDatabase
-          : get(currentDatabase.value, 'connection._id') == data.value!._id}
-        statusIcon={statusIconRef.value || engineStatusIconRef.value}
-        statusTitle={statusTitleRef.value || engineStatusTitleRef.value}
-        statusIconBefore={data.value && data.value.isReadOnly ? 'icon lock' : null}
-        extInfo={extInfoRef.value}
-        menu={getContextMenu}
-        onClick={handleClick}
-        onDblclick={handleConnect}
-      />
+      return (
+        <>
+          <AppObjectCore
+            {...restProps}
+            data={data.value as ConnectionsWithStatus}
+            title={getConnectionLabel(data.value)}
+            icon={data.value!.singleDatabase ? 'img database' : 'img server'}
+            isBold={data.value!.singleDatabase
+              ? get(currentDatabase.value, 'connection._id') == data.value!._id && get(currentDatabase.value, 'name') == data.value!.defaultDatabase
+              : get(currentDatabase.value, 'connection._id') == data.value!._id}
+            statusIcon={statusIconRef.value || engineStatusIconRef.value}
+            statusTitle={statusTitleRef.value || engineStatusTitleRef.value}
+            statusIconBefore={data.value && data.value.isReadOnly ? 'icon lock' : null}
+            extInfo={extInfoRef.value}
+            menu={getContextMenu}
+            onClick={handleClick}
+            onDblclick={handleConnect}
+          />
+          <CreateDatabaseModal onRegister={registerCreateDatabaseModal} />
+        </>
+      )
     }
   },
   extractKey: data => data._id,

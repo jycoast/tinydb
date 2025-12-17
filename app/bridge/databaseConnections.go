@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 	"github.com/samber/lo"
+	"strings"
 	"sync"
 	"tinydb/app/analyser"
 	"tinydb/app/db/standard/modules"
@@ -391,4 +392,117 @@ func (dc *DatabaseConnections) CollectionData(req *CollectionDataRequest) *seria
 	}
 
 	return serializer.Fail(serializer.NilRecord)
+}
+
+type CreateTableRequest struct {
+	databaseConnections
+	TableName string                   `json:"tableName"`
+	Columns   []map[string]interface{} `json:"columns"`
+}
+
+func (dc *DatabaseConnections) CreateTable(req *CreateTableRequest) *serializer.Response {
+	if req == nil || req.Conid == "" || req.Database == "" {
+		return serializer.Fail(serializer.IdNotEmpty)
+	}
+	if req.TableName == "" {
+		return serializer.Fail("table name is required")
+	}
+	if len(req.Columns) == 0 {
+		return serializer.Fail("at least one column is required")
+	}
+
+	opened := dc.ensureOpened(req.Conid, req.Database)
+	if opened == nil {
+		return serializer.Fail("database connection not found")
+	}
+
+	// Build CREATE TABLE SQL
+	sql := buildCreateTableSQL(req.TableName, req.Columns)
+
+	// Execute the SQL
+	response := dc.sendRequest(opened, &schema.EchoMessage{
+		Payload: map[string]interface{}{"sql": sql},
+		MsgType: "sqlSelect",
+	})
+
+	if response == nil {
+		return serializer.Fail("Error executing CREATE TABLE statement")
+	}
+
+	if response.Err != nil {
+		return serializer.Fail(fmt.Sprintf("failed to create table: %v", response.Err))
+	}
+
+	// Refresh database structure
+	dc.ensureOpened(req.Conid, req.Database)
+
+	return serializer.SuccessData(serializer.SUCCESS, map[string]string{
+		"status":    "ok",
+		"tableName": req.TableName,
+	})
+}
+
+func buildCreateTableSQL(tableName string, columns []map[string]interface{}) string {
+	var sql strings.Builder
+	sql.WriteString(fmt.Sprintf("CREATE TABLE `%s` (\n", strings.ReplaceAll(tableName, "`", "``")))
+
+	for i, col := range columns {
+		if i > 0 {
+			sql.WriteString(",\n")
+		}
+		colName := fmt.Sprintf("%v", col["columnName"])
+		colType := fmt.Sprintf("%v", col["dataType"])
+		colName = strings.ReplaceAll(colName, "`", "``")
+
+		sql.WriteString(fmt.Sprintf("  `%s` %s", colName, colType))
+
+		// Add length/precision if specified
+		if charMaxLength, ok := col["charMaxLength"].(float64); ok && charMaxLength > 0 {
+			sql.WriteString(fmt.Sprintf("(%d)", int(charMaxLength)))
+		} else if numericPrecision, ok := col["numericPrecision"].(float64); ok && numericPrecision > 0 {
+			if numericScale, ok := col["numericScale"].(float64); ok && numericScale > 0 {
+				sql.WriteString(fmt.Sprintf("(%d,%d)", int(numericPrecision), int(numericScale)))
+			} else {
+				sql.WriteString(fmt.Sprintf("(%d)", int(numericPrecision)))
+			}
+		}
+
+		// Add NOT NULL
+		if isNullable, ok := col["isNullable"].(string); ok && isNullable == "NO" {
+			sql.WriteString(" NOT NULL")
+		}
+
+		// Add AUTO_INCREMENT
+		if extra, ok := col["extra"].(string); ok && strings.Contains(extra, "auto_increment") {
+			sql.WriteString(" AUTO_INCREMENT")
+		}
+
+		// Add DEFAULT value
+		if defaultValue, ok := col["defaultValue"]; ok && defaultValue != nil && defaultValue != "" {
+			defVal := fmt.Sprintf("%v", defaultValue)
+			if colType == "VARCHAR" || colType == "TEXT" || colType == "CHAR" {
+				sql.WriteString(fmt.Sprintf(" DEFAULT '%s'", strings.ReplaceAll(defVal, "'", "''")))
+			} else {
+				sql.WriteString(fmt.Sprintf(" DEFAULT %s", defVal))
+			}
+		}
+
+		// Add COMMENT
+		if comment, ok := col["columnComment"].(string); ok && comment != "" {
+			sql.WriteString(fmt.Sprintf(" COMMENT '%s'", strings.ReplaceAll(comment, "'", "''")))
+		}
+	}
+
+	// Add PRIMARY KEY if specified
+	for _, col := range columns {
+		if extra, ok := col["extra"].(string); ok && strings.Contains(extra, "PRI") {
+			colName := fmt.Sprintf("%v", col["columnName"])
+			colName = strings.ReplaceAll(colName, "`", "``")
+			sql.WriteString(fmt.Sprintf(",\n  PRIMARY KEY (`%s`)", colName))
+			break
+		}
+	}
+
+	sql.WriteString("\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")
+	return sql.String()
 }

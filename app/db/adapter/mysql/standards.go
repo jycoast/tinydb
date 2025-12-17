@@ -3,6 +3,7 @@ package mysql
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"tinydb/app/db"
 	"tinydb/app/db/standard/modules"
 	"tinydb/app/pkg/logger"
@@ -75,6 +76,24 @@ func (s *Source) ListDatabases() (interface{}, error) {
 	}
 
 	return nil, db.ErrNotConnected
+}
+
+func (s *Source) CreateDatabase(name string) error {
+	if s.sqlDB == nil {
+		return db.ErrNotConnected
+	}
+	
+	// Escape database name to prevent SQL injection
+	// MySQL allows backticks for identifiers
+	escapedName := fmt.Sprintf("`%s`", strings.ReplaceAll(name, "`", "``"))
+	
+	err := s.sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %s", escapedName)).Error
+	if err != nil {
+		logger.Errorf("create mysql database failed: %v", err)
+		return fmt.Errorf("failed to create database: %w", err)
+	}
+	
+	return nil
 }
 
 func (s *Source) Query(sql string) (interface{}, error) {

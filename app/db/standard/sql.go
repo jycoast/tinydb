@@ -10,4 +10,5 @@ type SQL interface {
 	Close() error
 	ListDatabases() (interface{}, error)
 	Query(sql string) (interface{}, error)
+	CreateDatabase(name string) error
 }

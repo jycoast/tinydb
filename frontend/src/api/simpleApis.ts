@@ -34,6 +34,10 @@ export async function databaseConnectionsCollectionDataApi<T>(params: { conid: s
   return await apiCall('bridge.DatabaseConnections.CollectionData', params) as T
 }
 
+export async function databaseConnectionsCreateTableApi(params: { conid: string, database: string, tableName: string, columns: any[] }) {
+  return await apiCall('bridge.DatabaseConnections.CreateTable', params)
+}
+
 /**
  * @description plugins
  */
@@ -46,4 +50,8 @@ export async function pluginsScriptApi(params: { packageName: string }) {
  */
 export async function serverConnectionsRefreshApi(params) {
   return await apiCall('bridge.ServerConnections.Refresh', params)
+}
+
+export async function serverConnectionsCreateDatabaseApi(params: { conid: string, name: string }) {
+  return await apiCall('bridge.ServerConnections.CreateDatabase', params)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/samber/lo"
 	"sync"
+	"tinydb/app/db/adapter"
 	"tinydb/app/db/standard/modules"
 	"tinydb/app/db/stash"
 	"tinydb/app/internal/schema"
@@ -187,6 +188,46 @@ func (sc *ServerConnections) Refresh(req *ServerRefreshRequest) *serializer.Resp
 	sc.ensureOpened(req.Conid)
 	return serializer.SuccessData(serializer.SUCCESS, map[string]string{
 		"status": "ok",
+	})
+}
+
+type CreateDatabaseRequest struct {
+	Conid string `json:"conid"`
+	Name  string `json:"name"`
+}
+
+func (sc *ServerConnections) CreateDatabase(req *CreateDatabaseRequest) *serializer.Response {
+	if req == nil || req.Conid == "" {
+		return serializer.Fail(serializer.IdNotEmpty)
+	}
+	if req.Name == "" {
+		return serializer.Fail("database name is required")
+	}
+
+	connection := getCore(req.Conid, false)
+	if connection == nil {
+		return serializer.Fail("connection not found")
+	}
+
+	// Get or create a driver session
+	driver, err := adapter.NewCompatDriver().Open(connection)
+	if err != nil {
+		return serializer.Fail(fmt.Sprintf("failed to open connection: %v", err))
+	}
+	defer driver.Close()
+
+	// Create the database
+	err = driver.CreateDatabase(req.Name)
+	if err != nil {
+		return serializer.Fail(fmt.Sprintf("failed to create database: %v", err))
+	}
+
+	// Refresh the database list
+	sc.ensureOpened(req.Conid)
+
+	return serializer.SuccessData(serializer.SUCCESS, map[string]string{
+		"status": "ok",
+		"name":   req.Name,
 	})
 }
 

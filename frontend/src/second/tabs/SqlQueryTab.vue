@@ -56,7 +56,7 @@
         </ASelect>
 
         <AButton type="primary" :icon="h(PlayCircleOutlined)" :loading="executing" @click="handleExecute">
-          执行 (F5)
+          执行
         </AButton>
         <AButton :icon="h(DeleteOutlined)" @click="handleClear">清空</AButton>
         </Space>
