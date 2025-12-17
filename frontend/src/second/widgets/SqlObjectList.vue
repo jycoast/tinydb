@@ -1,7 +1,7 @@
 <template>
   <WidgetsInnerContainer v-if="status && status.name == 'error'">
     <ErrorInfo :message="`${status.message}`" icon="img error"/>
-    <InlineButton @click="handleRefreshDatabase">Refresh</InlineButton>
+    <AButton size="small" @click="handleRefreshDatabase">Refresh</AButton>
   </WidgetsInnerContainer>
   <WidgetsInnerContainer v-else-if="objectList.length == 0 &&
   status && status.name != 'pending' && status.name != 'checkStructure' && status.name != 'loadStructure' &&
@@ -11,29 +11,39 @@
       icon="img alert"/>
     <div class="m-1"></div>
     <div class="m-1"></div>
-    <InlineButton @click="handleRefreshDatabase">Refresh</InlineButton>
+    <AButton size="small" @click="handleRefreshDatabase">Refresh</AButton>
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('sql')">
       <div class="m-1"></div>
-      <InlineButton @click="runCommand('new.table')">New table</InlineButton>
+      <AButton size="small" @click="runCommand('new.table')">New table</AButton>
     </template>
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('document')">
       <div class="m-1"></div>
-      <InlineButton @click="runCommand('new.collection')">New collection</InlineButton>
+      <AButton size="small" @click="runCommand('new.collection')">New collection</AButton>
     </template>
   </WidgetsInnerContainer>
 
-  <SearchBoxWrapper v-else>
-    <SearchInput placeholder="Search connection or database" v-model:value="filter"/>
-    <CloseSearchButton :filter="filter" @filter="filter = ''"/>
-    <DropDownButton icon="icon plus-thick"/>
-    <InlineButton
-      @click="handleRefreshDatabase"
-      title="Refresh database connection and object list">
-      <FontIcon icon="icon refresh"/>
-    </InlineButton>
-  </SearchBoxWrapper>
+  <div v-else class="sol-toolbar">
+    <ASpace :size="6">
+      <AInput
+        v-model:value="filter"
+        allowClear
+        size="small"
+        placeholder="Search connection or database"
+      />
+      <ATooltip title="Add (coming soon)">
+        <AButton size="small" type="text" disabled>
+          <template #icon><PlusOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="Refresh database connection and object list">
+        <AButton size="small" type="text" @click="handleRefreshDatabase">
+          <template #icon><ReloadOutlined /></template>
+        </AButton>
+      </ATooltip>
+    </ASpace>
+  </div>
   <WidgetsInnerContainer>
     <LoadingInfo
       v-if="(status && (status.name == 'pending' || status.name == 'checkStructure' || status.name == 'loadStructure') && objects) || !objects"
@@ -57,13 +67,7 @@
 import {computed, defineComponent, PropType, ref, toRefs, unref, watch, onBeforeUnmount} from 'vue';
 import AppObjectList from '/@/second/appobj/AppObjectList'
 import ErrorInfo from '/@/second/elements/ErrorInfo.vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import SearchBoxWrapper from '/@/second/elements/SearchBoxWrapper.vue'
 import LoadingInfo from '/@/second/elements/LoadingInfo.vue'
-import SearchInput from '/@/second/elements/SearchInput.vue'
-import CloseSearchButton from '/@/second/buttons/CloseSearchButton'
-import DropDownButton from '/@/second/buttons/DropDownButton'
 import runCommand from '/@/second/commands/runCommand'
 import WidgetsInnerContainer from './WidgetsInnerContainer.vue'
 import DatabaseObjectAppObject from '/@/second/appobj/DatabaseObjectAppObject'
@@ -80,6 +84,9 @@ import {filterAppsForDatabase} from '/@/second/utility/appTools'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
 
+import {Button, Input, Space, Tooltip} from 'ant-design-vue'
+import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
+
 export default defineComponent({
   name: "SqlObjectList",
   props: {
@@ -95,12 +102,12 @@ export default defineComponent({
     WidgetsInnerContainer,
     LoadingInfo,
     ErrorInfo,
-    FontIcon,
-    InlineButton,
-    SearchBoxWrapper,
-    SearchInput,
-    CloseSearchButton,
-    DropDownButton,
+    [Button.name]: Button,
+    [Input.name]: Input,
+    [Space.name]: Space,
+    [Tooltip.name]: Tooltip,
+    PlusOutlined,
+    ReloadOutlined,
   },
   setup(props) {
     const filter = ref('')
@@ -195,3 +202,12 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+.sol-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+}
+</style>

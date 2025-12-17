@@ -1,36 +1,46 @@
 <template>
-  <SearchBoxWrapper>
-    <SearchInput placeholder="Search connection or database" v-model:value="filter"/>
-    <CloseSearchButton :filter="filter" @filter="filter = ''"/>
-    <InlineButton @click="handleAddKey" title="Add new key">
-      <FontIcon icon="icon plus-thick"/>
-    </InlineButton>
-    <InlineButton @click="handleRefreshDatabase" title="Refresh key list">
-      <FontIcon icon="icon refresh" />
-    </InlineButton>
-    <WidgetsInnerContainer>
-      DbKeysSubTree component
-    </WidgetsInnerContainer>
-  </SearchBoxWrapper>
+  <div class="dkt-toolbar">
+    <ASpace :size="6">
+      <AInput
+        v-model:value="filter"
+        allowClear
+        size="small"
+        placeholder="Search connection or database"
+      />
+      <ATooltip title="Add new key">
+        <AButton size="small" type="text" @click="handleAddKey">
+          <template #icon><PlusOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="Refresh key list">
+        <AButton size="small" type="text" @click="handleRefreshDatabase">
+          <template #icon><ReloadOutlined /></template>
+        </AButton>
+      </ATooltip>
+    </ASpace>
+  </div>
+
+  <WidgetsInnerContainer>
+    DbKeysSubTree component
+  </WidgetsInnerContainer>
 </template>
 
 <script lang="ts">
 import {ref} from 'vue'
-import SearchBoxWrapper from '/@/second/widgets/SearchBoxWrapper.vue'
 import WidgetsInnerContainer from './WidgetsInnerContainer.vue'
-import SearchInput from '/@/second/elements/SearchInput.vue'
-import CloseSearchButton from '/@/second/buttons/CloseSearchButton'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+
+import {Button, Input, Space, Tooltip} from 'ant-design-vue'
+import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
 export default {
   name: 'DbKeysTree',
   components: {
-    SearchBoxWrapper,
     WidgetsInnerContainer,
-    SearchInput,
-    CloseSearchButton,
-    InlineButton,
-    FontIcon,
+    [Button.name]: Button,
+    [Input.name]: Input,
+    [Space.name]: Space,
+    [Tooltip.name]: Tooltip,
+    PlusOutlined,
+    ReloadOutlined,
   },
   setup() {
     const filter = ref('')
@@ -46,3 +56,12 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.dkt-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+}
+</style>

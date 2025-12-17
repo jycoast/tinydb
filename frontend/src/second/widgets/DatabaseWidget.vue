@@ -1,45 +1,40 @@
 <template>
   <div v-show="!hidden" class="dbw-root">
-    <ACollapse v-model:activeKey="activeKeys" class="dbw-collapse" ghost>
-      <ACollapsePanel key="connections">
-        <template #header>
-          <span class="dbw-header">CONNECTIONS</span>
-        </template>
-        <div class="dbw-panel-body">
-          <ConnectionList/>
-        </div>
-      </ACollapsePanel>
+    <!-- Section 1: Connections (independent scroll inside list) -->
+    <div class="dbw-section dbw-section--connections">
+      <div class="dbw-section-header">CONNECTIONS</div>
+      <div class="dbw-section-body">
+        <ConnectionList/>
+      </div>
+    </div>
 
-      <ACollapsePanel v-if="showPinned" key="pinned">
-        <template #header>
-          <span class="dbw-header">PINNED</span>
-        </template>
-        <div class="dbw-panel-body">
-          <PinnedObjectsList/>
-        </div>
-      </ACollapsePanel>
+    <!-- Section 2: Pinned (optional) -->
+    <div v-if="showPinned" class="dbw-section dbw-section--pinned">
+      <div class="dbw-section-header">PINNED</div>
+      <div class="dbw-section-body">
+        <PinnedObjectsList/>
+      </div>
+    </div>
 
-      <ACollapsePanel key="dbObjects">
-        <template #header>
-          <span class="dbw-header">{{ objectsHeader }}</span>
+    <!-- Section 3: Objects (independent scroll inside list) -->
+    <div class="dbw-section dbw-section--objects">
+      <div class="dbw-section-header">{{ objectsHeader }}</div>
+      <div class="dbw-section-body">
+        <template v-if="conid && (database || singleDatabase)">
+          <SqlObjectList :conid="conid" :database="database"/>
         </template>
-        <div class="dbw-panel-body">
-          <template v-if="conid && (database || singleDatabase)">
-            <SqlObjectList :conid="conid" :database="database"/>
-          </template>
-          <template v-else>
-            <WidgetsInnerContainer>
-              <ErrorInfo message="Database not selected" icon="img alert"/>
-            </WidgetsInnerContainer>
-          </template>
-        </div>
-      </ACollapsePanel>
-    </ACollapse>
+        <template v-else>
+          <WidgetsInnerContainer>
+            <ErrorInfo message="Database not selected" icon="img alert"/>
+          </WidgetsInnerContainer>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, PropType, ref, toRef, unref, watch} from 'vue'
+import {computed, defineComponent, PropType, toRef, unref} from 'vue'
 import {storeToRefs} from 'pinia'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
@@ -50,7 +45,6 @@ import ConnectionList from './ConnectionList.vue'
 import SqlObjectList from './SqlObjectList.vue'
 import PinnedObjectsList from './PinnedObjectsList'
 import {findEngineDriver} from '/@/second/tinydb-tools'
-import {Collapse} from 'ant-design-vue'
 
 export default defineComponent({
   name: "DatabaseWidget",
@@ -61,8 +55,6 @@ export default defineComponent({
     }
   },
   components: {
-    ACollapse: Collapse,
-    ACollapsePanel: Collapse.Panel,
     WidgetsInnerContainer,
     ConnectionList,
     SqlObjectList,
@@ -99,36 +91,6 @@ export default defineComponent({
       return title.toUpperCase()
     })
 
-    const ACTIVE_KEY_STORAGE = 'dbwidget_activeKeys'
-    const activeKeys = ref<string[]>(['connections', 'dbObjects'])
-    if (showPinned.value) activeKeys.value = ['connections', 'pinned', 'dbObjects']
-    try {
-      const saved = localStorage.getItem(ACTIVE_KEY_STORAGE)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) activeKeys.value = parsed
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    watch(() => showPinned.value, (v) => {
-      if (v && !activeKeys.value.includes('pinned')) {
-        activeKeys.value = ['connections', 'pinned', 'dbObjects']
-      }
-      if (!v && activeKeys.value.includes('pinned')) {
-        activeKeys.value = activeKeys.value.filter(x => x !== 'pinned')
-      }
-    }, {immediate: true})
-
-    watch(() => activeKeys.value, (v) => {
-      try {
-        localStorage.setItem(ACTIVE_KEY_STORAGE, JSON.stringify(v))
-      } catch (e) {
-        // ignore
-      }
-    }, {deep: true})
-
     return {
       hidden: toRef(props, 'hidden'),
       pinnedDatabases,
@@ -140,7 +102,6 @@ export default defineComponent({
       driver,
       showPinned,
       objectsHeader,
-      activeKeys,
     }
   }
 })
@@ -154,45 +115,52 @@ export default defineComponent({
   min-height: 0;
   min-width: 0;
   background: var(--theme-bg-1);
-  overflow: auto;
+  overflow: hidden; /* outer doesn't scroll; each section scrolls */
 }
 
-.dbw-collapse {
-  height: auto;
+.dbw-section {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
-  overflow: visible;
+  border-bottom: 1px solid var(--theme-border);
 }
 
-.dbw-header {
+.dbw-section-header {
+  flex: 0 0 auto;
+  padding: 10px 12px;
   font-weight: 700;
   letter-spacing: 0.4px;
   font-size: 12px;
   color: var(--theme-font-2);
+  background: var(--theme-bg-1);
 }
 
-.dbw-panel-body {
+.dbw-section-body {
+  flex: 1;
+  min-height: 0;
+  background: var(--theme-bg-0);
+  /* key: make children (SearchBoxWrapper + WidgetsInnerContainer) layout as a column
+     so the list area can take remaining height and scroll */
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  height: auto;
-  padding: 0;
+  overflow: hidden;
 }
 
-/* ant Collapse theme tuning */
-.dbw-root :deep(.ant-collapse) {
-  background: var(--theme-bg-1);
+/* ensure the internal list container actually becomes the scrolling region */
+.dbw-section-body :deep(.widgetsInnerContainer) {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
-.dbw-root :deep(.ant-collapse-item) {
-  border-bottom: 1px solid var(--theme-border);
+
+/* default ratios: independent scroll areas */
+.dbw-section--connections {
+  flex: 1.2;
 }
-.dbw-root :deep(.ant-collapse-header) {
-  padding: 10px 12px !important;
-  background: var(--theme-bg-1);
+.dbw-section--pinned {
+  flex: 0.6;
 }
-.dbw-root :deep(.ant-collapse-content) {
-  background: var(--theme-bg-0);
-}
-.dbw-root :deep(.ant-collapse-content-box) {
-  padding: 0 !important;
+.dbw-section--objects {
+  flex: 1.2;
 }
 </style>

@@ -57,10 +57,6 @@ export default defineComponent({
       name: string
     }>(() => Object.values(getCommandsCustomized.value).find((x: any) => x.id == command.value) as any)
 
-    setTimeout(() => {
-      console.log(Object.values(getCommandsCustomized.value))
-    }, 5000)
-
     const visible = computed(() => cmd.value && (!hideDisabled.value || cmd.value.enabled))
     return {
       ...toRefs(props),

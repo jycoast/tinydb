@@ -13,7 +13,7 @@
     <LayoutHeader style="height: var(--dim-menu-bar-height); line-height: var(--dim-menu-bar-height); padding: 0; position: relative; z-index: 300; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
       <MenuBar/>
     </LayoutHeader>
-    
+
     <!-- 工具栏 -->
     <LayoutHeader style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
       <ToolBar/>
@@ -132,6 +132,27 @@ subscribeRecentDatabaseSwitch()
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* antd Sider 内部容器需要显式变成 flex */
+.app-iconbar :deep(.ant-layout-sider-children) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 左侧面板：外层不滚动，内部各区块自己滚动 */
+.app-leftpanel :deep(.ant-layout-sider-children) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app-splitter {
 /* 分割条样式 */
 .splitter {
   flex: 0 0 var(--dim-splitter-thickness);

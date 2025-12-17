@@ -1,56 +1,71 @@
 <template>
-  <SearchBoxWrapper>
-    <SearchInput placeholder="Search connection or database" v-model:value="filter"/>
-    <CloseSearchButton :filter="filter" @filter="filter = ''"/>
-    <InlineButton v-if="isDynamicStructure && !isJsonView" @click="showModal">Add</InlineButton>
-    <InlineButton @click="() => hideAllColumns()">Hide</InlineButton>
-    <InlineButton @click="() => showAllColumns()">Show</InlineButton>
-  </SearchBoxWrapper>
-  <ManagerInnerContainer :width="managerSize">
-    <input
-      type="text"
-      class="focus-field" ref="domFocusField"
-      @keydown="handleKeyDown"
-      @copy="copyToClipboard"/>
-    <ColumnManagerRow
-      v-for="column in items"
-      :display="display"
-      :column="column"
-      :isJsonView="isJsonView"
-      :conid="conid"
-      :database="database"
-      :isSelected="selectedColumns.includes(column.uniqueName) || currentColumnUniqueName == column.uniqueName"
-      @dispatchClick="() => handleClick(column)"
-      @dispatchMousemove="(e) => handleMousemove(e, column)"
-      @dispatchMousedown="() => handleMousedown(column)"
-      @dispatchMouseup="() => handleMouseup(column)"
-      @setVisibility="(e) => handleSetVisibility(e, column)"/>
-  </ManagerInnerContainer>
+  <div class="cm-root" :style="{ width: managerSize ? `${managerSize}px` : '100%' }">
+    <div class="cm-toolbar">
+      <ASpace :size="6">
+        <AInput
+          v-model:value="filter"
+          allowClear
+          size="small"
+          placeholder="Search connection or database"
+        />
+        <ATooltip v-if="isDynamicStructure && !isJsonView" title="Add">
+          <AButton size="small" type="text" @click="showModal">Add</AButton>
+        </ATooltip>
+        <ATooltip title="Hide all columns">
+          <AButton size="small" type="text" @click="hideAllColumns">Hide</AButton>
+        </ATooltip>
+        <ATooltip title="Show all columns">
+          <AButton size="small" type="text" @click="showAllColumns">Show</AButton>
+        </ATooltip>
+      </ASpace>
+    </div>
+
+    <div class="cm-list">
+      <input
+        type="text"
+        class="focus-field"
+        ref="domFocusField"
+        @keydown="handleKeyDown"
+        @copy="copyToClipboard"
+      />
+
+      <ColumnManagerRow
+        v-for="column in items"
+        :display="display"
+        :column="column"
+        :isJsonView="isJsonView"
+        :conid="conid"
+        :database="database"
+        :isSelected="selectedColumns.includes(column.uniqueName) || currentColumnUniqueName == column.uniqueName"
+        @dispatchClick="() => handleClick(column)"
+        @dispatchMousemove="(e) => handleMousemove(e, column)"
+        @dispatchMousedown="() => handleMousedown(column)"
+        @dispatchMouseup="() => handleMouseup(column)"
+        @setVisibility="(e) => handleSetVisibility(e, column)"
+      />
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
 import {computed, defineComponent, PropType, ref, toRefs, unref} from 'vue'
 import {findIndex, range} from 'lodash-es'
-import SearchBoxWrapper from '/@/second/elements/SearchBoxWrapper.vue'
-import SearchInput from '/@/second/elements/SearchInput.vue'
-import CloseSearchButton from '/@/second/buttons/CloseSearchButton'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import ManagerInnerContainer from '/@/second/elements/ManagerInnerContainer.vue'
 import ColumnManagerRow from '/@/second/datagrid/ColumnManagerRow.vue'
 import keycodes from '/@/second/utility/keycodes'
 import {GridDisplay} from '/@/second/tinydb-datalib'
 import {filterName} from '/@/second/tinydb-tools'
 import {copyTextToClipboard} from '/@/second/utility/clipboard'
 
+import {Button, Input, Space, Tooltip} from 'ant-design-vue'
+
 export default defineComponent({
   name: "ColumnManager",
   components: {
-    SearchBoxWrapper,
-    SearchInput,
-    CloseSearchButton,
-    InlineButton,
-    ManagerInnerContainer,
     ColumnManagerRow,
+    [Button.name]: Button,
+    [Input.name]: Input,
+    [Space.name]: Space,
+    [Tooltip.name]: Tooltip,
   },
   props: {
     managerSize: {
@@ -250,6 +265,25 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.cm-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cm-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.cm-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
 .focus-field {
   position: absolute;
   left: -1000px;
