@@ -88,7 +88,6 @@ const menus = reactive([
     label: '帮助',
     showDropdown: false,
     children: [
-      { key: 'documentation', label: '文档' },
       { key: 'about', label: '关于' }
     ]
   }

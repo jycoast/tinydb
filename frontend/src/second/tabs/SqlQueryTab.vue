@@ -7,6 +7,7 @@
         <Space>
           <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList">转 IN 列表</AButton>
           <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql">SQL 美化</AButton>
+          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection">去重</AButton>
         </Space>
       </div>
 
@@ -138,7 +139,7 @@ import { computed, h, nextTick, onBeforeUnmount, onMounted, PropType, ref, watch
 import { storeToRefs } from 'pinia'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { Alert as AAlert, Button as AButton, Card, Empty as AEmpty, Input as AInput, Select as ASelect, Space, Table as ATable, Tag, Typography, message } from 'ant-design-vue'
-import { DeleteOutlined, PlayCircleOutlined, OrderedListOutlined, FormatPainterOutlined, CopyOutlined } from '@ant-design/icons-vue'
+import { DeleteOutlined, PlayCircleOutlined, OrderedListOutlined, FormatPainterOutlined, CopyOutlined, FilterOutlined } from '@ant-design/icons-vue'
 import { databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
 import { getConnectionInfo, useDatabaseInfo } from '/@/api/bridge'
 import AceEditor from '/@/second/query/AceEditor'
@@ -354,6 +355,55 @@ async function handleFormatSql() {
   } catch (e: any) {
     message.error(`SQL 美化失败：${e?.message || e}`)
   }
+}
+
+function handleDeduplicateSelection() {
+  const ed = editor.value
+  if (!ed) {
+    message.warning('编辑器未就绪')
+    return
+  }
+  
+  const selectedText = (ed.getSelectedText?.() as string) || ''
+  if (!selectedText || !selectedText.trim()) {
+    message.info('请先选中要去重的内容（每行一个值）')
+    return
+  }
+  
+  // 按行分割
+  const lines = selectedText.split(/\r?\n/)
+  
+  // 使用 Set 来跟踪已出现的行（保留第一次出现的行）
+  const seen = new Set<string>()
+  const uniqueLines: string[] = []
+  
+  for (const line of lines) {
+    // 使用 trim() 后的内容作为去重的键，但保留原始行的格式
+    const trimmed = line.trim()
+    if (!seen.has(trimmed)) {
+      seen.add(trimmed)
+      uniqueLines.push(line)
+    }
+  }
+  
+  // 重新组合成文本
+  const deduplicated = uniqueLines.join('\n')
+  
+  // 如果去重后没有变化，提示用户
+  if (deduplicated === selectedText) {
+    message.info('选中内容中没有重复的行')
+    return
+  }
+  
+  // 替换选中的内容
+  // @ts-ignore
+  const range = ed.getSelectionRange()
+  ed.session.replace(range, deduplicated)
+  ed.clearSelection()
+  ed.focus()
+  
+  const removedCount = lines.length - uniqueLines.length
+  message.success(`去重完成，已移除 ${removedCount} 行重复数据`)
 }
 
 async function handleChangeConid(conid?: string) {
