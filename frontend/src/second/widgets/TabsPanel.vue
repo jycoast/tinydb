@@ -2,7 +2,9 @@
   <div class="root">
     <div class="tabs" ref="domTabs" @wheel.prevent="handleTabsWheel">
       <div class="db-wrapper" v-for="tabGroup in groupedTabs">
-        <div class="db-name"
+        <div
+          v-if="tabGroup.tabDbName !== '(no DB)'"
+          class="db-name"
              :class="{selected: draggingDbGroup ? tabGroup.grpid == draggingDbGroupTarget?.grpid : tabGroup.tabDbKey == currentDbKey}"
              @mouseup="e => {
                if (e.button == 1) {
@@ -13,8 +15,12 @@
              }"
              @contextmenu="handleContextTabs($event, tabGroup.tabs)"
              :draggable="true"
-             @dragstart="(e) => draggingDbGroup = tabGroup"
+             @dragstart="(e) => {
+               try { e.dataTransfer?.setData('text/plain', String(tabGroup.grpid || 'dbgroup')) } catch {}
+               draggingDbGroup = tabGroup
+             }"
              @dragenter="(e) => draggingDbGroupTarget = tabGroup"
+             @dragover.prevent
              @drop="dragDropTabs(draggingDbGroup.tabs, tabGroup.tabs)"
              @dragend="(e) => {
                draggingDbGroup = null
@@ -42,8 +48,9 @@
                @mouseup="handleMouseUp($event, tab.tabid)"
                @contextmenu="handleContextTab($event, tab)"
                :draggable="true"
-               @dragstart="handleDragstart(tab)"
+               @dragstart="(e) => handleDragstart(e, tab)"
                @dragenter="(e) => draggingTabTarget = tab"
+               @dragover.prevent
                @drop="(e) => {
                  if (draggingTab) {
                    dragDropTabs([draggingTab], [tab])
@@ -73,7 +80,7 @@
 
 <script lang="ts">
 import {computed, defineComponent, ref, unref} from 'vue'
-import {findIndex, max, min} from 'lodash-es'
+import {findIndex, isEqual, max, min} from 'lodash-es'
 import {storeToRefs} from 'pinia'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
@@ -82,6 +89,9 @@ import {getConnectionInfo} from '/@/api/bridge'
 import {getTabDbKey, groupTabs, sortTabs} from '/@/second/utility/openNewTab'
 import {setSelectedTab} from '/@/second/utility/common'
 import {useContextMenu} from '/@/hooks/web/useContextMenu'
+import {buildUUID} from '/@/utils/uuid'
+import localforage from 'localforage'
+import {message} from 'ant-design-vue'
 import {
   closeMultipleTabs,
   closeTab,
@@ -101,7 +111,7 @@ export default defineComponent({
   setup() {
     let domTabs = ref<Nullable<HTMLElement>>(null)
     const localeStore = useLocaleStore()
-    const {openedTabs} = storeToRefs(localeStore)
+    const {openedTabs, pinnedDatabases, pinnedTables} = storeToRefs(localeStore)
     const bootstrap = useBootstrapStore()
     const {currentDatabase} = storeToRefs(bootstrap)
 
@@ -171,6 +181,144 @@ export default defineComponent({
 
     const [createContextMenu] = useContextMenu()
 
+    function isSamePinnedTable(a: any, b: any) {
+      return (
+        a?.conid == b?.conid &&
+        a?.database == b?.database &&
+        a?.objectTypeField == b?.objectTypeField &&
+        a?.pureName == b?.pureName &&
+        a?.schemaName == b?.schemaName
+      )
+    }
+
+    async function duplicateTab(tab: any) {
+      const oldTabid = tab?.tabid
+      if (!oldTabid) return
+
+      const newTabid = buildUUID()
+
+      // Copy persisted per-tab data if present (best-effort)
+      try {
+        const sqlKey = `sql_query_${oldTabid}`
+        const sqlVal = localStorage.getItem(sqlKey)
+        if (sqlVal != null) localStorage.setItem(`sql_query_${newTabid}`, sqlVal)
+
+        // Copy any tabdata_*_${oldTabid} entries
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (!k) continue
+          if (k.startsWith('tabdata_') && k.endsWith(`_${oldTabid}`)) {
+            const v = localStorage.getItem(k)
+            if (v != null) {
+              const nk = k.replace(new RegExp(`_${oldTabid}$`), `_${newTabid}`)
+              localStorage.setItem(nk, v)
+            }
+          }
+        }
+
+        const editorKey = `tabdata_editor_${oldTabid}`
+        const editorVal = await localforage.getItem(editorKey)
+        if (editorVal != null) {
+          await localforage.setItem(`tabdata_editor_${newTabid}`, editorVal)
+        }
+      } catch {
+        // ignore persistence copy errors
+      }
+
+      // Create a readable unique title
+      const openTitles = (openedTabs.value || []).filter(x => !x.closedTime).map(x => x.title)
+      const base = `${tab.title} (copy)`
+      let title = base
+      let n = 2
+      while (openTitles.includes(title)) {
+        title = `${base} ${n}`
+        n += 1
+      }
+
+      localeStore.updateOpenedTabs((files: any[]) => {
+        const open = (files || []).filter(x => x.closedTime == null)
+        const ordered = sortTabs(open)
+        const idx = findIndex(ordered, x => x.tabid == oldTabid)
+        const insertAt = idx >= 0 ? idx + 1 : ordered.length
+
+        const newItem = {
+          ...tab,
+          tabid: newTabid,
+          title,
+          selected: true,
+          closedTime: null,
+          busy: false,
+        }
+
+        const orderedWithNew = [
+          ...ordered.slice(0, insertAt),
+          newItem,
+          ...ordered.slice(insertAt),
+        ]
+
+        return (files || []).map(x => {
+          const newIndex = findIndex(orderedWithNew, y => y.tabid == x.tabid)
+          if (newIndex >= 0) {
+            return {
+              ...x,
+              selected: false,
+              tabOrder: newIndex + 1,
+            }
+          }
+          return {
+            ...x,
+            selected: false,
+          }
+        }).concat([{
+          ...newItem,
+          tabOrder: findIndex(orderedWithNew, y => y.tabid == newTabid) + 1,
+        }])
+      })
+
+      message.success('已复制标签页')
+    }
+
+    function toggleFavorite(tab: any) {
+      const data = tab?.appObjectData
+      if (data?.objectTypeField) {
+        const exists = (pinnedTables.value || []).some(x => isSamePinnedTable(x, data))
+        if (exists) {
+          localeStore.updatePinnedTables(list => (list || []).filter(x => !isSamePinnedTable(x, data)))
+          message.success('已从收藏移除')
+        } else {
+          localeStore.updatePinnedTables(list => [...(list || []), data])
+          message.success('已加入收藏')
+        }
+        return
+      }
+
+      // fallback: allow pin database if possible (best-effort)
+      const conid = tab?.props?.conid
+      const database = tab?.props?.database
+      if (conid && database) {
+        getConnectionInfo({conid, database}).then((conn: any) => {
+          if (!conn) {
+            message.error('无法获取连接信息，收藏失败')
+            return
+          }
+          const exists = (pinnedDatabases.value || []).some(x => x?.name == database && x?.connection?._id == conn._id)
+          if (exists) {
+            localeStore.updatePinnedDatabases(list => (list || []).filter(x => !(x?.name == database && x?.connection?._id == conn._id)))
+            message.success('已从收藏移除')
+          } else {
+            localeStore.updatePinnedDatabases(list => [
+              ...(list || []),
+              {connection: conn, name: database, title: database} as any,
+            ])
+            message.success('已加入收藏')
+          }
+        }).catch((e) => message.error(`收藏失败：${e?.message || e}`))
+        return
+      }
+
+      message.warning('该标签页暂不支持加入收藏')
+    }
+
     function handleContextTabs(e: MouseEvent, tabs: any[]) {
       createContextMenu({
         event: e,
@@ -206,7 +354,9 @@ export default defineComponent({
     
     function getContextMenu(tab: any) {
       const { tabid, props, tabComponent, appObject, appObjectData } = tab;
-
+      const isPinned = appObjectData?.objectTypeField
+        ? (pinnedTables.value || []).some(x => isSamePinnedTable(x, appObjectData))
+        : false
 
       return [
         {
@@ -223,19 +373,27 @@ export default defineComponent({
         },
         {
           text: 'Duplicate',
+          onClick: () => duplicateTab(tab),
         },
         [
           { divider: true },
           {
-            text: 'Add to favorites',
-            onClick: () => {},
+            text: isPinned ? 'Remove from favorites' : 'Add to favorites',
+            onClick: () => toggleFavorite(tab),
           },
         ],
         { divider: true },
       ];
     }
 
-    async function handleDragstart(tab) {
+    async function handleDragstart(e, tab) {
+      // WebView2/Firefox: ensure a drag payload exists, otherwise drop may never fire
+      try {
+        e?.dataTransfer?.setData('text/plain', String(tab?.tabid || 'tab'))
+        e?.dataTransfer && (e.dataTransfer.effectAllowed = 'move')
+      } catch {
+        // ignore
+      }
       draggingTab.value = tab
       setSelectedTab(tab.tabid)
     }
@@ -324,6 +482,10 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   background: var(--theme-bg-1);
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .add-icon {
@@ -349,6 +511,7 @@ export default defineComponent({
 .tabs {
   height: 100%;
   display: flex;
+  align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
   position: relative;
@@ -376,41 +539,39 @@ export default defineComponent({
 
 .db-group {
   display: flex;
-  flex: 1;
-  align-content: stretch;
+  flex: 0 0 auto;
+  align-items: stretch;
 }
 
 .db-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: stretch;
 }
 
 .db-name {
   display: flex;
-  text-align: center;
-  font-size: 9pt;
+  align-items: center;
+  font-size: 12px;
   font-weight: 500;
-  border-bottom: 1px solid var(--theme-border);
   border-right: 1px solid var(--theme-border);
   cursor: pointer;
   user-select: none;
-  padding: 6px 12px;
+  padding: 0 10px;
   position: relative;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   transition: background-color 0.2s ease;
-  background: var(--theme-bg-2);
+  background: var(--theme-bg-1);
 }
 
 .db-name:hover {
-  background-color: var(--theme-bg-3);
+  background-color: var(--theme-bg-hover);
 }
 
 .db-name.selected {
   background-color: var(--theme-bg-0);
-  border-bottom-color: transparent;
 }
 
 .db-name-inner {
@@ -423,8 +584,7 @@ export default defineComponent({
 
 .file-tab-item {
   border-right: 1px solid var(--theme-border);
-  border-bottom: 1px solid var(--theme-border);
-  padding: 8px 16px;
+  padding: 0 12px;
   flex-shrink: 0;
   flex-grow: 0;
   min-width: 120px;
@@ -434,24 +594,23 @@ export default defineComponent({
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
-  background: var(--theme-bg-2);
+  background: var(--theme-bg-1);
   position: relative;
 }
 
 .file-tab-item:hover {
-  background: var(--theme-bg-3);
+  background: var(--theme-bg-hover);
 }
 
 .file-tab-item.selected {
   background-color: var(--theme-bg-0);
-  border-bottom-color: var(--theme-bg-0);
   z-index: 1;
 }
 
 .file-tab-item.selected::after {
   content: '';
   position: absolute;
-  bottom: -1px;
+  bottom: 0;
   left: 0;
   right: 0;
   height: 2px;

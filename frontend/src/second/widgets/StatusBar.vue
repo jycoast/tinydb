@@ -2,7 +2,7 @@
   <div class="main">
     <div class="container">
       <template v-if="databaseName">
-        <div class="item">
+        <div class="item item-primary">
           <FontIcon icon="icon lock" padRight v-if="connection && connection.isReadOnly"/>
           <FontIcon icon="icon database" padRight v-else/>
           {{ databaseName }}
@@ -14,7 +14,7 @@
         </div>
       </template>
       <template v-if="connectionLabel">
-        <div class="item">
+        <div class="item item-primary">
           <FontIcon icon="icon server" padRight/>
           {{ connectionLabel }}
         </div>
@@ -28,7 +28,7 @@
         <FontIcon icon="icon account" padRight/>
         {{ connection.user }}
       </div>
-      <div class="item clickable" v-if="connection && status">
+      <div class="item item-primary clickable" v-if="connection && status">
         <template v-if="status && status.name == 'pending'">
           <FontIcon icon="icon loading" padRight/>
           Loading
@@ -72,7 +72,7 @@
     <div class="container" v-for="item in contextItems">
       <div class="item">
         <FontIcon :icon="item.icon" padRight/>
-        {{ item.text }}}
+        {{ item.text }}
       </div>
     </div>
   </div>
@@ -162,12 +162,14 @@ export default defineComponent({
 <style scoped>
 .main {
   display: flex;
-  color: var(--theme-font-inv-15);
+  color: var(--theme-font-2);
+  background: var(--theme-bg-1);
+  border-top: 1px solid var(--theme-border);
   align-items: stretch;
   justify-content: space-between;
   cursor: default;
   flex: 1;
-  font-size: 11px;
+  font-size: 12px;
   padding: 0 8px;
   width: 100%;
   height: 100%;
@@ -185,8 +187,9 @@ export default defineComponent({
   transition: background-color 0.2s ease;
 }
 
-.item:not(.clickable) {
-  opacity: 0.9;
+.item-primary {
+  color: var(--theme-font-1);
+  font-weight: 500;
 }
 
 .version {
@@ -198,21 +201,22 @@ export default defineComponent({
 
 .clickable {
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: 6px;
 }
 .clickable:hover {
-  background-color: var(--theme-bg-statusbar-inv-hover);
+  background-color: var(--theme-bg-hover);
 }
 
 .colorbox {
   padding: 2px 6px;
-  border-radius: 3px;
-  color: var(--theme-bg-statusbar-inv-font);
-  background: var(--theme-bg-statusbar-inv-bg);
+  border-radius: 6px;
+  color: var(--theme-font-1);
+  background: var(--theme-bg-2);
+  border: 1px solid var(--theme-border);
   transition: all 0.2s ease;
 }
 
 .colorbox:hover {
-  opacity: 0.8;
+  background: var(--theme-bg-hover);
 }
 </style>

@@ -8,7 +8,7 @@
       info.
     </div>
   </div>
-  <Layout class="root tinydb-screen" style="height: 100vh; width: 100vw;">
+  <Layout class="root tinydb-screen" style="height: 100%; width: 100%; overflow: hidden;">
     <!-- 顶部菜单栏 -->
     <LayoutHeader style="height: var(--dim-menu-bar-height); line-height: var(--dim-menu-bar-height); padding: 0; position: relative; z-index: 300; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
       <MenuBar/>
@@ -21,32 +21,23 @@
 
     <!-- 主体内容 -->
     <Layout style="flex: 1; min-height: 0;">
-      <!-- 左侧图标栏 -->
-      <LayoutSider :width="iconbarWidth" :trigger="null" :collapsible="false" style="overflow: hidden;">
+      <!-- 左侧面板：固定显示 DatabaseWidget（去掉左侧图标栏/模块切换栏） -->
+      <LayoutSider
+        :width="leftPanelWidthPx"
+        :trigger="null"
+        :collapsible="false"
+        style="overflow: hidden;"
+      >
         <div style="height: 100%; display: flex; flex-direction: column; overflow: auto;">
-          <WidgetIconPanel/>
+          <WidgetContainer/>
         </div>
       </LayoutSider>
-
-      <!-- 左侧面板（可选） -->
-      <template v-if="selectedWidget">
-        <LayoutSider
-          :width="leftPanelWidthPx"
-          :trigger="null"
-          :collapsible="false"
-          style="overflow: hidden;"
-        >
-          <div style="height: 100%; display: flex; flex-direction: column; overflow: auto;">
-            <WidgetContainer/>
-          </div>
-        </LayoutSider>
-        <!-- 分割条 -->
-        <div
-          class="splitter"
-          v-splitterDrag="'clientX'"
-          :resizeSplitter="(e) => localeStore.updateLeftPanelWidth(x => x + e.detail)"
-        />
-      </template>
+      <!-- 分割条 -->
+      <div
+        class="splitter"
+        v-splitterDrag="'clientX'"
+        :resizeSplitter="(e) => localeStore.updateLeftPanelWidth(x => x + e.detail)"
+      />
 
       <!-- 主内容区 -->
       <Layout style="flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;">
@@ -83,7 +74,6 @@ import TabsPanel from '/@/second/widgets/TabsPanel.vue'
 import TabRegister from './TabRegister.vue'
 import StatusBar from '/@/second/widgets/StatusBar.vue'
 import {WarningOutlined} from '@ant-design/icons-vue'
-import WidgetIconPanel from '/@/second/widgets/WidgetIconPanel.vue'
 import ToolBar from './ToolBar.vue'
 import MenuBar from './MenuBar.vue'
 import bus from '/@/second/utility/bus'
@@ -97,8 +87,6 @@ const LayoutFooter = Layout.Footer
 const excludeFirst = ref(false)
 const localeStore = useLocaleStore()
 const {selectedWidget, leftPanelWidth, visibleTitleBar} = storeToRefs(localeStore)
-
-const iconbarWidth = computed(() => 56)
 const leftPanelWidthPx = computed(() => Math.max(200, Number(leftPanelWidth.value || 280)))
 
 window.addEventListener('resize', debounce(() => {
@@ -109,9 +97,19 @@ window.addEventListener('resize', debounce(() => {
 
 onMounted(() => (excludeFirst.value = true))
 
+// Remove the left iconbar area: collapse its reserved width in CSS vars
+onMounted(() => {
+  localeStore.setCssVariable(0, (x) => `${x}px`, '--dim-widget-icon-size')
+  // Default to database widget so WidgetContainer has content
+  if (!selectedWidget.value) {
+    localeStore.setSelectedWidget('database')
+  }
+})
+
 // 继续维护原有 CSS 变量，避免其它组件依赖它们时出问题
 watch(() => selectedWidget.value, () => {
-  localeStore.setCssVariable(selectedWidget.value, x => (x ? 1 : 0), '--dim-visible-left-panel')
+  // left panel is always visible now
+  localeStore.setCssVariable(1, x => x, '--dim-visible-left-panel')
 }, {immediate: true})
 
 watch(() => leftPanelWidth.value, () => {
@@ -152,7 +150,6 @@ subscribeRecentDatabaseSwitch()
   overflow: hidden;
 }
 
-.app-splitter {
 /* 分割条样式 */
 .splitter {
   flex: 0 0 var(--dim-splitter-thickness);

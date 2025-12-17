@@ -132,9 +132,9 @@ export default defineComponent({
       bootstrap.setCurrentDropDownMenu({ left, top, items: menu.value!, targetElement: e.target })
     }
 
-    const handleKeyDown = (data, hash, keyString, keyCode, event) => {
-      // if (event) handleCommandKeyDown(event)
-    }
+    // NOTE:
+    // Do not register a custom keyboard handler unless we actually implement it.
+    // An empty handler can break core editor commands (eg. Enter/newline) depending on Ace internals.
 
     function changedQueryParts() {
       const editor = getEditor()
@@ -272,7 +272,6 @@ export default defineComponent({
         }
 
         editor.value.container.addEventListener('contextmenu', handleContextMenu)
-        editor.value.keyBinding.addKeyboardHandler(handleKeyDown);
         changedQueryParts()
 
         // 初始化时调整大小（延迟一下确保编辑器完全初始化）
@@ -360,7 +359,6 @@ export default defineComponent({
       }
       if (editor.value) {
         editor.value.container.removeEventListener('contextmenu', handleContextMenu);
-        editor.value.keyBinding.removeKeyboardHandler(handleKeyDown);
         editor.value.destroy();
         editor.value.container.remove();
       }

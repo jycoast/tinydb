@@ -1,28 +1,20 @@
-import { useBootstrapStore } from '/@/store/modules/bootstrap'
-import { storeToRefs } from 'pinia'
 import openNewTab from '/@/second/utility/openNewTab'
 
 export default function runCommand(id: string) {
-  const bootstrap = useBootstrapStore()
-  const { currentDatabase } = storeToRefs(bootstrap)
-
   switch (id) {
     case 'new.query':
       // 打开新的 SQL 查询标签页
-      const conid = currentDatabase.value?.connection?._id
-      const database = currentDatabase.value?.name
-
       openNewTab({
         title: '新建查询#',
         icon: 'icon query',
         tabComponent: 'SqlQueryTab',
         props: {
-          conid: conid || undefined,
-          database: database || undefined
+          // Do NOT prefill db/connection for "New Query" (Navicat-like)
+          noPrefill: true,
         },
         selected: true,
         busy: false
-      })
+      }, undefined, { forceNewTab: true })
       break
 
     case 'new.connection':

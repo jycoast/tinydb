@@ -5,6 +5,7 @@ import DataGridCore from './DataGridCore.vue'
 import {GridDisplay} from '/@/second/tinydb-datalib'
 import {isFunction,} from '/@/utils/is'
 import Grider from '/@/second/datagrid/Grider'
+import {message} from 'ant-design-vue'
 
 export default defineComponent({
   name: 'LoadingDataGridCore',
@@ -62,9 +63,15 @@ export default defineComponent({
     const loadNextDataRef = createRef<boolean>(false)
     const loadedTimeRef = createRef<number | boolean | null>(null)
     const isLoading = ref(false)
+    const lastErrorShown = ref<string>('')
 
     const handleLoadRowCount = async () => {
-      allRowCount.value = await loadRowCount.value!(Object.assign({}, props, attrs))
+      try {
+        allRowCount.value = await loadRowCount.value!(Object.assign({}, props, attrs))
+      } catch (e: any) {
+        allRowCount.value = 0
+        errorMessage.value = e?.message || String(e || 'Load row count failed')
+      }
     }
 
     async function loadNextData() {
@@ -77,11 +84,16 @@ export default defineComponent({
 
       loadedTimeRef.set(loadStart)
 
-      const nextRows = await loadDataPage.value!(
-        Object.assign({}, props, attrs),
-        loadedRows.value.length,
-        getIntSettingsValue('dataGrid.pageSize', 100, 5, 1000)
-      )
+      let nextRows: any
+      try {
+        nextRows = await loadDataPage.value!(
+          Object.assign({}, props, attrs),
+          loadedRows.value.length,
+          getIntSettingsValue('dataGrid.pageSize', 100, 5, 1000)
+        )
+      } catch (e: any) {
+        nextRows = {errorMessage: e?.message || String(e || 'Load data failed')}
+      }
 
       if (loadedTimeRef.get() !== loadStart) {
         return
@@ -126,6 +138,17 @@ export default defineComponent({
         reload()
       }
     })
+
+    watch(
+      () => errorMessage.value,
+      (val) => {
+        const msg = (val || '').trim()
+        if (!msg) return
+        if (msg === lastErrorShown.value) return
+        lastErrorShown.value = msg
+        message.error(`加载数据失败：${msg}`)
+      }
+    )
 
     watchEffect(() => {
       if (masterLoadedTime.value && masterLoadedTime.value > loadedTime.value && display.value) {

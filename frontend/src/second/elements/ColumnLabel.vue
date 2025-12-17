@@ -16,6 +16,8 @@
       </span>
 
       <span v-else-if="dataType" class="extinfo">{{dataType.toLowerCase()}}</span>
+
+      <span v-if="columnComment" class="comment" :title="columnComment">{{ columnComment }}</span>
     </template>
   </span>
 </template>
@@ -62,6 +64,9 @@ export default defineComponent( {
     dataType: {
       type: String as PropType<string>
     },
+    columnComment: {
+      type: String as PropType<string>,
+    },
     showDataType: {
       type: Boolean as PropType<boolean>,
       default: false
@@ -90,6 +95,7 @@ export default defineComponent( {
       columnName,
       extInfo,
       dataType,
+      columnComment,
       showDataType,
       foreignKey,
       conid,
@@ -117,6 +123,7 @@ export default defineComponent( {
       columnName,
       extInfo,
       dataType,
+      columnComment,
       showDataType,
       foreignKey,
       conid,
@@ -131,6 +138,8 @@ export default defineComponent( {
 <style scoped>
 .label {
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
 }
 
 .label.notNull {
@@ -141,5 +150,15 @@ export default defineComponent( {
   font-weight: normal;
   margin-left: 5px;
   color: var(--theme-font-3);
+}
+
+.comment {
+  font-weight: normal;
+  margin-left: 8px;
+  color: var(--theme-font-4);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 </style>

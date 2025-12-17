@@ -58,6 +58,7 @@ export interface DisplayColumn {
   isChecked?: boolean;
   hintColumnNames?: string[];
   dataType?: string;
+  columnComment?: string;
   filterType?: boolean;
   isStructured?: boolean;
 }

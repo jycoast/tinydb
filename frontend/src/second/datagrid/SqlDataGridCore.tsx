@@ -18,13 +18,28 @@ import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 async function loadDataPage(props, offset, limit) {
   const {display, conid, database} = props
   const select = display.getPageQuery(offset, limit)
-  const response = await databaseConnectionsSqlSelectApi({
-    conid: unref(conid)!,
-    database: unref(database)!,
-    select,
-  }) as any
-  if (response.errorMessage) return response;
-  return response.rows
+  try {
+    const response = await databaseConnectionsSqlSelectApi({
+      conid: unref(conid)!,
+      database: unref(database)!,
+      select,
+    }) as any
+
+    if (response?.errorMessage) return response
+
+    // compat: backend may return MysqlRowsResult inside `rows`
+    const payload = response?.rows
+    if (payload && typeof payload === 'object' && Array.isArray(payload.rows)) {
+      return payload.rows
+    }
+    if (Array.isArray(payload)) {
+      return payload
+    }
+
+    return {errorMessage: 'Unexpected response while loading rows'}
+  } catch (e: any) {
+    return {errorMessage: e?.message || String(e || 'Load rows failed')}
+  }
 }
 
 async function loadRowCount(props) {
@@ -32,12 +47,22 @@ async function loadRowCount(props) {
 
   const select = display.getCountQuery()
 
-  const response = await databaseConnectionsSqlSelectApi<{ msgtype: string; rows: { count: number }[] }>({
-    conid: unref(conid)!,
-    database: unref(database)!,
-    select,
-  })
-  return response.rows[0].count
+  try {
+    const response = await databaseConnectionsSqlSelectApi<{ msgtype: string; rows: any }>({
+      conid: unref(conid)!,
+      database: unref(database)!,
+      select,
+    })
+
+    const payload: any = (response as any)?.rows
+    const rows = payload && typeof payload === 'object' && Array.isArray(payload.rows) ? payload.rows : payload
+    const first = Array.isArray(rows) ? rows[0] : undefined
+    const count = first?.count ?? first?.COUNT ?? first?.Count ?? first?.['COUNT(1)']
+    const n = typeof count === 'number' ? count : Number(count)
+    return Number.isFinite(n) ? n : 0
+  } catch {
+    return 0
+  }
 }
 
 export default defineComponent({

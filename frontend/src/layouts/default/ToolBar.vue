@@ -11,8 +11,11 @@
           style="pointer-events: auto;"
           @click="handleToolbarClick(item)"
         >
-          <template v-if="item.icon">
-            <FontIcon :icon="item.icon" style="margin-right: 4px;" />
+          <template v-if="getToolbarAntIcon(item)">
+            <span class="toolbar-icon"><component :is="getToolbarAntIcon(item)" /></span>
+          </template>
+          <template v-else-if="item.icon">
+            <span class="toolbar-icon"><FontIcon :icon="item.icon" /></span>
           </template>
           {{ item.toolbarName || item.name }}
         </Button>
@@ -26,13 +29,29 @@ import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
 import { Button, Space } from 'ant-design-vue'
+import { CodeOutlined, LinkOutlined } from '@ant-design/icons-vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import runCommand from '/@/second/commands/runCommand'
 
 const bootstrap = useBootstrapStore()
 const { commandsCustomized } = storeToRefs(bootstrap)
 
-const toolbarGroups = computed(() => {
+function getToolbarAntIcon(item: any) {
+  // Ensure core actions always have a visible icon even if FontIcon mapping is missing
+  switch (item?.id) {
+    case 'new.query':
+      return CodeOutlined
+    case 'new.connection':
+      return LinkOutlined
+    default:
+      return null
+  }
+}
+
+type ToolbarItem = { id: string; name: string; toolbarName?: string; icon?: string; disabled?: boolean; onClick?: () => void }
+type ToolbarGroup = { key: string; items: ToolbarItem[] }
+
+const toolbarGroups = computed<ToolbarGroup[]>(() => {
   const commands = Object.values(commandsCustomized.value || {})
     .filter((cmd: any) => cmd.toolbar)
     .sort((a: any, b: any) => (a.toolbarOrder || 0) - (b.toolbarOrder || 0))
@@ -43,29 +62,29 @@ const toolbarGroups = computed(() => {
       {
         key: 'connection',
         items: [
-          { id: 'new.connection', name: '连接', icon: 'icon new-connection', toolbarName: '连接' },
+          // { id: 'new.connection', name: '连接', icon: 'icon new-connection', toolbarName: '连接' },
           { id: 'new.query', name: '新建查询', icon: 'icon query', toolbarName: '新建查询' }
         ]
       },
-      {
-        key: 'database',
-        items: [
-          { id: 'new.table', name: '表', icon: 'icon table', toolbarName: '表' },
-          { id: 'new.view', name: '视图', icon: 'icon view', toolbarName: '视图' },
-          { id: 'new.function', name: '函数', icon: 'icon function', toolbarName: '函数' },
-          { id: 'new.user', name: '用户', icon: 'icon user', toolbarName: '用户' }
-        ]
-      },
-      {
-        key: 'tools',
-        items: [
-          { id: 'query', name: '查询', icon: 'icon query', toolbarName: '查询' },
-          { id: 'backup', name: '备份', icon: 'icon backup', toolbarName: '备份' },
-          { id: 'auto.run', name: '自动运行', icon: 'icon auto-run', toolbarName: '自动运行' },
-          { id: 'model', name: '模型', icon: 'icon model', toolbarName: '模型' },
-          { id: 'bi', name: 'BI', icon: 'icon bi', toolbarName: 'BI' }
-        ]
-      }
+      // {
+      //   key: 'database',
+      //   items: [
+      //     { id: 'new.table', name: '表', icon: 'icon table', toolbarName: '表' },
+      //     { id: 'new.view', name: '视图', icon: 'icon view', toolbarName: '视图' },
+      //     { id: 'new.function', name: '函数', icon: 'icon function', toolbarName: '函数' },
+      //     { id: 'new.user', name: '用户', icon: 'icon user', toolbarName: '用户' }
+      //   ]
+      // },
+      // {
+      //   key: 'tools',
+      //   items: [
+      //     { id: 'query', name: '查询', icon: 'icon query', toolbarName: '查询' },
+      //     { id: 'backup', name: '备份', icon: 'icon backup', toolbarName: '备份' },
+      //     { id: 'auto.run', name: '自动运行', icon: 'icon auto-run', toolbarName: '自动运行' },
+      //     { id: 'model', name: '模型', icon: 'icon model', toolbarName: '模型' },
+      //     { id: 'bi', name: 'BI', icon: 'icon bi', toolbarName: 'BI' }
+      //   ]
+      // }
     ]
   }
 
@@ -79,7 +98,7 @@ const toolbarGroups = computed(() => {
     groups[category].items.push(cmd)
   })
 
-  return Object.values(groups)
+  return Object.values(groups) as ToolbarGroup[]
 })
 
 function handleToolbarClick(item: any) {
@@ -91,5 +110,15 @@ function handleToolbarClick(item: any) {
   }
 }
 </script>
+
+<style scoped>
+.toolbar-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 1;
+}
+</style>
 
 

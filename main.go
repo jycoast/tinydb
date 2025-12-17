@@ -6,6 +6,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	"log"
 	"tinydb/app/bridge"
 )
@@ -25,7 +26,9 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 245, G: 245, B: 245, A: 1}, // 与主题背景色一致
+		// Keep the native titlebar in light mode so it stays white on Windows.
+		Windows:          &windows.Options{Theme: windows.Light},
+		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		LogLevel:         logger.DEBUG,
 		OnStartup:        app.Startup,
 		OnDomReady:       app.DomReady,

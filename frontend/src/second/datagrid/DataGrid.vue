@@ -283,7 +283,8 @@ export default defineComponent({
     const macroValues = ref({})
     provide('macroValues', macroValues)
 
-    const leftActiveKeys = ref<string[]>(getLocalStorage('dataGrid_left_active_keys', ['columns']) as any)
+    // Default collapsed (Navicat-like). If user has a saved preference, respect it.
+    const leftActiveKeys = ref<string[]>(getLocalStorage('dataGrid_left_active_keys', []) as any)
 
     const watchVisible = inject<Ref<boolean>>('collapsedLeftColumnStore')
     const collapsedLeftColumnStore = computed(() => unref(watchVisible) || ref(getLocalStorage('dataGrid_collapsedLeftColumn', false)))

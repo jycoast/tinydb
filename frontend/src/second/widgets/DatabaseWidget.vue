@@ -2,7 +2,7 @@
   <div v-show="!hidden" class="dbw-root">
     <!-- Section 1: Connections (independent scroll inside list) -->
     <div class="dbw-section dbw-section--connections">
-      <div class="dbw-section-header">CONNECTIONS</div>
+      <div class="dbw-section-header">连接</div>
       <div class="dbw-section-body">
         <ConnectionList/>
       </div>
@@ -10,7 +10,7 @@
 
     <!-- Section 2: Pinned (optional) -->
     <div v-if="showPinned" class="dbw-section dbw-section--pinned">
-      <div class="dbw-section-header">PINNED</div>
+      <div class="dbw-section-header">收藏</div>
       <div class="dbw-section-body">
         <PinnedObjectsList/>
       </div>
@@ -87,7 +87,7 @@ export default defineComponent({
     const objectsHeader = computed(() => {
       const title = driver.value && Array.isArray(driver.value?.databaseEngineTypes) && driver.value?.databaseEngineTypes?.includes('document')
         ? 'Collections'
-        : 'Tables, views, functions'
+        : '表、视图、函数'
       return title.toUpperCase()
     })
 

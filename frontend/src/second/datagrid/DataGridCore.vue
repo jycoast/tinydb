@@ -20,12 +20,13 @@
     <ErrorInfo v-for="err in grider.errors" :message="err" isSmall/>
   </div>
 
-  <!--@contextmenu="handleContext"-->
   <div v-else class="container" ref="container" @wheel="handleGridWheel">
     <!--  todo 现在还不清楚具体使用场景，暂时注释，如果我们点页面Hide按钮，把列表的所有column隐藏了，就会显示出来  -->
-    <input ref="domFocusField" v-if="false"/>
+    <input ref="domFocusField" class="focus-field" @keydown="handleGridKeyDown"/>
     <table
       class="table"
+      @contextmenu.prevent="handleContext"
+      @dblclick="handleGridDoubleClick"
       @mousedown="handleGridMouseDown"
       @mousemove="handleGridMouseMove"
       @mouseup="handleGridMouseUp">
@@ -211,7 +212,7 @@ import {
 } from './selection'
 import {registerMenu} from '/@/second/utility/contextMenu'
 import {message} from 'ant-design-vue'
-import {copyRowsFormatDefs} from '/@/second/utility/clipboard'
+import {copyRowsFormatDefs, copyRowsToClipboard} from '/@/second/utility/clipboard'
 import {getFilterType} from '/@/second/tinydb-filterparser'
 import createRef from '/@/second/utility/createRef'
 import {isCtrlOrCommandKey} from '/@/second/utility/common'
@@ -543,6 +544,15 @@ export default defineComponent({
 
     function handleGridKeyDown(event) {
       if (inplaceEditorState.value) return
+
+      // Copy selection (Ctrl/Cmd + C)
+      if (isCtrlOrCommandKey(event) && event.keyCode === keycodes.c) {
+        // @ts-ignore
+        event.preventDefault()
+        copyToClipboardCore(copyRowsFormat.value)
+        return
+      }
+
       if (
         !event.ctrlKey &&
         !event.altKey &&
@@ -662,7 +672,7 @@ export default defineComponent({
         submenu: [
           keys(copyRowsFormatDefs).map(format => ({
             text: copyRowsFormatDefs[format].label,
-            onClick: () => message.warning('copyToClipboardCore'),
+            onClick: () => copyToClipboardCore(format),
           })),
           { divider: true },
           keys(copyRowsFormatDefs).map(format => ({
@@ -716,7 +726,7 @@ export default defineComponent({
         unref(originMenu),
         {
           text: copyRowsFormatDefs[copyRowsFormat.value].label,
-          onClick: () => message.warning('copyToClipboardCore'),
+          onClick: () => copyToClipboardCore(copyRowsFormat.value),
           keyText: 'CtrlOrCommand+C',
           tag: 'copy',
         },
@@ -729,6 +739,49 @@ export default defineComponent({
         event: e,
         items: buildMenu as () => ContextMenuItem[],
       });
+    }
+
+    function copyToClipboardCore(format: string) {
+      const rowIndexes = getSelectedRowIndexes()
+        .slice()
+        .filter(isNumber)
+        .sort((a, b) => (a as number) - (b as number)) as number[]
+      const colIndexes = getSelectedColumnIndexes()
+        .slice()
+        .filter(isNumber)
+        .sort((a, b) => (a as number) - (b as number)) as number[]
+
+      const columnsToCopy = compact(colIndexes.map((idx: number) => realColumnUniqueNames.value[idx]))
+      const rowsToCopy = compact(rowIndexes.map((idx: number) => grider.value?.getRowData(idx)))
+
+      if (!columnsToCopy.length || !rowsToCopy.length) {
+        message.info('没有可复制的数据')
+        return
+      }
+
+      const keyColumns =
+        display.value?.baseTable?.primaryKey?.columns?.map((x: any) => x.columnName) ||
+        (display.value as any)?.changeSetKeyFields ||
+        []
+
+      copyRowsToClipboard(format, columnsToCopy, rowsToCopy, {
+        schemaName: display.value?.baseTableOrSimilar?.schemaName,
+        pureName: display.value?.baseTableOrSimilar?.pureName,
+        driver: display.value?.driver,
+        keyColumns,
+      })
+    }
+
+    function handleGridDoubleClick(event: MouseEvent) {
+      const cell = cellFromEvent(event)
+      if (!isRegularCell(cell)) return
+      if (!grider.value?.editable) {
+        message.warning('当前数据源为只读，不能编辑')
+        return
+      }
+      if (!showMultilineCellEditorConditional(cell)) {
+        dispatchInsplaceEditor({type: 'show', cell, selectAll: true})
+      }
     }
 
     function updateCollapsedLeftColumn() {
@@ -1060,6 +1113,7 @@ export default defineComponent({
       updateVerticalRowIndex,
       griders,
       handleContext,
+      handleGridDoubleClick,
     }
   }
 })

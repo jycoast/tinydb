@@ -18,7 +18,12 @@
         style="margin-bottom: 12px;"
       />
       <template #insertFooter>
-        <a-button class="float-left" type="default" :loading="testing" @click="handleTest">测试连接</a-button>
+        <a-button
+          class="float-left"
+          type="default"
+          :loading="testing"
+          @click="handleTest"
+        >测试连接</a-button>
       </template>
     </BasicModal>
   </FormProviderCore>
@@ -68,6 +73,18 @@ export default defineComponent({
       errorMessage.value = ''
       testing.value = true
       try {
+        if (!window['go']) {
+          const errMsg =
+            '浏览器模式下无法测试连接：Wails 不会向浏览器注入 window.go。请使用项目根目录执行 `wails dev`（桌面模式）后再测试连接。'
+          errorMessage.value = errMsg
+          notification.error({
+            message: '连接测试失败',
+            description: errMsg,
+            duration: 6,
+          })
+          return
+        }
+
         const result = await connectionTestApi(pickBy(unref(connParams), (item) => !!item))
         // 检查是否有错误信息
         if (result && (result as any).errorMessage) {

@@ -2,10 +2,21 @@ import {findLastIndex, get} from 'lodash-es'
 import {useLocaleStore} from "/@/store/modules/locale"
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
 import {getOpenedTabs} from '/@/store/modules/locale'
+import {Modal} from 'ant-design-vue'
 
 function allowCloseTabs(tabs) {
-  if (tabs.length == 0) return Promise.resolve(true);
-  return new Promise(_ => {});
+  if (!tabs || tabs.length == 0) return Promise.resolve(true)
+
+  return new Promise<boolean>((resolve) => {
+    Modal.confirm({
+      title: '关闭未保存的标签页？',
+      content: `当前有 ${tabs.length} 个未保存的标签页，关闭后未保存内容将丢失。是否继续？`,
+      okText: '关闭',
+      cancelText: '取消',
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false),
+    })
+  })
 }
 
 const locale = useLocaleStore()
@@ -62,11 +73,12 @@ export const closeAll = async () => {
 
   const closedTime = new Date().getTime()
   locale.updateOpenedTabs(tabs => {
-    tabs.map(tab => ({
+    const newTabs = (tabs || []).map(tab => ({
       ...tab,
-      closedTime: tab.closedTime || closedTime,
+      closedTime: tab.closedTime || (tab.closedTime == null ? closedTime : tab.closedTime),
       selected: false,
     }))
+    return newTabs
   })
 }
 
@@ -85,7 +97,7 @@ export const closeWithOtherDb = closeTabFunc(
 export const closeOthers = closeTabFunc((x, active) => x.tabid != active.tabid)
 
 export function getTabDbName(tab, connectionList) {
-  if (tab.tabComponent == 'ConnectionTab') return 'Connections';
+  if (tab.tabComponent == 'ConnectionTab') return '连接';
   if (tab.props && tab.props.conid && tab.props.database) return tab.props.database;
   if (tab.props && tab.props.conid) {
     const connection = connectionList?.find(x => x._id == tab.props.conid);

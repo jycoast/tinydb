@@ -55,8 +55,10 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     server: {
       https: false,
       // Listening on all local IPs
-      host: true,
-      port: VITE_PORT,
+      host: '127.0.0.1',
+      // Wails dev expects a stable devserver URL; keep it fixed to match `wails.json`
+      port: Number(VITE_PORT) || 3100,
+      strictPort: true,
       // Load proxy configuration from .env
       proxy: createProxy(VITE_PROXY),
       cors: true
