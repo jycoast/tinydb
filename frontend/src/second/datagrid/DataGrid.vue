@@ -5,13 +5,18 @@
     :hideFirst="collapsedLeftColumnStore">
     <template #1>
       <div class="left">
-        <WidgetColumnBar>
-
-          <WidgetColumnBarItem
-            title="Columns"
-            name="columns"
-            height="45%"
-            :show="(!freeTableColumn || isDynamicStructure) && !isFormView">
+        <ACollapse
+          v-model:activeKey="leftActiveKeys"
+          class="dg-left-collapse"
+          :bordered="false"
+          :ghost="true"
+          expandIconPosition="end"
+        >
+          <ACollapsePanel
+            v-if="(!freeTableColumn || isDynamicStructure) && !isFormView"
+            key="columns"
+            header="COLUMNS"
+          >
             <ColumnManager
               :conid="$attrs['conid']"
               :database="$attrs['database']"
@@ -19,71 +24,77 @@
               :managerSize="managerSize"
               :isJsonView="isJsonView"
               :isDynamicStructure="isDynamicStructure"
-              ref="domColumnManager"/>
-          </WidgetColumnBarItem>
+              ref="domColumnManager"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem
-            title="Filters"
-            name="jsonFilters"
-            height="30%"
-            :skip="!isDynamicStructure || !display?.filterable">
+          <ACollapsePanel
+            v-if="isDynamicStructure && !!display?.filterable"
+            key="jsonFilters"
+            header="FILTERS"
+          >
             <JsonViewFilters
               v-bind="Object.assign({}, $props, $attrs)"
               :managerSize="managerSize"
               :isDynamicStructure="isDynamicStructure"
-              :useEvalFilters="useEvalFilters"/>
-          </WidgetColumnBarItem>
+              :useEvalFilters="useEvalFilters"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem
-            title="Filters"
-            name="tableFilters"
-            height="15%"
-            :skip="!display?.filterable || isDynamicStructure || display.filterCount == 0 || isFormView"
-            :collapsed="isDetailView">
+          <ACollapsePanel
+            v-if="!!display?.filterable && !isDynamicStructure && display.filterCount != 0 && !isFormView"
+            key="tableFilters"
+            header="FILTERS"
+          >
             <JsonViewFilters
               v-bind="Object.assign({}, $props, $attrs)"
               :managerSize="managerSize"
               :isDynamicStructure="isDynamicStructure"
-              :useEvalFilters="useEvalFilters"/>
-          </WidgetColumnBarItem>
+              :useEvalFilters="useEvalFilters"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem
-            title="Columns"
-            name="freeColumns"
-            height="40%"
-            :show="freeTableColumn && !isDynamicStructure">
+          <ACollapsePanel
+            v-if="freeTableColumn && !isDynamicStructure"
+            key="freeColumns"
+            header="COLUMNS"
+          >
             <FreeTableColumnEditor
               v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"/>
-          </WidgetColumnBarItem>
+              :managerSize="managerSize"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem title="Filters" name="filters" height="30%" :show="isFormView">
+          <ACollapsePanel
+            v-if="isFormView"
+            key="formFilters"
+            header="FILTERS"
+          >
             <FormViewFilters
               v-bind="Object.assign({}, $props, $attrs)"
               :managerSize="managerSize"
-              :driver="formDisplay?.driver"/>
-          </WidgetColumnBarItem>
+              :driver="formDisplay?.driver"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem
-            title="References"
-            name="references"
-            height="30%"
-            :collapsed="isDetailView"
-            :show="showReferences && display?.hasReferences">
+          <ACollapsePanel
+            v-if="showReferences && !!display?.hasReferences"
+            key="references"
+            header="REFERENCES"
+          >
             <ReferenceManager
               v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"/>
-          </WidgetColumnBarItem>
+              :managerSize="managerSize"
+            />
+          </ACollapsePanel>
 
-          <WidgetColumnBarItem
-            title="Macros"
-            name="macros"
-            :skip="!showMacros"
-            :collapsed="!expandMacros">
-            <MacroManager v-bind="Object.assign({}, $props, $attrs)" :managerSize="managerSize"/>
-          </WidgetColumnBarItem>
-
-        </WidgetColumnBar>
+          <ACollapsePanel v-if="showMacros" key="macros" header="MACROS">
+            <MacroManager
+              v-bind="Object.assign({}, $props, $attrs)"
+              :managerSize="managerSize"
+            />
+          </ACollapsePanel>
+        </ACollapse>
       </div>
     </template>
     <template #2>
@@ -137,8 +148,6 @@ import {
 } from 'vue'
 import {fromPairs, isNumber, mapKeys} from 'lodash-es'
 import HorizontalSplitter from '/@/second/elements/HorizontalSplitter.vue'
-import WidgetColumnBar from '/@/second/widgets/WidgetColumnBar.vue'
-import WidgetColumnBarItem from '/@/second/widgets/WidgetColumnBarItem.vue'
 import VerticalSplitter from '/@/second/elements/VerticalSplitter.vue'
 import MacroDetail from '/@/second/freetable/MacroDetail.vue'
 import ColumnManager from '/@/second/datagrid/ColumnManager.vue'
@@ -157,6 +166,9 @@ import {
 } from '/@/second/tinydb-datalib'
 import {Nullable} from '/@/utils/types'
 
+import {Collapse} from 'ant-design-vue'
+const CollapsePanel = (Collapse as any).Panel
+
 function extractMacroValuesForMacro(vObject, mObject) {
   // return {};
   const macroValues = unref(vObject)
@@ -174,14 +186,14 @@ export default defineComponent({
     HorizontalSplitter,
     VerticalSplitter,
     MacroDetail,
-    WidgetColumnBar,
-    WidgetColumnBarItem,
     ColumnManager,
     JsonViewFilters,
     FormViewFilters,
     ReferenceManager,
     MacroManager,
-    FreeTableColumnEditor
+    FreeTableColumnEditor,
+    [Collapse.name]: Collapse,
+    ACollapsePanel: CollapsePanel,
   },
   props: {
     gridCoreComponent: {
@@ -271,6 +283,8 @@ export default defineComponent({
     const macroValues = ref({})
     provide('macroValues', macroValues)
 
+    const leftActiveKeys = ref<string[]>(getLocalStorage('dataGrid_left_active_keys', ['columns']) as any)
+
     const watchVisible = inject<Ref<boolean>>('collapsedLeftColumnStore')
     const collapsedLeftColumnStore = computed(() => unref(watchVisible) || ref(getLocalStorage('dataGrid_collapsedLeftColumn', false)))
 
@@ -322,6 +336,12 @@ export default defineComponent({
       if (managerSize.value) setLocalStorage('dataGridManagerWidth', managerSize.value)
     })
 
+    watch(
+      () => [...leftActiveKeys.value],
+      () => setLocalStorage('dataGrid_left_active_keys', leftActiveKeys.value),
+      {deep: true}
+    )
+
     watch(() => [...loadedRowsRW.value], () => {
       emit('update:loadedRows', loadedRowsRW.value)
     })
@@ -332,6 +352,7 @@ export default defineComponent({
       formViewComponent,
       jsonViewComponent,
       managerSize,
+      leftActiveKeys,
       getInitialManagerSize,
       handleChangeSelectedColumns,
       collapsedLeftColumnStore,
@@ -359,5 +380,35 @@ export default defineComponent({
   display: flex;
   flex: 1;
   background-color: var(--theme-bg-0);
+  min-height: 0;
+}
+
+.dg-left-collapse {
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 6px 0;
+}
+
+.dg-left-collapse :deep(.ant-collapse-header) {
+  padding: 6px 8px !important;
+  color: var(--theme-font-2);
+  background: var(--theme-bg-1);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+}
+
+.dg-left-collapse :deep(.ant-collapse-item) {
+  margin-bottom: 8px;
+}
+
+.dg-left-collapse :deep(.ant-collapse-content) {
+  border: 0;
+  background: transparent;
+}
+
+.dg-left-collapse :deep(.ant-collapse-content-box) {
+  padding: 0;
+  margin-top: 6px;
 }
 </style>

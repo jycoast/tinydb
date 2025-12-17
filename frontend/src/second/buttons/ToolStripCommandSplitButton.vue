@@ -41,9 +41,6 @@ export default defineComponent({
     watchEffect(() => {
       if (unref(commands)) {
         menu.value = compact(unref(commands)).map(command => (isString(unref(command)) ? {command: unref(command)} :  unref(command)))
-        console.log(unref(commands), `unref(commands)`)
-        console.log(unref(hideDisabled), `unref(hideDisabled)`)
-        console.log(unref(buttonLabel), `unref(buttonLabel)`)
       }
     })
 

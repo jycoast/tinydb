@@ -154,16 +154,24 @@ subscribeRecentDatabaseSwitch()
   overflow: hidden;
 }
 
-/* antd Sider 内部容器需要显式变成 flex 才能正确滚动 */
-.app-iconbar :deep(.ant-layout-sider-children),
+/* antd Sider 内部容器需要显式变成 flex */
+.app-iconbar :deep(.ant-layout-sider-children) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 左侧面板：外层不滚动，内部各区块自己滚动 */
 .app-leftpanel :deep(.ant-layout-sider-children) {
   height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  /* allow left panel to scroll */
-  overflow: auto;
+  overflow: hidden;
 }
 
 .app-splitter {

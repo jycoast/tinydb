@@ -12,10 +12,10 @@
   position: absolute;
   left: 0;
   top: 0;
-  border-bottom: 1px solid var(--theme-border);
   right: 0;
   bottom: var(--dim-toolstrip-height);
   display: flex;
+  min-height: 0;
 }
 
 .toolstrip {
@@ -25,6 +25,10 @@
   right: 0;
   bottom: 0;
   display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
   background: var(--theme-bg-1);
+  border-top: 1px solid var(--theme-border);
 }
 </style>

@@ -198,10 +198,11 @@ ul {
   position: absolute;
   list-style: none;
   background-color: var(--theme-bg-0);
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--theme-border);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
-  padding: 5px 0;
+  /* closer to Ant dropdown/menu shadow */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  padding: 4px;
   margin: 2px 0 0;
   font-size: 14px;
   text-align: left;
@@ -220,12 +221,13 @@ ul {
 }
 
 a {
-  padding: 3px 20px;
-  line-height: 1.42;
-  white-space: nop-wrap;
+  padding: 5px 12px;
+  line-height: 22px;
+  white-space: nowrap;
   color: var(--theme-font-1);
   display: flex;
   justify-content: space-between;
+  border-radius: 4px;
 }
 
 a.disabled {
@@ -233,13 +235,13 @@ a.disabled {
 }
 
 a:hover:not(.disabled) {
-  background-color: var(--theme-bg-1);
+  background-color: var(--theme-bg-hover);
   text-decoration: none;
   color: var(--theme-font-1);
 }
 
 .divider {
-  margin: 9px 0px 9px 0px;
+  margin: 4px 0;
   border-top: 1px solid var(--theme-border);
   border-bottom: 1px solid var(--theme-bg-0);
 }

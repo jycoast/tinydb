@@ -1,14 +1,24 @@
 <template>
-  <SearchBoxWrapper>
-    <SearchInput placeholder="Search connection or database" v-model:value="filter"/>
-    <CloseSearchButton :filter="filter" @filter="filter = ''"/>
-    <InlineButton title="Add new connection" @click="openModal">
-      <FontIcon icon="icon plus-thick"/>
-    </InlineButton>
-    <InlineButton title="Add new connection" @click="handleRefreshConnections">
-      <FontIcon icon="icon refresh"/>
-    </InlineButton>
-  </SearchBoxWrapper>
+  <div class="cl-toolbar">
+    <ASpace :size="6">
+      <AInput
+        v-model:value="filter"
+        allowClear
+        size="small"
+        placeholder="Search connection or database"
+      />
+      <ATooltip title="Add new connection">
+        <AButton size="small" type="text" @click="openModal">
+          <template #icon><PlusOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="Refresh connections">
+        <AButton size="small" type="text" @click="handleRefreshConnections">
+          <template #icon><ReloadOutlined /></template>
+        </AButton>
+      </ATooltip>
+    </ASpace>
+  </div>
   <WidgetsInnerContainer>
     <AppObjectList
       v-if="Array.isArray(connectionsWithStatus) && connectionsWithStatus.length > 0"
@@ -24,13 +34,15 @@
         updateExpandedConnections(old => (value ? [...old, data._id] : old.filter(x => x != data._id)))
       }"
     />
-    <LargeButton
-      v-else
-      icon="icon new-connection"
-      fillHorizontal
-      @visible="openModal">
-      Add new connection
-    </LargeButton>
+    <div v-else class="cl-empty">
+      <AEmpty description="No connections" />
+      <div class="cl-empty-actions">
+        <AButton type="primary" @click="openModal">
+          <template #icon><PlusOutlined /></template>
+          Add new connection
+        </AButton>
+      </div>
+    </div>
     <ConnectionModal @register="register" @closeCurrentModal="closeModal"/>
   </WidgetsInnerContainer>
 </template>
@@ -39,19 +51,13 @@
 import {computed, defineComponent, onMounted, ref, unref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {sortBy} from 'lodash-es'
-import SearchBoxWrapper from '/@/second/widgets/SearchBoxWrapper.vue'
 import WidgetsInnerContainer from '/@/second/widgets//WidgetsInnerContainer.vue'
-import SearchInput from '/@/second/elements/SearchInput.vue'
-import CloseSearchButton from '/@/second/buttons/CloseSearchButton'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
 import AppObjectList from '/@/second/appobj/AppObjectList'
-import FontIcon from '/@/second/icons/FontIcon.vue'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
 import ConnectionAppObject from '/@/second/appobj/ConnectionAppObject'
 import SubDatabaseList from '/@/second/appobj/SubDatabaseList'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import runCommand from '/@/second/commands/runCommand'
-import LargeButton from '/@/second/buttons/LargeButton.vue'
 import ConnectionModal from '/@/second/modals/ConnectionModal.vue'
 import {useModal} from '/@/components/Modal'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
@@ -59,18 +65,22 @@ import {serverConnectionsRefreshApi} from '/@/api/simpleApis'
 import {useConnectionList, useServerStatus} from '/@/api/bridge'
 import {IActiveConnection, IConnectionStatus} from '/@/second/typings/types/connections.d'
 
+import {Button, Empty, Input, Space, Tooltip} from 'ant-design-vue'
+import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
+
 export default defineComponent({
   name: "ConnectionList",
   components: {
-    SearchBoxWrapper,
     WidgetsInnerContainer,
-    CloseSearchButton,
-    SearchInput,
-    InlineButton,
     AppObjectList,
-    FontIcon,
-    LargeButton,
     ConnectionModal,
+    [Button.name]: Button,
+    [Empty.name]: Empty,
+    [Input.name]: Input,
+    [Space.name]: Space,
+    [Tooltip.name]: Tooltip,
+    PlusOutlined,
+    ReloadOutlined,
   },
   setup() {
     const bootstrap = useBootstrapStore()
@@ -139,3 +149,22 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+.cl-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid var(--theme-border);
+}
+
+.cl-empty {
+  padding: 12px 8px;
+}
+
+.cl-empty-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+</style>

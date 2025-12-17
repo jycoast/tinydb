@@ -47,9 +47,8 @@ export default defineComponent({
 
 <style scoped>
 .button {
-  /* padding: 5px 15px; */
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 4px;
+  padding-right: 4px;
   color: var(--theme-font-1);
   border: 0;
   align-self: stretch;
@@ -59,14 +58,6 @@ export default defineComponent({
 
 .button.disabled {
   color: var(--theme-font-3);
-}
-
-.inner:hover:not(.disabled) {
-  background: var(--theme-bg-3);
-}
-
-.inner:active:hover:not(.disabled) {
-  background: var(--theme-bg-4);
 }
 
 .icon {
@@ -79,13 +70,28 @@ export default defineComponent({
 }
 
 .inner {
-  /* position: relative;
-  top: 2px; */
   white-space: nowrap;
   align-self: center;
-  background: var(--theme-bg-2);
-  padding: 3px 8px;
-  border-radius: 4px;
+  height: 24px;
+  line-height: 22px;
+  box-sizing: border-box;
+  background: var(--theme-bg-0);
+  border: 1px solid var(--theme-border);
+  padding: 0 8px;
+  border-radius: 6px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.inner:hover:not(.disabled) {
+  background: var(--theme-bg-hover);
+  border-color: var(--theme-font-link);
+}
+
+.inner:active:not(.disabled) {
+  background: var(--theme-bg-2);
+  border-color: var(--theme-font-link);
 }
 </style>

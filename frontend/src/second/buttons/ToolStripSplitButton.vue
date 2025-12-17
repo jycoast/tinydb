@@ -49,9 +49,8 @@ function handleSplitClick(e) {
 
 <style scoped>
 .button {
-  /* padding: 5px 15px; */
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 4px;
+  padding-right: 4px;
   color: var(--theme-font-1);
   border: 0;
   align-self: stretch;
@@ -61,34 +60,6 @@ function handleSplitClick(e) {
 
 .button.disabled {
   color: var(--theme-font-3);
-}
-
-.main {
-  background: var(--theme-bg-2);
-  padding: 3px 0px 3px 8px;
-  border-radius: 4px 0px 0px 4px;
-}
-
-.main:hover:not(.disabled) {
-  background: var(--theme-bg-3);
-}
-
-.main:active:hover:not(.disabled) {
-  background: var(--theme-bg-4);
-}
-
-.split-icon:hover:not(.disabled) {
-  background: var(--theme-bg-3);
-}
-
-.split-icon:active:hover:not(.disabled) {
-  background: var(--theme-bg-4);
-}
-
-.split-icon {
-  background: var(--theme-bg-2);
-  padding: 3px 8px 3px 0px;
-  border-radius: 0px 4px 4px 0px;
 }
 
 .icon {
@@ -105,16 +76,47 @@ function handleSplitClick(e) {
   align-self: center;
   cursor: pointer;
   display: flex;
+  height: 24px;
+  line-height: 22px;
+  box-sizing: border-box;
+  background: var(--theme-bg-0);
+  border: 1px solid var(--theme-border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .main {
   display: flex;
-  padding-right: 5px;
+  align-items: center;
+  padding: 0 6px 0 8px;
+}
+
+.main:hover:not(.disabled) {
+  background: var(--theme-bg-hover);
+}
+
+.main:active:not(.disabled) {
+  background: var(--theme-bg-2);
 }
 
 .split-icon {
-  padding-left: 5px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
   color: var(--theme-font-link);
-  border-left: 1px solid var(--theme-bg-4);
+  border-left: 1px solid var(--theme-border);
+}
+
+.split-icon:hover:not(.disabled) {
+  background: var(--theme-bg-hover);
+}
+
+.split-icon:active:not(.disabled) {
+  background: var(--theme-bg-2);
+}
+
+.inner:hover:not(.disabled) {
+  border-color: var(--theme-font-link);
 }
 </style>
