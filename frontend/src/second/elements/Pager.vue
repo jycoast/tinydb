@@ -1,44 +1,42 @@
 <template>
-  <div class="wrapper">
-    <InlineButton @click="handleSkipMinus">
-      <FontIcon icon="icon arrow-left"/>
-    </InlineButton>
+  <a-space class="pager-wrapper">
+    <a-button size="small" @click="handleSkipMinus" :icon="h(LeftOutlined)" />
     <span class="label">Start:</span>
-    <TextField
+    <a-input-number
       size="small"
-      type="number"
       v-model:value="skipRW"
+      :min="0"
+      :style="{ width: '100px' }"
       @blur="handleLoad"
-      @keydown="handleKeyDown"
+      @pressEnter="handleLoad"
     />
     <span class="label">Rows:</span>
-    <TextField
+    <a-input-number
       size="small"
-      type="number"
       v-model:value="limitRW"
+      :min="1"
+      :style="{ width: '100px' }"
       @blur="handleLoad"
-      @keydown="handleKeyDown"
+      @pressEnter="handleLoad"
     />
-    <InlineButton @click="handleSkipPlus">
-      <FontIcon icon="icon arrow-right"/>
-    </InlineButton>
-  </div>
+    <a-button size="small" @click="handleSkipPlus" :icon="h(RightOutlined)" />
+  </a-space>
 </template>
 
 <script lang="ts">
-import {defineComponent, PropType, ref, toRefs, watch} from 'vue'
+import {defineComponent, PropType, ref, toRefs, watch, h} from 'vue'
 import {isNumber} from '/@/utils/is'
-import FontIcon from '/@/second/icons/FontIcon.vue'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import TextField from '/@/second/forms/TextField'
-import keycodes from '/@/second/utility/keycodes'
+import {Button, InputNumber, Space} from 'ant-design-vue'
+import {LeftOutlined, RightOutlined} from '@ant-design/icons-vue'
 
 export default defineComponent({
   name: "Pager",
   components: {
-    FontIcon,
-    InlineButton,
-    TextField
+    AButton: Button,
+    AInputNumber: InputNumber,
+    ASpace: Space,
+    LeftOutlined,
+    RightOutlined
   },
   props: {
     skip: {
@@ -52,29 +50,31 @@ export default defineComponent({
   setup(props, {emit}) {
     const {skip, limit} = toRefs(props)
 
-    const skipRW = ref(skip)
-    const limitRW = ref(limit)
+    const skipRW = ref(skip?.value || 0)
+    const limitRW = ref(limit?.value || 10)
 
+    watch(() => skip?.value, (val) => {
+      if (val !== undefined) skipRW.value = val
+    }, {immediate: true})
+
+    watch(() => limit?.value, (val) => {
+      if (val !== undefined) limitRW.value = val
+    }, {immediate: true})
 
     function handleSkipPlus() {
       if (isNumber(skipRW.value) && isNumber(limitRW.value)) {
-        skipRW.value = parseInt(skipRW.value) + parseInt(limitRW.value)
+        skipRW.value = parseInt(String(skipRW.value)) + parseInt(String(limitRW.value))
         if (skipRW.value < 0) skipRW.value = 0
+        emit('update:skip', skipRW.value)
         emit('load')
       }
     }
 
     function handleSkipMinus() {
       if (isNumber(skipRW.value) && isNumber(limitRW.value)) {
-        skipRW.value = parseInt(skipRW.value) - parseInt(limitRW.value)
-        emit('load')
-      }
-    }
-
-    function handleKeyDown(e) {
-      if (e.keyCode == keycodes.enter) {
-        e.preventDefault();
-        e.stopPropagation();
+        skipRW.value = parseInt(String(skipRW.value)) - parseInt(String(limitRW.value))
+        if (skipRW.value < 0) skipRW.value = 0
+        emit('update:skip', skipRW.value)
         emit('load')
       }
     }
@@ -91,23 +91,21 @@ export default defineComponent({
     }
 
     return {
+      h,
       skipRW,
       limitRW,
       handleLoad,
       handleSkipPlus,
       handleSkipMinus,
-      handleKeyDown
+      LeftOutlined,
+      RightOutlined
     }
   }
 })
 </script>
 
 <style scoped>
-.wrapper :global(input) {
-  width: 100px;
-}
-
-.wrapper {
+.pager-wrapper {
   display: flex;
   align-items: center;
 }

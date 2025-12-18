@@ -72,9 +72,6 @@
         </div>
       </div>
     </div>
-    <div class="add-icon" title="New query">
-      <FontIcon icon="icon add"/>
-    </div>
   </div>
 </template>
 

@@ -3,6 +3,7 @@ package sideQuests
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 	"github.com/samber/lo"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -196,29 +197,51 @@ func (msg *DatabaseConnection) HandleSqlSelect(
 
 	// Legacy path: ask frontend to convert Select -> SQL via runtime event.
 	ch := make(chan *schema.EchoMessage, 1)
+	var chClosed bool
+	var chMutex sync.Mutex
+	
+	safeSend := func(msg *schema.EchoMessage) {
+		chMutex.Lock()
+		defer chMutex.Unlock()
+		if !chClosed {
+			select {
+			case ch <- msg:
+			default:
+				// Channel is full, skip
+			}
+		}
+	}
+	
 	runtime.EventsEmit(ctx, "handleSqlSelect", selectParams)
 	runtime.EventsOnce(ctx, "handleSqlSelectReturn", func(sql ...interface{}) {
 		utility.WithRecover(func() {
 			driver, err := stash.GetStorageSession().GetItem(conn.Conid, conn.Database)
 			if err != nil {
-				ch <- &schema.EchoMessage{MsgType: "response", Err: err}
+				safeSend(&schema.EchoMessage{MsgType: "response", Err: err})
 				return
 			}
-			ch <- msg.handleQueryData(driver, sql[0].(string), true)
+			safeSend(msg.handleQueryData(driver, sql[0].(string), true))
 		}, func(err error) {
-			ch <- &schema.EchoMessage{
+			safeSend(&schema.EchoMessage{
 				MsgType: "response",
 				Err:     errors.New(serializer.ErrNil),
-			}
+			})
 		})
 	})
-	defer close(ch)
 
 	// Never hang forever: timeout if frontend doesn't respond.
 	select {
 	case resp := <-ch:
+		chMutex.Lock()
+		chClosed = true
+		close(ch)
+		chMutex.Unlock()
 		return resp
 	case <-time.After(8 * time.Second):
+		chMutex.Lock()
+		chClosed = true
+		close(ch)
+		chMutex.Unlock()
 		return &schema.EchoMessage{
 			MsgType: "response",
 			Err:     errors.New("sql select timeout: frontend did not return SQL"),

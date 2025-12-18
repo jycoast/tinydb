@@ -1,30 +1,30 @@
 <template>
-  <div v-if="isSmall" class="error-container-small">
-    <FontIcon :icon="icon" />
-    {{message || 'Unknown error'}}
-  </div>
-  <div v-else-if="alignTop">
-    <div class="error-container">
-      <div class="icon">
-        <FontIcon :icon="icon" />
-      </div>
-      {{message || 'Unknown error'}}
-    </div>
-  </div>
-  <div v-else class="error-container">
-    <div class="icon">
-      <FontIcon :icon="icon" />
-    </div>
-    {{message || 'Unknown error'}}
-  </div>
+  <a-alert
+    v-if="isSmall"
+    :message="message || 'Unknown error'"
+    type="error"
+    size="small"
+    :show-icon="false"
+    class="error-alert-small"
+  />
+  <a-alert
+    v-else
+    :message="message || 'Unknown error'"
+    type="error"
+    :show-icon="true"
+    :class="alignTop ? 'error-alert-top' : 'error-alert'"
+  />
 </template>
 
 <script lang="ts">
-  import {defineComponent, toRefs, PropType} from 'vue'
-  import FontIcon from '/@/second/icons/FontIcon.vue'
+  import {defineComponent, PropType} from 'vue'
+  import {Alert} from 'ant-design-vue'
 
   export default defineComponent({
     name: "ErrorInfo",
+    components: {
+      AAlert: Alert
+    },
     props: {
       message: {
         type: String as PropType<string>,
@@ -42,30 +42,19 @@
         default: false
       },
     },
-    components: {
-      FontIcon
-    },
-    setup(props) {
-      return {
-        ...toRefs(props)
-      }
-    }
   })
 </script>
 
 <style scoped>
-  .error-container {
-    display: flex;
+  .error-alert {
     margin-right: 10px;
-    align-items: center;
-  }
-  .icon {
-    font-size: 20pt;
-    margin: 10px;
   }
 
-  .error-container-small {
-    display: flex;
+  .error-alert-top {
+    margin-right: 10px;
+  }
+
+  .error-alert-small {
     margin-right: 10px;
   }
 </style>

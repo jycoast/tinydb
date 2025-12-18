@@ -1,32 +1,34 @@
 <template>
   <div class="main" :class="flex1 && 'flex1'">
-    <div class="tabs">
-      <div class="tab-item" v-for="(tab, index) in tabs">
-        <div class="tab-item" :class="value == index && 'selected'" @click="targetIndex(index)">
-          <span class="ml-2">
-            {{ tab.label }}
-          </span>
-        </div>
-      </div>
-
-      <DropDownButton v-if="menu" :menu="menu"/>
-    </div>
-
-    <div class="content-container">
-      <div
-        class="container"
+    <a-tabs
+      v-model:activeKey="activeKey"
+      type="card"
+      :tabBarExtraContent="menu ? h(DropDownButton, { menu }) : undefined"
+      class="tab-control-tabs"
+    >
+      <a-tab-pane
         v-for="(tab, index) in tabs"
-        :class="[isInline && 'isInline', index == value && 'tabVisible']"
-        :style="`max-width: ${containerMaxWidth}`">
-        <component :is="tab.component" v-bing="{...tab.props}"
-                   :tabControlHiddenTab="index != value"/>
-      </div>
-    </div>
+        :key="String(index)"
+        :tab="tab.label"
+      >
+        <div
+          class="container"
+          :class="[isInline && 'isInline']"
+          :style="containerMaxWidth ? `max-width: ${containerMaxWidth}` : undefined"
+        >
+          <component
+            :is="tab.component"
+            v-bind="{...tab.props}"
+            :tabControlHiddenTab="index != activeKeyIndex"
+          />
+        </div>
+      </a-tab-pane>
+    </a-tabs>
   </div>
 </template>
 
 <script lang="ts">
-import {Component, defineComponent, PropType, toRefs} from "vue"
+import {Component, defineComponent, PropType, toRefs, ref, computed, h, watch} from "vue"
 import DropDownButton from '/@/second/buttons/DropDownButton'
 import {compact} from "lodash-es";
 import {Tabs} from "ant-design-vue";
@@ -44,8 +46,8 @@ export default defineComponent({
   name: 'TabControl',
   components: {
     DropDownButton,
-    [Tabs.name]: Tabs,
-    [TabPane.name]: TabPane,
+    ATabs: Tabs,
+    ATabPane: TabPane,
   },
   props: {
     isInline: {
@@ -70,20 +72,31 @@ export default defineComponent({
       default: true
     }
   },
-  setup(props) {
+  emits: ['update:value'],
+  setup(props, {emit}) {
     const {isInline, tabs, value, menu, containerMaxWidth, flex1} = toRefs(props)
 
-    function targetIndex(index: number) {
-      value.value = index
-    }
+    const activeKey = ref(String(value.value || 0))
+    const activeKeyIndex = computed(() => parseInt(activeKey.value))
+
+    watch(() => value.value, (val) => {
+      if (val !== undefined) activeKey.value = String(val)
+    }, {immediate: true})
+
+    watch(activeKey, (val) => {
+      emit('update:value', parseInt(val))
+    })
 
     return {
+      h,
       isInline,
       menu,
       containerMaxWidth,
       flex1,
-      tabs: compact(tabs.value),
-      targetIndex,
+      tabs: computed(() => compact(tabs.value || [])),
+      activeKey,
+      activeKeyIndex,
+      DropDownButton
     }
   }
 })
@@ -99,49 +112,23 @@ export default defineComponent({
   flex: 1;
 }
 
-.tabs {
-  display: flex;
-  height: var(--dim-tabs-height);
-  right: 0;
-  background-color: var(--theme-bg-2);
-}
-
-.tab-item {
-  border-right: 1px solid var(--theme-border);
-  padding-left: 15px;
-  padding-right: 15px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-/* .tab-item:hover {
-  color: ${props => props.theme.tabs_font_hover};
-} */
-.tab-item.selected {
-  background-color: var(--theme-bg-1);
-}
-
-.content-container {
+.tab-control-tabs {
   flex: 1;
-  position: relative;
-}
-
-.container:not(.isInline) {
-  position: absolute;
   display: flex;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  flex-direction: column;
 }
 
-.container:not(.tabVisible):not(.isInline) {
-  visibility: hidden;
+.tab-control-tabs :deep(.ant-tabs-content-holder) {
+  flex: 1;
+  overflow: auto;
 }
 
-.container.isInline:not(.tabVisible) {
-  display: none;
+.container {
+  height: 100%;
+}
+
+.container.isInline {
+  display: block;
 }
 </style>
 

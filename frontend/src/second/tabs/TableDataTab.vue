@@ -156,13 +156,24 @@ export default defineComponent({
     const ddlError = ref('')
 
     function quoteIdent(name: string) {
-      const safe = String(name || '').replace(/`/g, '``')
+      if (!name || name.trim() === '') {
+        return ''
+      }
+      const safe = String(name).replace(/`/g, '``')
       return `\`${safe}\``
     }
 
     const tableIdent = computed(() => {
-      if (schemaName.value) return `${quoteIdent(schemaName.value)}.${quoteIdent(pureName.value)}`
-      return `${quoteIdent(pureName.value)}`
+      if (!pureName.value || pureName.value.trim() === '') {
+        return ''
+      }
+      if (schemaName.value && schemaName.value.trim() !== '') {
+        const schemaPart = quoteIdent(schemaName.value)
+        const tablePart = quoteIdent(pureName.value)
+        if (!schemaPart || !tablePart) return ''
+        return `${schemaPart}.${tablePart}`
+      }
+      return quoteIdent(pureName.value)
     })
 
     const ddlEditorOptions = {
@@ -183,7 +194,7 @@ export default defineComponent({
       async () => {
         ddlError.value = ''
         ddlText.value = ''
-        if (!conid.value || !database.value || !pureName.value) return
+        if (!conid.value || !database.value || !pureName.value || !tableIdent.value) return
 
         ddlLoading.value = true
         try {

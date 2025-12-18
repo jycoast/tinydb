@@ -1,28 +1,27 @@
 <template>
   <div v-if="wrapper" class="wrapper">
-    <div class="box">
-      <div class="container">
-        <div class="spinner">
-          <FontIcon icon="icon loading" />
-        </div>
-        {{message}}
-      </div>
-    </div>
+    <a-spin :tip="message" size="large">
+      <div class="spin-content"></div>
+    </a-spin>
   </div>
-  <div v-else class="container">
-    <div class="spinner">
-      <FontIcon icon="icon loading" />
-    </div>
-    {{message}}
-  </div>
+  <a-spin v-else :tip="message" size="default" class="loading-spin">
+    <template #indicator>
+      <LoadingOutlined :style="{ fontSize: 20 }" spin />
+    </template>
+  </a-spin>
 </template>
 
 <script lang="ts">
-  import {defineComponent, toRefs, PropType} from 'vue'
-  import FontIcon from '/@/second/icons/FontIcon.vue'
+  import {defineComponent, PropType} from 'vue'
+  import {Spin} from 'ant-design-vue'
+  import {LoadingOutlined} from '@ant-design/icons-vue'
 
   export default defineComponent({
     name: "LoadingInfo",
+    components: {
+      ASpin: Spin,
+      LoadingOutlined
+    },
     props: {
       message: {
         type: String as PropType<string>,
@@ -32,26 +31,14 @@
         default: false
       }
     },
-    components: {FontIcon},
-    setup(props) {
-      return {
-        ...toRefs(props)
-      }
-    }
   })
 </script>
 
 <style scoped>
-  .container {
-    display: flex;
-    align-items: center;
+  .loading-spin {
     margin-right: 10px;
   }
 
-  .spinner {
-    font-size: 20pt;
-    margin: 10px;
-  }
   .wrapper {
     position: absolute;
     left: 0;
@@ -60,12 +47,11 @@
     bottom: 0;
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: center;
   }
-  .box {
-    background-color: var(--theme-bg-2);
-    padding: 8px 10px;
-    border: 1px solid var(--theme-border);
+
+  .spin-content {
+    min-height: 200px;
   }
 </style>
 

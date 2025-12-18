@@ -100,6 +100,51 @@ func (s *Source) Query(sql string) (interface{}, error) {
 	// Protect the app from returning huge result sets (Wails marshalling + UI rendering can hang).
 	const maxRows = 2000
 
+	// Validate SQL to prevent syntax errors from empty identifiers
+	// Trim SQL to handle trailing whitespace/newlines
+	sqlTrimmed := strings.TrimSpace(sql)
+	
+	// Check for invalid patterns like `` (empty backticks) which indicate empty table/column names
+	if strings.Contains(sqlTrimmed, "``") || strings.Contains(sqlTrimmed, "` `") {
+		err := fmt.Errorf("invalid SQL: contains empty identifier (table or column name is empty)")
+		logger.Errorf("get mysql query failed: %v", err)
+		return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: []*modules.Column{}}, err
+	}
+
+	// Check for FROM followed by empty backticks in the middle of SQL
+	fromEmptyPattern := regexp.MustCompile(`(?i)\bFROM\s+` + "``")
+	if fromEmptyPattern.MatchString(sqlTrimmed) {
+		err := fmt.Errorf("invalid SQL: FROM clause contains empty table name")
+		logger.Errorf("get mysql query failed: %v", err)
+		return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: []*modules.Column{}}, err
+	}
+
+	// Check for incomplete FROM clauses - FROM followed by single backtick (not closed)
+	// This catches cases like "SELECT * FROM `" where the backtick is not closed
+	// Use a simpler approach: check if SQL ends with "`" and contains "FROM" before it
+	if strings.HasSuffix(sqlTrimmed, "`") {
+		// Check if there's a FROM clause before the trailing backtick
+		fromIndex := strings.LastIndex(strings.ToUpper(sqlTrimmed), "FROM")
+		if fromIndex >= 0 {
+			// Extract the part after FROM
+			afterFrom := strings.TrimSpace(sqlTrimmed[fromIndex+4:])
+			// If it's just a backtick or backtick with whitespace, it's invalid
+			if afterFrom == "`" || strings.HasPrefix(afterFrom, "`") && len(strings.TrimSpace(afterFrom)) <= 1 {
+				err := fmt.Errorf("invalid SQL: incomplete FROM clause (table name is missing, only backtick found)")
+				logger.Errorf("get mysql query failed: %v", err)
+				return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: []*modules.Column{}}, err
+			}
+		}
+	}
+
+	// Also check for FROM ` followed by SQL keywords (not a valid table name)
+	fromSingleBacktickPattern := regexp.MustCompile(`(?i)\bFROM\s+` + "`" + `\s+(?:WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|GROUP|ORDER|HAVING|LIMIT|;|$)`)
+	if fromSingleBacktickPattern.MatchString(sqlTrimmed) {
+		err := fmt.Errorf("invalid SQL: incomplete FROM clause (table name is missing, only backtick found)")
+		logger.Errorf("get mysql query failed: %v", err)
+		return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: []*modules.Column{}}, err
+	}
+
 	resultRows := make([]map[string]interface{}, 0, 64)
 	sqlQuery, err := execute(s.sqlDB, sql)
 	if err != nil {

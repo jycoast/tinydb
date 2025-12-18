@@ -542,6 +542,10 @@ export abstract class GridDisplay {
 
   createSelectBase(name: NamedObjectInfo, columns: ColumnInfo[], options) {
     if (!columns) return null;
+    // Validate table name to prevent SQL syntax errors
+    if (!name || !name.pureName || (typeof name.pureName === 'string' && name.pureName.trim() === '')) {
+      return null;
+    }
     const orderColumnName = columns[0].columnName;
     const select: Select = {
       commandType: 'select',

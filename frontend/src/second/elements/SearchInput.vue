@@ -1,21 +1,28 @@
 <template>
   <a-input
     size="small"
-    autoComplete="off"
+    autocomplete="off"
     :placeholder="placeholder"
     v-model:value="searchValue"
     @input="handleInput"
     @keydown="handleKeyDown"
-    allow-clear/>
+    allow-clear
+    :prefix="h(SearchOutlined)"
+  />
 </template>
 
 <script lang="ts">
-  import {defineComponent, ref, unref, watch, toRef} from 'vue'
+  import {defineComponent, ref, unref, watch, toRef, PropType, h} from 'vue'
   import {debounce} from 'lodash-es'
+  import {Input} from 'ant-design-vue'
+  import {SearchOutlined} from '@ant-design/icons-vue'
   import keycodes from '/@/second/utility/keycodes'
 
   export default defineComponent({
     name: 'SearchInput',
+    components: {
+      AInput: Input
+    },
     props: {
       placeholder: {
         type: String as PropType<string>,
@@ -32,10 +39,10 @@
       const isDebounced = toRef(props, 'isDebounced')
       const value = toRef(props, 'value')
 
-      const searchValue = ref<string>('')
+      const searchValue = ref<string>(props.value || '')
       const debouncedSet = debounce(x => {emit('update:value', unref(x))}, 500)
 
-      function handleKeyDown(e) {
+      function handleKeyDown(e: KeyboardEvent) {
         if (e.keyCode == keycodes.escape) {
           searchValue.value = ''
           emit('update:value', '')
@@ -52,15 +59,18 @@
 
       watch(() => value.value, () => {
         if (value.value === '') searchValue.value = ''
-      })
+        else if (value.value !== undefined) searchValue.value = value.value
+      }, {immediate: true})
 
       return {
+        h,
         value,
         searchValue,
         placeholder: props.placeholder,
         debouncedSet,
         handleKeyDown,
         handleInput,
+        SearchOutlined
       }
     }
   })

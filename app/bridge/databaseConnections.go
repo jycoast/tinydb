@@ -498,7 +498,32 @@ func buildCreateTableSQL(tableName string, columns []map[string]interface{}) str
 		if extra, ok := col["extra"].(string); ok && strings.Contains(extra, "PRI") {
 			colName := fmt.Sprintf("%v", col["columnName"])
 			colName = strings.ReplaceAll(colName, "`", "``")
-			sql.WriteString(fmt.Sprintf(",\n  PRIMARY KEY (`%s`)", colName))
+			colType := fmt.Sprintf("%v", col["dataType"])
+			colTypeUpper := strings.ToUpper(colType)
+			
+			// For utf8mb4, MySQL has a max key length of 3072 bytes
+			// Each utf8mb4 character can be up to 4 bytes, so max is 768 characters
+			// If a VARCHAR/CHAR/TEXT column exceeds this, use a prefix index
+			primaryKeyDef := fmt.Sprintf("`%s`", colName)
+			
+			// TEXT columns always need a prefix index for PRIMARY KEY
+			if colTypeUpper == "TEXT" || colTypeUpper == "MEDIUMTEXT" || colTypeUpper == "LONGTEXT" {
+				// Use 768 characters prefix (3072 bytes / 4 bytes per char)
+				primaryKeyDef = fmt.Sprintf("`%s`(768)", colName)
+			} else if colTypeUpper == "VARCHAR" || colTypeUpper == "CHAR" {
+				// For VARCHAR/CHAR, check if length exceeds key limit
+				if charMaxLength, ok := col["charMaxLength"].(float64); ok && charMaxLength > 0 {
+					// Calculate max bytes: charMaxLength * 4 (for utf8mb4)
+					maxBytes := int(charMaxLength) * 4
+					// If exceeds 3072 bytes, use prefix index (768 chars = 3072 bytes)
+					if maxBytes > 3072 {
+						prefixLength := 768
+						primaryKeyDef = fmt.Sprintf("`%s`(%d)", colName, prefixLength)
+					}
+				}
+			}
+			
+			sql.WriteString(fmt.Sprintf(",\n  PRIMARY KEY (%s)", primaryKeyDef))
 			break
 		}
 	}

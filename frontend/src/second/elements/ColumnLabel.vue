@@ -1,31 +1,37 @@
 <template>
-  <span class="label" :class="notNull && 'notNull'">
-   <FontIcon v-if="icon" :icon="icon"/>
-    {{headerText || columnName}}
+  <a-space class="label" :class="notNull && 'notNull'" size="small">
+    <FontIcon v-if="icon" :icon="icon"/>
+    <a-typography-text :strong="notNull">
+      {{headerText || columnName}}
+    </a-typography-text>
 
-    <span v-if="extInfo" class="extinfo">{{ extInfo }}</span>
+    <a-tag v-if="extInfo" size="small" color="default" class="extinfo">{{ extInfo }}</a-tag>
 
     <template v-if="showDataType">
-
-      <span class="extinfo" v-if="foreignKey">
+      <a-space v-if="foreignKey" size="small" class="extinfo">
         <FontIcon icon="icon arrow-right"/>
-         <Link v-if="conid && database" @click.stop="handler($event)">{{
-             foreignKey.refTableName
-           }}</Link>
-        <template v-else>{{ foreignKey.refTableName }}</template>
-      </span>
+        <Link v-if="conid && database" @click.stop="handler($event)">{{
+          foreignKey.refTableName
+        }}</Link>
+        <a-typography-text v-else type="secondary">{{ foreignKey.refTableName }}</a-typography-text>
+      </a-space>
 
-      <span v-else-if="dataType" class="extinfo">{{dataType.toLowerCase()}}</span>
+      <a-tag v-else-if="dataType" size="small" color="default" class="extinfo">
+        {{dataType.toLowerCase()}}
+      </a-tag>
 
-      <span v-if="columnComment" class="comment" :title="columnComment">{{ columnComment }}</span>
+      <a-tooltip v-if="columnComment" :title="columnComment">
+        <a-typography-text type="secondary" class="comment">{{ columnComment }}</a-typography-text>
+      </a-tooltip>
     </template>
-  </span>
+  </a-space>
 </template>
 
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs, unref,} from 'vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import Link from '/@/second/elements/Link.vue'
+import {Space, Tag, Typography, Tooltip} from 'ant-design-vue'
 import {openDatabaseObjectDetail} from '/@/second/appobj/DatabaseObjectAppObject'
 
 export function getColumnIcon(column, forceIcon = false) {
@@ -39,7 +45,11 @@ export default defineComponent( {
   name: "ColumnLabel",
   components: {
     FontIcon,
-    Link
+    Link,
+    ASpace: Space,
+    ATag: Tag,
+    ATypographyText: Typography.Text,
+    ATooltip: Tooltip
   },
   props: {
     notNull: {

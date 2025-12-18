@@ -86,6 +86,11 @@ export class SqlDumper implements AlterProcessor {
         break;
       case 'i':
       {
+        // Validate identifier to avoid SQL syntax errors (empty string would generate ``)
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          // Skip empty identifiers to prevent SQL syntax errors
+          break;
+        }
         this.putRaw(this.dialect.quoteIdentifier(value));
       }
         break;
@@ -99,7 +104,14 @@ export class SqlDumper implements AlterProcessor {
       case 'f':
       {
         const { schemaName, pureName } = value;
-        if (schemaName) {
+        // Validate pureName to avoid SQL syntax errors (empty string would generate ``)
+        // If pureName is empty, skip generating the table name to prevent SQL syntax errors
+        if (!pureName || (typeof pureName === 'string' && pureName.trim() === '')) {
+          // Don't generate anything - this will result in incomplete SQL, but it's better than invalid SQL
+          // The caller should validate table name before calling this
+          break;
+        }
+        if (schemaName && (typeof schemaName !== 'string' || schemaName.trim() !== '')) {
           this.putRaw(this.dialect.quoteIdentifier(schemaName));
           this.putRaw('.');
         }

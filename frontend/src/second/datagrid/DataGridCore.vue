@@ -882,7 +882,11 @@ export default defineComponent({
     const hasSelectedRows = computed(() => getSelectedRowIndexes().filter(isNumber).length > 0)
 
     function quoteIdent(name: string) {
-      const safe = String(name || '').replace(/`/g, '``')
+      // Validate name to avoid SQL syntax errors (empty string would generate ``)
+      if (!name || (typeof name === 'string' && name.trim() === '')) {
+        return ''
+      }
+      const safe = String(name).replace(/`/g, '``')
       return `\`${safe}\``
     }
 

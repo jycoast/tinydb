@@ -1,36 +1,35 @@
 <template>
-  <a href="">
+  <a-typography-link :href="href || undefined" @click="handleClick">
     <slot></slot>
-  </a>
+  </a-typography-link>
 </template>
 
 <script lang="ts">
-  import {defineComponent, toRefs, PropType} from 'vue'
-  // import FontIcon from '/@/second/icons/FontIcon.vue'
+  import {defineComponent, PropType} from 'vue'
+  import {Typography} from 'ant-design-vue'
+
   export default defineComponent({
     name: "Link",
+    components: {
+      ATypographyLink: Typography.Link
+    },
     props: {
       href: {
         type: String as PropType<string>,
       },
     },
-    // components: {FontIcon},
-    setup(props) {
+    emits: ['click'],
+    setup(props, {emit}) {
+      const handleClick = (e: Event) => {
+        if (!props.href) {
+          e.preventDefault()
+        }
+        emit('click', e)
+      }
       return {
-        ...toRefs(props)
+        handleClick
       }
     }
   })
 </script>
-
-<style scoped>
-  a {
-    text-decoration: none;
-    cursor: pointer;
-    color: var(--theme-font-link);
-  }
-  a:hover {
-    text-decoration: underline;
-  }
-</style>
 
