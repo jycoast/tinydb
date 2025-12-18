@@ -50,7 +50,7 @@
       </a-col>
       <a-col :span="12">
         <a-form-item label="Password">
-          <a-input-password v-model:value="driverForm.password" placeholder=""/>
+          <a-input-password v-model:value="driverForm.password" placeholder="" autocomplete="current-password"/>
         </a-form-item>
       </a-col>
     </a-row>
@@ -171,7 +171,8 @@ export default defineComponent({
       host: [{ required: true, message: 'Please input your username!' }],
     })
     const { resetFields, validate, validateInfos } = useForm(driverForm, rulesRef,{
-      onValidate: (...args) => console.log(...args),
+      // silence noisy onValidate debug logs (was spamming console with "host true null")
+      onValidate: undefined,
     })
 
     const notificationTest = async () => {
@@ -185,7 +186,7 @@ export default defineComponent({
         }
         dispatchConnections(dynamicProps)
       } catch (e) {
-        console.log(e)
+        // validation errors are expected while typing; avoid console noise
       }
     }
 

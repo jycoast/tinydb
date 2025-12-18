@@ -21,13 +21,24 @@
 <script lang="ts" setup>
 import { reactive, onMounted, onUnmounted } from 'vue'
 import runCommand from '/@/second/commands/runCommand'
-import { useBootstrapStore } from '/@/store/modules/bootstrap'
-import { storeToRefs } from 'pinia'
 
-const bootstrap = useBootstrapStore()
-const { commandsCustomized } = storeToRefs(bootstrap)
+type MenuChildItem = {
+  key: string
+  label?: string
+  keyText?: string
+  onClick?: () => void
+  divider?: boolean
+  disabled?: boolean
+}
 
-const menus = reactive([
+type MenuBarMenu = {
+  key: string
+  label: string
+  showDropdown: boolean
+  children?: MenuChildItem[]
+}
+
+const menus = reactive<MenuBarMenu[]>([
   {
     key: 'file',
     label: '文件',
@@ -35,10 +46,10 @@ const menus = reactive([
     children: [
       { key: 'new.connection', label: '新建连接', keyText: 'Ctrl+N', onClick: () => runCommand('new.connection') },
       { key: 'open.connection', label: '打开连接' },
-      { divider: true },
+      { key: 'file.divider.1', divider: true },
       { key: 'save', label: '保存', keyText: 'Ctrl+S' },
       { key: 'save.as', label: '另存为' },
-      { divider: true },
+      { key: 'file.divider.2', divider: true },
       { key: 'exit', label: '退出' }
     ]
   },
@@ -49,11 +60,11 @@ const menus = reactive([
     children: [
       { key: 'undo', label: '撤销', keyText: 'Ctrl+Z' },
       { key: 'redo', label: '重做', keyText: 'Ctrl+Y' },
-      { divider: true },
+      { key: 'edit.divider.1', divider: true },
       { key: 'cut', label: '剪切', keyText: 'Ctrl+X' },
       { key: 'copy', label: '复制', keyText: 'Ctrl+C' },
       { key: 'paste', label: '粘贴', keyText: 'Ctrl+V' },
-      { divider: true },
+      { key: 'edit.divider.2', divider: true },
       { key: 'find', label: '查找', keyText: 'Ctrl+F' },
       { key: 'replace', label: '替换', keyText: 'Ctrl+H' }
     ]
@@ -65,7 +76,7 @@ const menus = reactive([
     children: [
       { key: 'refresh', label: '刷新', keyText: 'F5' },
       { key: 'fullscreen', label: '全屏', keyText: 'F11' },
-      { divider: true },
+      { key: 'view.divider.1', divider: true },
       { key: 'show.left.panel', label: '显示左侧面板' },
       { key: 'show.statusbar', label: '显示状态栏' }
     ]
@@ -78,7 +89,7 @@ const menus = reactive([
       { key: 'options', label: '选项' },
       { key: 'backup', label: '备份' },
       { key: 'restore', label: '恢复' },
-      { divider: true },
+      { key: 'tools.divider.1', divider: true },
       { key: 'import', label: '导入数据' },
       { key: 'export', label: '导出数据' }
     ]
@@ -93,7 +104,7 @@ const menus = reactive([
   }
 ])
 
-function handleMenuClick(menu: any) {
+function handleMenuClick(menu: MenuBarMenu) {
   // 关闭其他菜单
   menus.forEach(m => {
     if (m.key !== menu.key) {
@@ -104,7 +115,7 @@ function handleMenuClick(menu: any) {
   menu.showDropdown = !menu.showDropdown
 }
 
-function handleItemClick(item: any, menu: any) {
+function handleItemClick(item: MenuChildItem, menu: MenuBarMenu) {
   if (item.disabled || item.divider) return
   
   menu.showDropdown = false

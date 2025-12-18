@@ -128,6 +128,15 @@ subscribeRecentDatabaseSwitch()
 .root {
   color: var(--theme-font-1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: var(--theme-bg-0);
+}
+
+/* Make the main workspace + left panel background white (Navicat-like) */
+.root :deep(.ant-layout),
+.root :deep(.ant-layout-content),
+.root :deep(.ant-layout-sider),
+.root :deep(.ant-layout-sider-children) {
+  background: var(--theme-bg-0) !important;
 }
 
 /* antd Sider 内部容器需要显式变成 flex */
@@ -156,10 +165,26 @@ subscribeRecentDatabaseSwitch()
   width: var(--dim-splitter-thickness);
   background: transparent;
   cursor: col-resize;
+  position: relative;
+}
+
+.splitter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: var(--theme-border);
 }
 
 .splitter:hover {
   background: var(--theme-bg-selected);
+}
+
+.splitter:hover::before {
+  background: var(--theme-bg-selected-point);
 }
 
 /* 通知容器 */

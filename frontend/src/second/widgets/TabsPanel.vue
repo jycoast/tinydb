@@ -3,7 +3,7 @@
     <div class="tabs" ref="domTabs" @wheel.prevent="handleTabsWheel">
       <div class="db-wrapper" v-for="tabGroup in groupedTabs">
         <div
-          v-if="tabGroup.tabDbName !== '(no DB)'"
+          v-if="false"
           class="db-name"
              :class="{selected: draggingDbGroup ? tabGroup.grpid == draggingDbGroupTarget?.grpid : tabGroup.tabDbKey == currentDbKey}"
              @mouseup="e => {

@@ -140,6 +140,30 @@
       @scroll="updateVerticalRowIndex"
       ref="domVerticalScroll"
     />
+
+    <!-- Bottom-left edit actions: commit / delete / insert / discard -->
+    <div v-if="grider && grider.editable" class="edit-actions" @mousedown.stop @click.stop>
+      <ATooltip title="提交当前修改">
+        <AButton size="small" shape="circle" type="default" :disabled="!grider.allowSave" @click="handleCommitChanges">
+          <template #icon><CheckOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="删除选中的行">
+        <AButton size="small" shape="circle" type="default" :disabled="!hasSelectedRows" @click="handleDeleteSelectedRows">
+          <template #icon><MinusOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="新增一行">
+        <AButton size="small" shape="circle" type="default" :disabled="!grider.canInsert" @click="handleInsertNewRow">
+          <template #icon><PlusOutlined /></template>
+        </AButton>
+      </ATooltip>
+      <ATooltip title="放弃当前修改">
+        <AButton size="small" shape="circle" type="default" :disabled="!grider.containsChanges" @click="handleDiscardAllChanges">
+          <template #icon><CloseOutlined /></template>
+        </AButton>
+      </ATooltip>
+    </div>
     <div v-if="selectedCellsInfo" class="row-count-label">{{ selectedCellsInfo }}</div>
     <div v-else-if="allRowCount != null && multipleGridsOnTab" class="row-count-label">
       Rows: {allRowCount.toLocaleString()}
@@ -188,6 +212,8 @@ import DataFilterControl from '/@/second/datagrid/DataFilterControl.vue'
 import DataGridRow from '/@/second/datagrid/DataGridRow.vue'
 import InlineButton from '/@/second/buttons/InlineButton.vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
+import {Button, Tooltip} from 'ant-design-vue'
+import {CheckOutlined, CloseOutlined, MinusOutlined, PlusOutlined} from '@ant-design/icons-vue'
 import {
   cellIsSelected,
   countColumnSizes,
@@ -211,7 +237,7 @@ import {
   topLeftCell
 } from './selection'
 import {registerMenu} from '/@/second/utility/contextMenu'
-import {message} from 'ant-design-vue'
+import {message, Modal} from 'ant-design-vue'
 import {copyRowsFormatDefs, copyRowsToClipboard} from '/@/second/utility/clipboard'
 import {getFilterType} from '/@/second/tinydb-filterparser'
 import createRef from '/@/second/utility/createRef'
@@ -225,6 +251,7 @@ import bus from '/@/second/utility/bus'
 import {useContextMenu} from "/@/hooks/web/useContextMenu";
 import {useLocaleStore} from "/@/store/modules/locale";
 import {ContextMenuItem} from "/@/second/modals/typing"
+import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 registerCommand({
   id: 'dataGrid.refresh',
   category: 'Data grid',
@@ -270,6 +297,12 @@ export default defineComponent({
     DataGridRow,
     InlineButton,
     FontIcon,
+    [Button.name]: Button,
+    [Tooltip.name]: Tooltip,
+    CheckOutlined,
+    MinusOutlined,
+    PlusOutlined,
+    CloseOutlined,
   },
   props: {
     grider: {
@@ -450,7 +483,9 @@ export default defineComponent({
     // })
 
     watch(() => selectedCells.value, () => {
-      const stringified = stableStringify(selectedCells)
+      // PERF: this watcher runs on every cell click. Only stringify the actual selection array,
+      // not the Ref wrapper (which is much larger and can cause noticeable jank).
+      const stringified = stableStringify(selectedCells.value)
       if (lastPublishledSelectedCellsRef.get() != stringified) {
         lastPublishledSelectedCellsRef.set(stringified)
         const cellsValue = () => getCellsPublished(selectedCells.value)
@@ -833,7 +868,7 @@ export default defineComponent({
       const rowData = grider.value!.getRowData(cell[0])
       if (!rowData) return null
       const cellData = rowData[realColumnUniqueNames.value[cell[1]]]
-      console.log(cellData.value, `realColumnUniqueNames`)
+      // PERF: avoid console logging on the hot click-to-edit path (can freeze UI for large values)
       /*if (shouldOpenMultilineDialog(cellData)) {
         showModal(EditCellDataModal, {
           value: cellData,
@@ -842,6 +877,152 @@ export default defineComponent({
         return true;
       }*/
       return false
+    }
+
+    const hasSelectedRows = computed(() => getSelectedRowIndexes().filter(isNumber).length > 0)
+
+    function quoteIdent(name: string) {
+      const safe = String(name || '').replace(/`/g, '``')
+      return `\`${safe}\``
+    }
+
+    function sqlLiteral(value: any): string {
+      if (value === null || value === undefined) return 'NULL'
+      if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+      if (typeof value === 'boolean') return value ? '1' : '0'
+      if (value instanceof Date) return `'${value.toISOString().slice(0, 19).replace('T', ' ')}'`
+      if (typeof value === 'object') {
+        const json = JSON.stringify(value)
+        return `'${(json || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+      }
+      const s = String(value)
+      return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
+    }
+
+    function buildWhere(condition: Record<string, any> | null | undefined) {
+      if (!condition || Object.keys(condition).length === 0) return ''
+      const parts = Object.entries(condition).map(([k, v]) => {
+        if (v === null || v === undefined) return `${quoteIdent(k)} IS NULL`
+        return `${quoteIdent(k)} = ${sqlLiteral(v)}`
+      })
+      return parts.length ? ` WHERE ${parts.join(' AND ')}` : ''
+    }
+
+    async function handleCommitChanges() {
+      if (!grider.value?.allowSave) return
+      if (!conid.value || !database.value) return
+
+      const base = display.value?.baseTableOrSimilar
+      if (!base?.pureName) {
+        message.error('无法提交：未识别当前表')
+        return
+      }
+
+      const tableName =
+        base.schemaName ? `${quoteIdent(base.schemaName)}.${quoteIdent(base.pureName)}` : `${quoteIdent(base.pureName)}`
+
+      const cs = (grider.value as any)?.changeSet
+      if (!cs) {
+        message.error('无法提交：缺少变更集')
+        return
+      }
+
+      const statements: string[] = []
+
+      for (const item of cs.deletes || []) {
+        const where = buildWhere(item.condition)
+        if (where) statements.push(`DELETE FROM ${tableName}${where};`)
+      }
+
+      for (const item of cs.updates || []) {
+        const fields = item.fields || {}
+        const sets = Object.entries(fields)
+          .filter(([k]) => !!k)
+          .map(([k, v]) => `${quoteIdent(k)} = ${sqlLiteral(v)}`)
+        const where = buildWhere(item.condition)
+        if (sets.length && where) statements.push(`UPDATE ${tableName} SET ${sets.join(', ')}${where};`)
+      }
+
+      for (const item of cs.inserts || []) {
+        const fields = item.fields || {}
+        const cols = Object.keys(fields).filter(Boolean)
+        if (!cols.length) continue
+        const colSql = cols.map(quoteIdent).join(', ')
+        const valSql = cols.map((k) => sqlLiteral(fields[k])).join(', ')
+        statements.push(`INSERT INTO ${tableName} (${colSql}) VALUES (${valSql});`)
+      }
+
+      if (!statements.length) {
+        message.info('没有可提交的修改（请先修改/新增/删除）')
+        return
+      }
+
+      Modal.confirm({
+        title: '提交修改',
+        content: `确定要提交 ${statements.length} 条变更吗？`,
+        okText: '提交',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            for (const sql of statements) {
+              const res = await databaseConnectionsSqlSelectApi({
+                conid: conid.value,
+                database: database.value,
+                select: { sql },
+              })
+              if ((res as any)?.errorMessage) throw new Error(String((res as any).errorMessage))
+            }
+            grider.value?.revertAllChanges()
+            display.value?.reload?.()
+            message.success('提交成功')
+          } catch (e: any) {
+            message.error(e?.message || '提交失败')
+          }
+        },
+      })
+    }
+
+    function handleDiscardAllChanges() {
+      if (!grider.value?.containsChanges) return
+      Modal.confirm({
+        title: '放弃修改',
+        content: '确定要放弃当前所有未提交的修改吗？',
+        okText: '放弃',
+        cancelText: '取消',
+        onOk: () => {
+          grider.value?.revertAllChanges()
+          message.success('已放弃修改')
+        },
+      })
+    }
+
+    function handleDeleteSelectedRows() {
+      if (!grider.value?.editable) return
+      const rows = getSelectedRowIndexes().filter(isNumber) as number[]
+      if (!rows.length) return
+      Modal.confirm({
+        title: '删除行',
+        content: `确定要标记删除选中的 ${rows.length} 行吗？（点击对勾提交后才会写入数据库）`,
+        okText: '删除',
+        cancelText: '取消',
+        onOk: () => {
+          grider.value?.beginUpdate?.()
+          for (const r of rows) grider.value?.deleteRow?.(r)
+          grider.value?.endUpdate?.()
+          message.success('已标记删除')
+        },
+      })
+    }
+
+    function handleInsertNewRow() {
+      if (!grider.value?.canInsert) return
+      const newRow = grider.value.insertRow()
+      if (newRow == null) return
+      const cell: any = [newRow, 0]
+      currentCell.value = cell
+      selectedCells.value = [cell]
+      scrollIntoView(cell)
+      message.success('已新增一行（编辑后点击对勾提交）')
     }
 
     function handleGridWheel(event) {
@@ -1114,6 +1295,11 @@ export default defineComponent({
       griders,
       handleContext,
       handleGridDoubleClick,
+      hasSelectedRows,
+      handleCommitChanges,
+      handleDeleteSelectedRows,
+      handleInsertNewRow,
+      handleDiscardAllChanges,
     }
   }
 })
@@ -1167,6 +1353,15 @@ export default defineComponent({
   background-color: var(--theme-bg-2);
   right: 40px;
   bottom: 20px;
+}
+
+.edit-actions {
+  position: absolute;
+  left: 6px;
+  bottom: 20px;
+  display: inline-flex;
+  gap: 6px;
+  z-index: 20;
 }
 </style>
 

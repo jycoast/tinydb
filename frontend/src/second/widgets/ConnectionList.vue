@@ -1,50 +1,50 @@
 <template>
-  <div class="cl-toolbar">
-    <ASpace :size="6">
-      <AInput
-        v-model:value="filter"
-        allowClear
-        size="small"
-        placeholder="Search connection or database"
-      />
-      <ATooltip title="Add new connection">
-        <AButton size="small" type="text" @click="openModal">
-          <template #icon><PlusOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="Refresh connections">
-        <AButton size="small" type="text" @click="handleRefreshConnections">
-          <template #icon><ReloadOutlined /></template>
-        </AButton>
-      </ATooltip>
-    </ASpace>
-  </div>
-  <WidgetsInnerContainer>
-    <AppObjectList
-      v-if="Array.isArray(connectionsWithStatus) && connectionsWithStatus.length > 0"
-      :list="connectionsWithStatusList"
-      :filter="filter"
-      :module="connectionAppObject"
-      :subItemsComponent="SubDatabaseList"
-      expandOnClick
-      :isExpandable="data => openedConnections.includes(data._id) && !data.singleDatabase"
-      :passProps="{showPinnedInsteadOfUnpin: true}"
-      :getIsExpanded="data => expandedConnections.includes(data._id) && !data.singleDatabase"
-      :setIsExpanded="(data, value) => {
-        updateExpandedConnections(old => (value ? [...old, data._id] : old.filter(x => x != data._id)))
-      }"
-    />
-    <div v-else class="cl-empty">
-      <AEmpty description="No connections" />
-      <div class="cl-empty-actions">
-        <AButton type="primary" @click="openModal">
-          <template #icon><PlusOutlined /></template>
-          Add new connection
-        </AButton>
-      </div>
+  <div class="cl-root">
+    <div class="cl-toolbar">
+      <ASpace :size="6">
+        <AInput
+          v-model:value="filter"
+          allowClear
+          size="small"
+          placeholder="Search connection or database"
+        />
+        <ATooltip title="Add new connection">
+          <AButton size="small" type="text" @click="openModal">
+            <template #icon><PlusOutlined /></template>
+          </AButton>
+        </ATooltip>
+        <ATooltip title="Refresh connections">
+          <AButton size="small" type="text" @click="handleRefreshConnections">
+            <template #icon><ReloadOutlined /></template>
+          </AButton>
+        </ATooltip>
+      </ASpace>
     </div>
-    <ConnectionModal @register="register" @closeCurrentModal="closeModal"/>
-  </WidgetsInnerContainer>
+    <WidgetsInnerContainer>
+      <AppObjectList
+        v-if="Array.isArray(connectionsWithStatus) && connectionsWithStatus.length > 0"
+        :list="connectionsWithStatusList"
+        :filter="filter"
+        :module="connectionAppObject"
+        :subItemsComponent="SubDatabaseList"
+        expandOnClick
+        :isExpandable="() => true"
+        :passProps="{showPinnedInsteadOfUnpin: true}"
+        :getIsExpanded="data => expandedConnections.includes(data._id)"
+        :setIsExpanded="handleSetIsExpanded"
+      />
+      <div v-else class="cl-empty">
+        <AEmpty description="No connections" />
+        <div class="cl-empty-actions">
+          <AButton type="primary" @click="openModal">
+            <template #icon><PlusOutlined /></template>
+            Add new connection
+          </AButton>
+        </div>
+      </div>
+      <ConnectionModal @register="register" @closeCurrentModal="closeModal"/>
+    </WidgetsInnerContainer>
+  </div>
 </template>
 
 <script lang="ts">
@@ -125,6 +125,21 @@ export default defineComponent({
       }
     }
 
+    const handleSetIsExpanded = async (data: any, value: boolean) => {
+      // Requirement: click connection should immediately show all databases.
+      // Ensure the server connection is refreshed/opened before rendering database list.
+      bootstrap.updateExpandedConnections((old) => (value ? [...old, data._id] : old.filter((x) => x != data._id)))
+      if (value) {
+        bootstrap.updateOpenedConnections((old) => [...old, data._id])
+        try {
+          await serverConnectionsRefreshApi({ conid: data._id, keepOpen: true })
+        } catch (e) {
+          // swallow; ConnectionAppObject/openConnection handles user-facing notifications
+          console.error(e)
+        }
+      }
+    }
+
     const [register, {openModal, closeModal}] = useModal()
 
     return {
@@ -142,6 +157,7 @@ export default defineComponent({
       connections,
       serverStatus,
       handleRefreshConnections,
+      handleSetIsExpanded,
       expandedConnections,
       openedConnections,
       updateExpandedConnections: bootstrap.updateExpandedConnections
@@ -151,6 +167,15 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.cl-root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* toolbar fixed; list scrolls inside WidgetsInnerContainer */
+  background: var(--theme-bg-0);
+}
+
 .cl-toolbar {
   display: flex;
   align-items: center;

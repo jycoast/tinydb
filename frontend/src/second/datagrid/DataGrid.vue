@@ -1,134 +1,25 @@
 <template>
-  <HorizontalSplitter
-    :initialValue="getInitialManagerSize()"
-    v-model:size="managerSize"
-    :hideFirst="collapsedLeftColumnStore">
-    <template #1>
-      <div class="left">
-        <ACollapse
-          v-model:activeKey="leftActiveKeys"
-          class="dg-left-collapse"
-          :bordered="false"
-          :ghost="true"
-          expandIconPosition="end"
-        >
-          <ACollapsePanel
-            v-if="(!freeTableColumn || isDynamicStructure) && !isFormView"
-            key="columns"
-            header="COLUMNS"
-          >
-            <ColumnManager
-              :conid="$attrs['conid']"
-              :database="$attrs['database']"
-              :display="display"
-              :managerSize="managerSize"
-              :isJsonView="isJsonView"
-              :isDynamicStructure="isDynamicStructure"
-              ref="domColumnManager"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel
-            v-if="isDynamicStructure && !!display?.filterable"
-            key="jsonFilters"
-            header="FILTERS"
-          >
-            <JsonViewFilters
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-              :isDynamicStructure="isDynamicStructure"
-              :useEvalFilters="useEvalFilters"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel
-            v-if="!!display?.filterable && !isDynamicStructure && display.filterCount != 0 && !isFormView"
-            key="tableFilters"
-            header="FILTERS"
-          >
-            <JsonViewFilters
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-              :isDynamicStructure="isDynamicStructure"
-              :useEvalFilters="useEvalFilters"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel
-            v-if="freeTableColumn && !isDynamicStructure"
-            key="freeColumns"
-            header="COLUMNS"
-          >
-            <FreeTableColumnEditor
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel
-            v-if="isFormView"
-            key="formFilters"
-            header="FILTERS"
-          >
-            <FormViewFilters
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-              :driver="formDisplay?.driver"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel
-            v-if="showReferences && !!display?.hasReferences"
-            key="references"
-            header="REFERENCES"
-          >
-            <ReferenceManager
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-            />
-          </ACollapsePanel>
-
-          <ACollapsePanel v-if="showMacros" key="macros" header="MACROS">
-            <MacroManager
-              v-bind="Object.assign({}, $props, $attrs)"
-              :managerSize="managerSize"
-            />
-          </ACollapsePanel>
-        </ACollapse>
-      </div>
-    </template>
-    <template #2>
-      <VerticalSplitter initialValue="70%" :isSplitter="!!selectedMacro && !isFormView && showMacros">
-        <template #1>
-          <component
-            v-if="isFormView"
-            :is="formViewComponent"
-            v-bind="Object.assign({}, $props, $attrs)"/>
-          <component
-            v-else-if="isJsonView"
-            :is="jsonViewComponent"
-            v-bind="Object.assign({}, $props, $attrs)"
-            v-model:loadedRows="loadedRowsRW"/>
-          <component
-            v-else
-            :is="gridCoreComponent"
-            v-bind="Object.assign({}, $props, $attrs)"
-            :collapsedLeftColumnStore="collapsedLeftColumnStore"
-            :formViewAvailable="!!formViewComponent && !!formDisplay"
-            :macroValues="extractMacroValuesForMacro(macroValues, selectedMacro)"
-            :macroPreview="selectedMacro"
-            v-model:loadedRows="loadedRowsRW"
-            v-model:selectedCellsPublished="selectedCellsPublished"
-            :changeSelectedColumns="handleChangeSelectedColumns"
-          />
-        </template>
-
-        <template #2>
-          <MacroDetail v-if="selectedMacro" :onExecute="handleExecuteMacro"/>
-        </template>
-      </VerticalSplitter>
-    </template>
-  </HorizontalSplitter>
+  <!-- Simplified grid view (Navicat-like): remove left manager panel (Columns/Macros/Tools). -->
+  <component
+    v-if="isFormView"
+    :is="formViewComponent"
+    v-bind="Object.assign({}, $props, $attrs)"
+  />
+  <component
+    v-else-if="isJsonView"
+    :is="jsonViewComponent"
+    v-bind="Object.assign({}, $props, $attrs)"
+    v-model:loadedRows="loadedRowsRW"
+  />
+  <component
+    v-else
+    :is="gridCoreComponent"
+    v-bind="Object.assign({}, $props, $attrs)"
+    :collapsedLeftColumnStore="collapsedLeftColumnStore"
+    :formViewAvailable="!!formViewComponent && !!formDisplay"
+    v-model:loadedRows="loadedRowsRW"
+    v-model:selectedCellsPublished="selectedCellsPublished"
+  />
 </template>
 
 <script lang="ts">

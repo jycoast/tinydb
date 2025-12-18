@@ -4,6 +4,7 @@ import {filterName} from '/@/second/tinydb-tools'
 import {Modal, message} from "ant-design-vue";
 import {ExclamationCircleOutlined} from "@ant-design/icons-vue";
 import {getLocalStorage} from '/@/second/utility/storageCache'
+import {removeLocalStorage} from '/@/second/utility/storageCache'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {get, uniq} from 'lodash-es'
 import AppObjectCore from '/@/second/appobj/AppObjectCore.vue'
@@ -159,7 +160,7 @@ export default defineComponent({
         void serverConnectionsRefreshApi({conid: data.value?._id})
       }
       const handleDisconnect = () => {
-        disconnectServerConnection(data.value?._id);
+        disconnectServerConnection(data.value);
       }
 
       const handleServerSummary = () => {
@@ -167,18 +168,6 @@ export default defineComponent({
           title: getConnectionLabel(data.value),
           icon: 'img server',
           tabComponent: 'ServerSummaryTab',
-          props: {
-            conid: data.value?._id,
-          },
-        });
-      }
-      const handleNewQuery = () => {
-        const tooltip = `${getConnectionLabel(data.value)}`;
-        openNewTab({
-          title: 'Query #',
-          icon: 'img sql-file',
-          tooltip,
-          tabComponent: 'QueryTab',
           props: {
             conid: data.value?._id,
           },
@@ -277,7 +266,68 @@ export default defineComponent({
 
 
 export function disconnectServerConnection(conid, showConfirmation = true) {
+  const bootstrap = useBootstrapStore()
 
+  const doDisconnect = async () => {
+    const id = conid?._id
+    if (!id) return
+
+    try {
+      // Close/refresh server-side connection pool
+      await serverConnectionsRefreshApi({ conid: id, keepOpen: false })
+    } catch (e) {
+      // Some engines may not support explicit close; still update UI state
+      console.warn('serverConnectionsRefreshApi(close) failed', e)
+    }
+
+    try {
+      // If current DB is on this connection, attempt to close that database connection too
+      const current = bootstrap.currentDatabase as any
+      const dbName = current?.connection?._id === id ? current?.name : conid?.defaultDatabase
+      if (dbName) {
+        await databaseConnectionsRefreshApi({ conid: id, database: dbName, keepOpen: false })
+      }
+    } catch (e) {
+      console.warn('databaseConnectionsRefreshApi(close) failed', e)
+    }
+
+    // Clear cached db list so next connect shows fresh databases
+    removeLocalStorage(`database_list_${id}`)
+
+    // Update UI state (collapse + not connected)
+    bootstrap.updateExpandedConnections((list) => list.filter((x) => x !== id))
+    bootstrap.updateOpenedConnections((list) => list.filter((x) => x !== id))
+    bootstrap.updateOpenedSingleDatabaseConnections((list) => list.filter((x) => x !== id))
+
+    if ((bootstrap.currentDatabase as any)?.connection?._id === id) {
+      bootstrap.setCurrentDatabase(null)
+    }
+  }
+
+  if (!conid?._id) return
+
+  if (!showConfirmation) {
+    void doDisconnect()
+    return
+  }
+
+  const r = Modal.confirm({
+    title: 'Confirm',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: `Disconnect ${getConnectionLabel(conid)}?`,
+    okText: 'Ok',
+    cancelText: 'Cancel',
+    onOk: async () => {
+      try {
+        await doDisconnect()
+        r.destroy()
+      } catch (e: any) {
+        // avoid throwing inside Modal handler
+        console.error(e)
+      }
+    },
+    onCancel: () => r.destroy(),
+  })
 }
 
 export function openConnection(connection, bootstrap) {

@@ -74,11 +74,18 @@ export default defineComponent({
     })
 
     const childrenMatched = computed(() => {
-      return !unref(groupFunc) ? (unref(list)!).filter(data => {
-        const matcher = module.createChildMatcher && module.createChildMatcher(data)
-        if (matcher && !matcher(filter.value)) return false
-        return true
-      }) : null
+      // Only auto-expand by search when:
+      // - we are NOT grouping
+      // - filter is non-empty
+      // - module provides createChildMatcher
+      // Otherwise default is "no auto expand" (collapsed).
+      if (unref(groupFunc)) return null
+      if (!filter.value) return []
+      if (!module?.createChildMatcher) return []
+      return (unref(list) || []).filter((data) => {
+        const matcher = module.createChildMatcher(data)
+        return matcher ? !!matcher(filter.value) : false
+      })
     })
 
     const listGrouped = computed(() => {
@@ -122,7 +129,7 @@ export default defineComponent({
         expandIconFunc={unref(expandIconFunc)}
         disableContextMenu={unref(disableContextMenu)}
         filter={unref(filter)}
-        isExpandedBySearch={(childrenMatched.value)!.includes(data)}
+        isExpandedBySearch={Array.isArray(childrenMatched.value) && childrenMatched.value.includes(data)}
         passProps={unref(passProps)}
         getIsExpanded={unref(getIsExpanded)}
         setIsExpanded={unref(setIsExpanded)}
