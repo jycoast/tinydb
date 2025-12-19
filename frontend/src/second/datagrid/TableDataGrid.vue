@@ -3,7 +3,7 @@
     <template #1>
       <DataGrid
         v-bind="Object.assign({}, $props, $attrs)"
-        :gridCoreComponent="SqlDataGridCore"
+        :gridCoreComponent="AntdSqlDataGridCore"
         :formViewComponent="SqlFormView"
         :display="display"
         :formDisplay="formDisplay"
@@ -47,7 +47,7 @@ import stableStringify from 'json-stable-stringify'
 import VerticalSplitter from '/@/second/elements/VerticalSplitter.vue'
 import DataGrid from '/@/second/datagrid/DataGrid.vue'
 import ReferenceHeader from '/@/second/datagrid/ReferenceHeader.vue'
-import SqlDataGridCore from '/@/second/datagrid/SqlDataGridCore'
+import AntdSqlDataGridCore from '/@/second/datagrid/AntdSqlDataGridCore'
 import SqlFormView from '/@/second/formview/SqlFormView'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {useConnectionInfo, useDatabaseInfo, useDatabaseServerVersion} from '/@/api/bridge'
@@ -114,7 +114,7 @@ export default defineComponent({
     VerticalSplitter,
     DataGrid,
     ReferenceHeader,
-    SqlDataGridCore,
+    AntdSqlDataGridCore,
     SqlFormView
   },
   setup(props) {
@@ -261,7 +261,12 @@ export default defineComponent({
       setChildConfig(createGridConfig(), value)
     }
 
+    // Back-compat alias: some templates/HMR snapshots may still reference SqlDataGridCore.
+    // Keep it pointing to the new Antd core to avoid runtime ReferenceError.
+    const SqlDataGridCore = AntdSqlDataGridCore as any
+
     return {
+      AntdSqlDataGridCore,
       SqlDataGridCore,
       SqlFormView,
       handleReferenceSourceChanged,

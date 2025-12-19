@@ -123,11 +123,11 @@ export default class ChangeSetGrider extends Grider {
   }
 
   get editable() {
-    return this.display.editable;
+    return !!this.display?.editable;
   }
 
   get canInsert() {
-    return !!this.display.baseTableOrCollection;
+    return !!this.display?.baseTableOrCollection;
   }
 
   getRowData(index: number) {

@@ -10,6 +10,11 @@ import {message} from 'ant-design-vue'
 export default defineComponent({
   name: 'LoadingDataGridCore',
   props: {
+    coreComponent: {
+      // Allow swapping the visual grid implementation (eg. Ant Design Table) while keeping the same loader logic.
+      type: [Object, String, Function] as PropType<any>,
+      default: () => DataGridCore,
+    },
     loadDataPage: {
       type: Function as PropType<(props: any, offset: any, limit: any) => Promise<any>>,
     },
@@ -160,7 +165,9 @@ export default defineComponent({
       emit('update:selectedCellsPublished', selectedCellsPublishedRW.value)
     })
 
-    return () => <DataGridCore
+    return () => {
+      const Core: any = (props as any).coreComponent || DataGridCore
+      return <Core
       {...Object.assign({}, props, attrs)}
       ref={domGrid}
       vModel:selectedCellsPublished={selectedCellsPublishedRW.value}
@@ -172,6 +179,7 @@ export default defineComponent({
       loadedTime={loadedTime.value}
       grider={grider.value}
       display={display.value}
-    />
+      />
+    }
   }
 })
