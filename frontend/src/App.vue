@@ -30,7 +30,6 @@ const {getAntdLocale} = useLocale();
 
 initPluginsProvider()
 
-const appStore = useAppStore()
 const bootstrap = useBootstrapStore()
 const {loadingPluginStore} = storeToRefs(bootstrap)
 

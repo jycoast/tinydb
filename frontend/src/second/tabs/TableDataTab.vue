@@ -13,7 +13,13 @@
           :dispatchChangeSet="dispatchChangeSet"
         />
       </div>
-      <div class="table-tab-ddl">
+      <!-- Splitter: resize DDL panel width -->
+      <div
+        class="table-tab-splitter"
+        v-splitterDrag="'clientX'"
+        :resizeSplitter="(e) => handleResizeDdl(e.detail)"
+      />
+      <div class="table-tab-ddl" :style="ddlPanelStyle">
         <div class="table-tab-ddl-header">DDL</div>
         <div class="table-tab-ddl-body">
           <div v-if="ddlLoading" class="table-tab-ddl-loading">Loading DDL…</div>
@@ -31,7 +37,7 @@
     <template #toolstrip>
       <ToolStripCommandSplitButton
         :buttonLabel="autoRefreshStarted ? `Refresh (every ${autoRefreshInterval}s)` : null"
-        :commands="['dataGrid.refresh', ...createAutoRefreshMenu()]"
+        :commands="(['dataGrid.refresh', ...createAutoRefreshMenu()] as any)"
         hideDisabled
       />
 
@@ -150,6 +156,21 @@ export default defineComponent({
       ]
     }
 
+    // --- Resizable right DDL panel ---
+    const ddlWidth = ref<number>(Number(getLocalStorage('tableDataTab_ddl_width', 420)) || 420)
+    const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
+
+    function handleResizeDdl(diff: number) {
+      // dragging splitter: diff is mouse deltaX; moving right should increase DDL width
+      ddlWidth.value = clamp(ddlWidth.value - diff, 260, 900)
+      setLocalStorage('tableDataTab_ddl_width', ddlWidth.value)
+    }
+
+    const ddlPanelStyle = computed(() => ({
+      width: `${ddlWidth.value}px`,
+      flex: `0 0 ${ddlWidth.value}px`,
+    }))
+
     // --- Right-side DDL (SHOW CREATE TABLE) ---
     const ddlLoading = ref(false)
     const ddlText = ref('')
@@ -179,10 +200,10 @@ export default defineComponent({
     const ddlEditorOptions = {
       fontSize: 12,
       tabSize: 2,
-      useSoftTabs: true,
-      wrap: true,
+      useSoftTabs: false,
+      wrap: false,
       showLineNumbers: false,
-      showGutter: true,
+      showGutter: false,
       highlightActiveLine: false,
       highlightGutterLine: false,
       showPrintMargin: false,
@@ -243,6 +264,8 @@ export default defineComponent({
       createAutoRefreshMenu,
       autoRefreshStarted,
       autoRefreshInterval,
+      ddlPanelStyle,
+      handleResizeDdl,
       ddlLoading,
       ddlText,
       ddlError,
@@ -271,14 +294,39 @@ export default defineComponent({
 }
 
 .table-tab-ddl {
-  flex: 0 0 420px;
-  width: 420px;
+  /* width is controlled by ddlPanelStyle */
   min-width: 320px;
-  border-left: 1px solid var(--theme-border);
   background: var(--theme-bg-0);
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.table-tab-splitter {
+  flex: 0 0 6px;
+  width: 6px;
+  cursor: col-resize;
+  position: relative;
+  background: transparent;
+}
+
+.table-tab-splitter::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--theme-border);
+  transform: translateX(-50%);
+}
+
+.table-tab-splitter:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.table-tab-splitter:hover::before {
+  background: var(--theme-bg-selected);
 }
 
 .table-tab-ddl-header {
