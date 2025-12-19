@@ -181,7 +181,7 @@ export default defineComponent({
       tabSize: 2,
       useSoftTabs: true,
       wrap: true,
-      showLineNumbers: true,
+      showLineNumbers: false,
       showGutter: true,
       highlightActiveLine: false,
       highlightGutterLine: false,
@@ -292,7 +292,8 @@ export default defineComponent({
 .table-tab-ddl-body {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  position: relative; /* AceEditor is absolutely positioned; contain it within the DDL panel */
+  overflow: hidden; /* Ace handles its own scrolling */
   padding: 0;
 }
 

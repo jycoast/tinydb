@@ -23,10 +23,13 @@ func main() {
 		Title:  "tinydb",
 		Width:  1024,
 		Height: 768,
+		// Use a custom (frontend-rendered) titlebar so we can force a pure white background on Windows.
+		Frameless:       true,
+		CSSDragProperty: "--wails-draggable",
+		CSSDragValue:    "drag",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		// Keep the native titlebar in light mode so it stays white on Windows.
 		Windows:          &windows.Options{Theme: windows.Light},
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		LogLevel:         logger.DEBUG,

@@ -7,10 +7,10 @@ import (
 
 func (s *Source) UniqueNames(sql string) (*modules.MysqlRowsResult, error) {
 	rows, err := s.sqlDB.Raw(sql).Rows()
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	columns := getSqlColumns(rows)
 
@@ -33,10 +33,10 @@ func (s *Source) UniqueNames(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) Indexes(sql string) (*modules.MysqlRowsResult, error) {
 	rows, err := s.sqlDB.Raw(sql).Rows()
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	columns := getSqlColumns(rows)
 
@@ -65,10 +65,10 @@ func (s *Source) Indexes(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) Tables(sql string) (*modules.MysqlRowsResult, error) {
 	rows, err := s.sqlDB.Raw(sql).Rows()
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	columns := getSqlColumns(rows)
 
@@ -97,10 +97,10 @@ func (s *Source) Tables(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) Columns(sql string) (*modules.MysqlRowsResult, error) {
 	sqlQuery, err := execute(s.sqlDB, sql)
-	defer sqlQuery.Rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer sqlQuery.Rows.Close()
 	var pureName, columnName, isNullable, dataType, columnComment, columnType string
 	var charMaxLength, numericPrecision, numericScale *int
 	var defaultValue, extra interface{}
@@ -144,10 +144,10 @@ func getSqlColumns(rows *sql.Rows) (columns []*modules.Column) {
 
 func (s *Source) PrimaryKeys(sql string) (*modules.MysqlRowsResult, error) {
 	rows, err := s.sqlDB.Raw(sql).Rows()
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	columns := getSqlColumns(rows)
 
@@ -171,10 +171,10 @@ func (s *Source) PrimaryKeys(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) ForeignKeys(sql string) (*modules.MysqlRowsResult, error) {
 	sqlQuery, err := execute(s.sqlDB, sql)
-	defer sqlQuery.Rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer sqlQuery.Rows.Close()
 
 	var foreignKeys []*modules.ForeignKeys
 	var constraintName, pureName, updateAction, deleteAction, refTableName, columnName, refColumnName string
@@ -206,10 +206,10 @@ func (s *Source) ForeignKeys(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) Views(sql string) (*modules.MysqlRowsResult, error) {
 	sqlQuery, err := execute(s.sqlDB, sql)
-	defer sqlQuery.Rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer sqlQuery.Rows.Close()
 
 	var pureName, modifyDate string
 	var views []*modules.View
@@ -230,10 +230,10 @@ func (s *Source) Views(sql string) (*modules.MysqlRowsResult, error) {
 
 func (s *Source) Programmables(sql string) (*modules.MysqlRowsResult, error) {
 	sqlQuery, err := execute(s.sqlDB, sql)
-	defer sqlQuery.Rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer sqlQuery.Rows.Close()
 
 	var programmables []*modules.Programmable
 	var pureName, objectType, modifyDate, returnDataType string

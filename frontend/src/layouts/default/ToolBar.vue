@@ -1,25 +1,29 @@
 <template>
-  <div style="width: 100%; height: 100%; display: flex; align-items: center; padding: 4px 8px; position: relative; z-index: 201;">
-    <Space :size="0" style="width: 100%;">
-      <Space v-for="group in toolbarGroups" :key="group.key" :size="0" style="border-right: 1px solid var(--theme-border); padding-right: 8px; margin-right: 8px;">
-        <Button
-          v-for="item in group.items"
-          :key="item.id"
-          :disabled="item.disabled"
-          :title="item.toolbarName || item.name"
-          type="text"
-          style="pointer-events: auto;"
-          @click="handleToolbarClick(item)"
-        >
-          <template v-if="getToolbarAntIcon(item)">
-            <span class="toolbar-icon"><component :is="getToolbarAntIcon(item)" /></span>
-          </template>
-          <template v-else-if="item.icon">
-            <span class="toolbar-icon"><FontIcon :icon="item.icon" /></span>
-          </template>
-          {{ item.toolbarName || item.name }}
-        </Button>
-      </Space>
+  <div class="toolbar-root">
+    <Space :size="0" class="toolbar-groups">
+      <template v-for="(group, idx) in toolbarGroups" :key="group.key">
+        <Space :size="4" class="toolbar-group">
+          <Tooltip
+            v-for="item in group.items"
+            :key="item.id"
+            :title="item.toolbarName || item.name"
+          >
+            <Button
+              :disabled="item.disabled"
+              type="text"
+              class="toolbar-btn"
+              @click="handleToolbarClick(item)"
+            >
+              <template #icon>
+                <component v-if="getToolbarAntIcon(item)" :is="getToolbarAntIcon(item)" />
+                <FontIcon v-else-if="item.icon" :icon="item.icon" />
+              </template>
+              <span class="toolbar-label">{{ item.toolbarName || item.name }}</span>
+            </Button>
+          </Tooltip>
+        </Space>
+        <Divider v-if="idx < toolbarGroups.length - 1" type="vertical" class="toolbar-divider" />
+      </template>
     </Space>
   </div>
 </template>
@@ -28,7 +32,7 @@
 import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
-import { Button, Space } from 'ant-design-vue'
+import { Button, Divider, Space, Tooltip } from 'ant-design-vue'
 import { CodeOutlined, LinkOutlined } from '@ant-design/icons-vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import runCommand from '/@/second/commands/runCommand'
@@ -112,6 +116,46 @@ function handleToolbarClick(item: any) {
 </script>
 
 <style scoped>
+.toolbar-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  position: relative;
+  z-index: 201;
+}
+
+.toolbar-groups {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.toolbar-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.toolbar-divider {
+  height: 16px;
+  margin: 0 8px;
+  border-inline-start-color: var(--theme-border);
+}
+
+.toolbar-btn {
+  pointer-events: auto;
+  padding: 0 6px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.toolbar-label {
+  white-space: nowrap;
+}
+
 .toolbar-icon {
   display: inline-flex;
   align-items: center;

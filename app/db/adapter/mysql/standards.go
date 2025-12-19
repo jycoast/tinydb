@@ -103,10 +103,46 @@ func (s *Source) Query(sql string) (interface{}, error) {
 	// Validate SQL to prevent syntax errors from empty identifiers
 	// Trim SQL to handle trailing whitespace/newlines
 	sqlTrimmed := strings.TrimSpace(sql)
-	
-	// Check for invalid patterns like `` (empty backticks) which indicate empty table/column names
-	if strings.Contains(sqlTrimmed, "``") || strings.Contains(sqlTrimmed, "` `") {
-		err := fmt.Errorf("invalid SQL: contains empty identifier (table or column name is empty)")
+
+	// Check for empty identifier tokens like `` (backtick-backtick with nothing inside).
+	// IMPORTANT: Do NOT treat escaped backticks inside a quoted identifier (e.g. `a``b`) as invalid.
+	// We only flag "``" when it is followed by a delimiter/end (space, dot, comma, etc).
+	isIdentDelimiter := func(b byte) bool {
+		switch b {
+		case ' ', '\t', '\n', '\r', '.', ',', ';', ')', ']', '}':
+			return true
+		default:
+			return false
+		}
+	}
+	findEmptyIdentTokenPos := func(s string) int {
+		// look for "``" followed by a delimiter/end => empty identifier token: ``
+		// NOTE: escaped backtick inside identifier looks like `a``b` (`` followed by 'b'), which we allow.
+		for i := 0; i+1 < len(s); i++ {
+			if s[i] == '`' && s[i+1] == '`' {
+				if i+2 >= len(s) || isIdentDelimiter(s[i+2]) {
+					return i
+				}
+			}
+			// Also treat backtick + whitespace + backtick as empty/blank identifier: ` ` or `\t`
+			if s[i] == '`' && i+2 < len(s) && (s[i+1] == ' ' || s[i+1] == '\t' || s[i+1] == '\n' || s[i+1] == '\r') && s[i+2] == '`' {
+				return i
+			}
+		}
+		return -1
+	}
+	if pos := findEmptyIdentTokenPos(sqlTrimmed); pos >= 0 {
+		// include a short snippet for debugging in UI logs
+		start := pos - 80
+		if start < 0 {
+			start = 0
+		}
+		end := pos + 160
+		if end > len(sqlTrimmed) {
+			end = len(sqlTrimmed)
+		}
+		snippet := sqlTrimmed[start:end]
+		err := fmt.Errorf("invalid SQL: contains empty identifier (table or column name is empty) at pos=%d. context=%s", pos, snippet)
 		logger.Errorf("get mysql query failed: %v", err)
 		return &modules.MysqlRowsResult{Rows: make([]map[string]interface{}, 0), Columns: []*modules.Column{}}, err
 	}

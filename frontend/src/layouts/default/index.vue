@@ -9,10 +9,8 @@
     </div>
   </div>
   <Layout class="root tinydb-screen" style="height: 100%; width: 100%; overflow: hidden;">
-    <!-- 顶部菜单栏 -->
-    <LayoutHeader style="height: var(--dim-menu-bar-height); line-height: var(--dim-menu-bar-height); padding: 0; position: relative; z-index: 300; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
-      <MenuBar/>
-    </LayoutHeader>
+    <!-- 自定义标题栏（Frameless window）：集成 MenuBar -->
+    <TitleBar/>
 
     <!-- 工具栏 -->
     <LayoutHeader style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
@@ -75,7 +73,7 @@ import TabRegister from './TabRegister.vue'
 import StatusBar from '/@/second/widgets/StatusBar.vue'
 import {WarningOutlined} from '@ant-design/icons-vue'
 import ToolBar from './ToolBar.vue'
-import MenuBar from './MenuBar.vue'
+import TitleBar from './TitleBar.vue'
 import bus from '/@/second/utility/bus'
 import {Layout} from 'ant-design-vue'
 

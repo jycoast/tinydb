@@ -157,8 +157,18 @@ export default defineComponent({
       extendedDbInfo.value = extendDatabaseInfoFromApps(dbinfo.value, apps.value)
     })
 
+    const normalizedSchemaName = computed(() => {
+      const s = schemaName.value
+      return (typeof s === 'string' && s.trim() === '') ? undefined : s
+    })
+
+    const normalizedPureName = computed(() => {
+      const s = pureName.value
+      return (typeof s === 'string') ? s.trim() : s
+    })
+
     const display = computed(() => (connection.value && extensions.value && serverVersion.value) ? new TableGridDisplay(
-      {schemaName: schemaName.value, pureName: pureName.value!},
+      {schemaName: normalizedSchemaName.value, pureName: normalizedPureName.value!},
       findEngineDriver(connection.value, <ExtensionsDirectory>extensions.value!),
       config.value!,
       setConfig.value as ChangeConfigFunc,
@@ -172,7 +182,7 @@ export default defineComponent({
     ) as GridDisplay : null)
 
     const formDisplay = computed(() => (connection.value && extensions.value && serverVersion.value) ? new TableFormViewDisplay(
-      {schemaName: schemaName.value, pureName: pureName.value!},
+      {schemaName: normalizedSchemaName.value, pureName: normalizedPureName.value!},
       findEngineDriver(connection.value, <ExtensionsDirectory>extensions.value!),
       config.value!,
       setConfig.value as ChangeConfigFunc,

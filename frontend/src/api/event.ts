@@ -9,6 +9,7 @@ import Mongo from '/@/second/plugins/tinydb-plugin-mongo'
 import Mysql from '/@/second/plugins/tinydb-plugin-mysql'
 
 let runtimeEventsInitialized = false
+let warnedInvalidSqlOnce = false
 
 export default function dispatchRuntimeEvent() {
   if (runtimeEventsInitialized) return
@@ -50,7 +51,64 @@ export default function dispatchRuntimeEvent() {
       if (driver) {
         const dmp = driver.createDumper()
         dumpSqlSelect(dmp, selectParams as Select)
-        EventsEmit('handleSqlSelectReturn', dmp?.s || '')
+        const out = dmp?.s || ''
+
+        // Guard: if generated SQL contains an empty quoted identifier token `` (likely missing table/column name),
+        // fallback to a minimal safe SELECT to keep table browsing usable.
+        const hasEmptyIdentToken = (s: string) => {
+          const isDelim = (ch: string) => {
+            return (
+              ch === '' ||
+              ch === ' ' ||
+              ch === '\t' ||
+              ch === '\n' ||
+              ch === '\r' ||
+              ch === '.' ||
+              ch === ',' ||
+              ch === ';' ||
+              ch === ')' ||
+              ch === ']' ||
+              ch === '}'
+            )
+          }
+          for (let i = 0; i + 1 < s.length; i++) {
+            // empty identifier: `` followed by delimiter/end
+            if (s[i] === '`' && s[i + 1] === '`') {
+              const next = (i + 2 < s.length) ? s[i + 2] : ''
+              if (isDelim(next)) return true
+            }
+            // blank identifier: ` ` (or whitespace) then `
+            if (s[i] === '`' && i + 2 < s.length && /\s/.test(s[i + 1]) && s[i + 2] === '`') {
+              return true
+            }
+          }
+          return false
+        }
+
+        if (out && hasEmptyIdentToken(out)) {
+          try {
+            const name = (selectParams as any)?.from?.name || {}
+            const pureName = typeof name?.pureName === 'string' ? name.pureName.trim() : ''
+            const schemaName = typeof name?.schemaName === 'string' ? name.schemaName.trim() : ''
+            const limit = Number((selectParams as any)?.range?.limit) || 200
+            const quote = (s: string) => `\`${String(s).replace(/`/g, '``')}\``
+            if (pureName) {
+              const from = schemaName ? `${quote(schemaName)}.${quote(pureName)}` : `${quote(pureName)}`
+              const fallbackSql = `SELECT * FROM ${from} LIMIT ${limit};`
+              if (!warnedInvalidSqlOnce) {
+                warnedInvalidSqlOnce = true
+                // eslint-disable-next-line no-console
+                console.warn('[tinydb] Generated invalid SQL (empty identifier), using fallback SELECT', { out, fallbackSql, selectParams })
+              }
+              EventsEmit('handleSqlSelectReturn', fallbackSql)
+              return
+            }
+          } catch {
+            // ignore fallback build errors
+          }
+        }
+
+        EventsEmit('handleSqlSelectReturn', out)
         return
       }
 

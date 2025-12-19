@@ -29,8 +29,6 @@ export default function runCommand(id: string) {
 
     case 'new.table':
       // 打开创建表的 Modal
-      // 由于 runCommand 不在组件上下文中，我们需要通过事件或其他方式触发
-      // 这个命令通常从 SqlObjectList 组件中调用，那里已经注册了 Modal
       if (currentDatabase.value?.connection?._id && currentDatabase.value?.name) {
         // 触发一个自定义事件，让组件监听并打开 Modal
         window.dispatchEvent(new CustomEvent('open-create-table-modal', {

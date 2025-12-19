@@ -5,9 +5,9 @@
     
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <Space>
-          <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList">转 IN 列表</AButton>
-          <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql">SQL 美化</AButton>
-          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection">去重</AButton>
+          <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList" size="small">转 IN 列表</AButton>
+          <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql" size="small">SQL 美化</AButton>
+          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection" size="small">去重</AButton>
         </Space>
       </div>
 
@@ -16,7 +16,7 @@
         <ASelect
           v-model:value="selectedConid"
           style="min-width: 220px"
-          size="middle"
+          size="small"
           show-search
           allow-clear
           placeholder="选择数据源"
@@ -27,7 +27,7 @@
         <ASelect
           v-model:value="selectedObject"
           style="min-width: 260px"
-          size="middle"
+          size="small"
           show-search
           allow-clear
           placeholder="选择库/表"
@@ -60,10 +60,6 @@
         </AButton>
         <AButton :icon="h(DeleteOutlined)" @click="handleClear">清空</AButton>
         </Space>
-
-        <Tag v-if="effectiveConid && effectiveDatabaseName" color="blue">
-          {{ connectionName }} / {{ effectiveDatabaseName }}
-        </Tag>
       </div>
 
     </div>

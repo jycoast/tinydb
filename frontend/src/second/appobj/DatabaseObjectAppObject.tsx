@@ -8,6 +8,7 @@ import {getConnectionInfo} from '/@/api/bridge'
 import fullDisplayName from '/@/second/utility/fullDisplayName'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
 import openNewTab from '/@/second/utility/openNewTab'
+import {message} from 'ant-design-vue'
 
 export const extractKey = ({schemaName, pureName}) =>
   (schemaName ? `${schemaName}.${pureName}` : pureName)
@@ -468,7 +469,16 @@ export async function openDatabaseObjectDetail(
 }
 
 export function handleDatabaseObjectClick(data, forceNewTab = false) {
-  const {schemaName, pureName, conid, database, objectTypeField} = data
+  const schemaNameRaw = data?.schemaName
+  const pureNameRaw = data?.pureName
+  const schemaName = (typeof schemaNameRaw === 'string' && schemaNameRaw.trim() === '') ? undefined : schemaNameRaw
+  const pureName = (typeof pureNameRaw === 'string') ? pureNameRaw.trim() : pureNameRaw
+  const {conid, database, objectTypeField} = data
+
+  if (!pureName) {
+    message.error('表名为空，无法打开表数据（pureName is empty）')
+    return
+  }
   // const configuredAction = getCurrentSettings()[`defaultAction.dbObjectClick.${objectTypeField}`];
   const configuredAction = undefined
   const overrideMenu = menus[objectTypeField].find(x => x.label && x.label == configuredAction);
