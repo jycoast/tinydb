@@ -8,7 +8,7 @@
     </div>
     <DataFilterControl
       :filterType="dynamicFilterType"
-      :filter="dynamicFilter"
+      :filter="dynamicFilter || undefined"
       :setFilter="handlerSetFilter"
     />
   </div>
@@ -17,7 +17,7 @@
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs, unref} from 'vue'
 import DataFilterControl from '/@/second/datagrid/DataFilterControl.vue'
-import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
+import ColumnLabelComponent from '/@/second/elements/ColumnLabel.vue'
 import InlineButton from '/@/second/buttons/InlineButton.vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import {getFilterType} from '/@/second/tinydb-filterparser'
@@ -27,7 +27,7 @@ export default defineComponent({
   name: 'JsonViewFilterColumn',
   components: {
     DataFilterControl,
-    ColumnLabel,
+    ColumnLabel: ColumnLabelComponent,
     InlineButton,
     FontIcon,
   },

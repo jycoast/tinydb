@@ -25,6 +25,7 @@
     <input ref="domFocusField" class="focus-field" @keydown="handleGridKeyDown"/>
     <table
       class="table"
+      :class="{ 'force-horizontal-scroll': shouldShowHorizontalScroll }"
       @contextmenu.prevent="handleContext"
       @dblclick="handleGridDoubleClick"
       @mousedown="handleGridMouseDown"
@@ -127,6 +128,7 @@
       </tbody>
     </table>
     <HorizontalScrollBar
+      v-if="shouldShowHorizontalScroll"
       :minimum="0"
       :maximum="maxScrollColumn"
       :viewportRatio="(gridScrollAreaWidth && columnSizes) ? gridScrollAreaWidth / columnSizes.getVisibleScrollSizeSum() : null"
@@ -449,6 +451,18 @@ export default defineComponent({
     ))
     const maxScrollColumn = computed(() => (columns.value && columnSizes.value) ?
       columnSizes.value?.scrollInView(0, columns.value.length - 1 - columnSizes.value.frozenCount, gridScrollAreaWidth.value) : 0)
+    
+    // 计算表格总宽度，用于判断是否需要显示滚动条
+    const totalTableWidth = computed(() => {
+      if (!columnSizes.value) return 0
+      return headerColWidth.value + columnSizes.value.getVisibleScrollSizeSum()
+    })
+    
+    // 判断是否需要强制显示水平滚动条
+    const shouldShowHorizontalScroll = computed(() => {
+      if (!columnSizes.value || !containerWidth.value) return false
+      return totalTableWidth.value > gridScrollAreaWidth.value
+    })
 
     const griders = computed(() => {
       return grider.value
@@ -1280,6 +1294,7 @@ export default defineComponent({
       filterCellForRow,
       maxScrollColumn,
       gridScrollAreaWidth,
+      shouldShowHorizontalScroll,
       visibleRowCountUpperBound,
       visibleRowCountLowerBound,
       visibleRealColumns,
@@ -1325,9 +1340,45 @@ export default defineComponent({
   left: 0;
   top: 0;
   bottom: 20px;
-  overflow: scroll;
+  right: 20px; /* 为垂直滚动条留出空间 */
+  overflow: auto;
+  overflow-y: auto;
   border-collapse: collapse;
   outline: none;
+  /* 确保滚动条可见 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-border) transparent;
+  /* 确保表格内容可以超出容器宽度 */
+  min-width: 100%;
+}
+
+/* 当表格宽度超过容器时，强制显示水平滚动条 */
+.table.force-horizontal-scroll {
+  overflow-x: scroll;
+}
+
+/* Webkit 浏览器滚动条样式 */
+.table::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.table::-webkit-scrollbar-track {
+  background: var(--theme-bg-0);
+}
+
+.table::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 6px;
+  border: 2px solid var(--theme-bg-0);
+}
+
+.table::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-font-3);
+}
+
+.table::-webkit-scrollbar-corner {
+  background: var(--theme-bg-0);
 }
 
 .header-cell {

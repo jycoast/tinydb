@@ -61,12 +61,35 @@ export default defineComponent({
 
 <style scoped>
 .main {
-  overflow-y: scroll;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: 20px;
   position: absolute;
   right: 0px;
-  width: 20px;
   bottom: 16px;
   top: 0;
+  /* 确保滚动条可见 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-border) transparent;
+  z-index: 10;
+}
+
+/* Webkit 浏览器滚动条样式 */
+.main::-webkit-scrollbar {
+  width: 12px;
+}
+
+.main::-webkit-scrollbar-track {
+  background: var(--theme-bg-0);
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 6px;
+  border: 2px solid var(--theme-bg-0);
+}
+
+.main::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-font-3);
 }
 </style>

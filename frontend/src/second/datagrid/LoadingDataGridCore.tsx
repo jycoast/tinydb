@@ -112,7 +112,16 @@ export default defineComponent({
         if (allRowCount.value == null) await handleLoadRowCount()
         const loadedRowsRW = [...loadedRows.value, ...nextRows]
         emit('update:loadedRows', loadedRowsRW)
-        isLoadedAll.value = nextRows.length === 0
+        
+        // 判断是否已加载完所有数据：
+        // 1. 返回的数据为空数组
+        // 2. 返回的数据长度小于请求的 limit（说明已经是最后一页）
+        // 3. 已加载的数据总数 >= 总行数（如果总行数已知）
+        const pageSize = getIntSettingsValue('dataGrid.pageSize', 100, 5, 1000)
+        const isLastPage = nextRows.length === 0 || nextRows.length < pageSize
+        const hasReachedTotal = allRowCount.value != null && loadedRowsRW.length >= allRowCount.value
+        
+        isLoadedAll.value = isLastPage || hasReachedTotal
       }
 
       if (loadNextDataRef.get()) {
@@ -121,10 +130,19 @@ export default defineComponent({
     }
 
     function handleLoadNextData() {
-      if (!isLoadedAll.value && !errorMessage.value && (grider.value && !grider.value.disableLoadNextPage)) {
-        if (isFunction(dataPageAvailable.value) && dataPageAvailable.value!(Object.assign({}, props, attrs))) {
-          void loadNextData()
-        }
+      // 如果已经加载完所有数据，或者有错误，或者禁用加载下一页，则不加载
+      if (isLoadedAll.value || errorMessage.value || (grider.value && grider.value.disableLoadNextPage)) {
+        return
+      }
+      
+      // 如果总行数已知且已加载的数据 >= 总行数，则不加载
+      if (allRowCount.value != null && loadedRows.value.length >= allRowCount.value) {
+        isLoadedAll.value = true
+        return
+      }
+      
+      if (isFunction(dataPageAvailable.value) && dataPageAvailable.value!(Object.assign({}, props, attrs))) {
+        void loadNextData()
       }
     }
 

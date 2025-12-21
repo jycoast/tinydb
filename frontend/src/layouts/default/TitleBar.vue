@@ -11,20 +11,20 @@
     </div>
     <div class="tb-right" :style="noDragStyle" @dblclick.stop>
       <Tooltip title="最小化">
-        <Button type="text" class="tb-btn" @click="minimise">
+        <Button type="reset" class="tb-btn" @click="minimise">
           <template #icon><MinusOutlined /></template>
         </Button>
       </Tooltip>
       <Tooltip :title="isMaximised ? '还原' : '最大化'">
-        <Button type="text" class="tb-btn" @click="toggleMaximise">
+        <Button type="reset" class="tb-btn" @click="toggleMaximise">
           <template #icon>
-            <CopyOutlined v-if="isMaximised" />
+            <MinusSquareOutlined v-if="isMaximised" />
             <BorderOutlined v-else />
           </template>
         </Button>
       </Tooltip>
       <Tooltip title="关闭">
-        <Button type="text" class="tb-btn tb-btn-close" @click="closeWindow">
+        <Button type="reset" class="tb-btn tb-btn-close" @click="closeWindow">
           <template #icon><CloseOutlined /></template>
         </Button>
       </Tooltip>
@@ -35,10 +35,10 @@
 <script lang="ts" setup>
 import {onMounted, onUnmounted, ref} from 'vue'
 import {Button, Tooltip} from 'ant-design-vue'
-import {BorderOutlined, CloseOutlined, CopyOutlined, MinusOutlined} from '@ant-design/icons-vue'
+import {BorderOutlined, CloseOutlined, MinusOutlined, MinusSquareOutlined} from '@ant-design/icons-vue'
 import {WindowIsMaximised, WindowMinimise, WindowToggleMaximise, Quit} from '/@/wailsjs/runtime/runtime'
 import MenuBar from './MenuBar.vue'
-import logoUrl from '/@/assets/images/logo.png'
+import logoUrl from '/src/assets/images/logo.png'
 
 const isMaximised = ref(false)
 
