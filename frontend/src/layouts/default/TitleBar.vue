@@ -99,6 +99,9 @@ onUnmounted(() => {
   align-items: center;
   padding-left: 8px;
   gap: 8px;
+  /* 左侧区域可拖动，但内部交互元素不可拖动 */
+  -webkit-app-region: drag;
+  --wails-draggable: drag;
 }
 
 .tb-app {

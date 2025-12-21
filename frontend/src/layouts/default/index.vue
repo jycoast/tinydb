@@ -13,7 +13,7 @@
     <TitleBar/>
 
     <!-- 工具栏 -->
-    <LayoutHeader style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
+    <LayoutHeader class="toolbar-header" style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
       <ToolBar/>
     </LayoutHeader>
 
@@ -217,6 +217,14 @@ subscribeRecentDatabaseSwitch()
 
 .big-icon {
   font-size: 20pt;
+}
+
+/* 工具栏区域可拖动窗口 */
+.toolbar-header {
+  /* Make the toolbar draggable in frameless mode */
+  -webkit-app-region: drag;
+  /* Wails CSSDragProperty hook (main.go sets CSSDragProperty/Value) */
+  --wails-draggable: drag;
 }
 
 @media only screen and (max-width: 600px) {

@@ -124,6 +124,9 @@ function handleToolbarClick(item: any) {
   padding: 4px 8px;
   position: relative;
   z-index: 201;
+  /* 工具栏容器本身可拖动，但内部按钮不可拖动 */
+  -webkit-app-region: drag;
+  --wails-draggable: drag;
 }
 
 .toolbar-groups {
@@ -142,6 +145,9 @@ function handleToolbarClick(item: any) {
   height: 16px;
   margin: 0 8px;
   border-inline-start-color: var(--theme-border);
+  /* 分隔符不可拖动 */
+  -webkit-app-region: no-drag;
+  --wails-draggable: no-drag;
 }
 
 .toolbar-btn {
@@ -150,6 +156,9 @@ function handleToolbarClick(item: any) {
   height: 28px;
   display: inline-flex;
   align-items: center;
+  /* 按钮区域不可拖动，以便点击 */
+  -webkit-app-region: no-drag;
+  --wails-draggable: no-drag;
 }
 
 .toolbar-label {
