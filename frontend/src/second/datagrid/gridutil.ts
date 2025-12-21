@@ -40,8 +40,8 @@ export function countColumnSizes(grider: Grider, columns, containerWidth, displa
     // else context.font = "14px Helvetica";
     context!.font = 'bold 14px Helvetica';
 
-    const text = column.headerText;
-    const headerWidth = context!.measureText(text).width + 64;
+    const text = column.headerText || column.columnName || '';
+    const headerWidth = context!.measureText(text).width + 120;
 
     // if (column.columnClientObject != null && column.columnClientObject.icon != null) headerWidth += 16;
     // if (this.getFilterOnColumn(column.uniquePath)) headerWidth += 16;

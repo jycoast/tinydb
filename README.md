@@ -22,6 +22,10 @@ A modern, lightweight desktop database management tool built with Go, Wails, and
 
 TinyDB is a cross-platform desktop database management application that provides an intuitive interface for managing MySQL and MongoDB databases. Built with modern web technologies (Vue 3) and Go, it offers a native desktop experience with powerful database management capabilities.
 
+![image-20251221194237229](https://blog-1304855543.cos.ap-guangzhou.myqcloud.com/blog/image-20251221194237229.png)
+
+![image-20251221194426049](https://blog-1304855543.cos.ap-guangzhou.myqcloud.com/blog/image-20251221194426049.png)
+
 ### ✨ Features
 
 - **Multi-Database Support**

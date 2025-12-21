@@ -82,7 +82,6 @@
           <Space>
             <span>查询结果</span>
             <Text v-if="resultsInfo" type="secondary" style="font-size: 12px;">{{ resultsInfo }}</Text>
-            <Tag v-if="queryResult && !error" color="gold">结果可编辑（仅本地，不写回数据库）</Tag>
           </Space>
         </template>
         <template #extra>

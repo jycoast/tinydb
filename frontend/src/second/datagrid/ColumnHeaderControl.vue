@@ -5,7 +5,11 @@
         {{ grouping == 'COUNT DISTINCT' ? 'distinct' : grouping.toLowerCase() }}
       </span>
 
-      <ColumnLabel v-bind="{...column}"/>
+      <a-tooltip :title="columnTooltip" :mouseEnterDelay="0.5">
+        <span class="column-label-wrapper">
+          <ColumnLabel v-bind="{...column}"/>
+        </span>
+      </a-tooltip>
       <span
         v-if="isStringDataType && !order"
         class="data-type"
@@ -31,7 +35,7 @@
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs} from 'vue'
 import {isString} from 'lodash-es'
-import {message} from 'ant-design-vue'
+import {message, Tooltip} from 'ant-design-vue'
 import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import DropDownButton from '/@/second/buttons/DropDownButton'
@@ -46,6 +50,7 @@ export default defineComponent({
     ColumnLabel,
     FontIcon,
     DropDownButton,
+    ATooltip: Tooltip,
   },
   props: {
     column: {
@@ -176,11 +181,17 @@ export default defineComponent({
 
     const isStringDataType = computed(() => column.value && isString(column.value.dataType))
 
+    const columnTooltip = computed(() => {
+      if (!column.value) return ''
+      return column.value.headerText || column.value.columnName || ''
+    })
+
     return {
       ...toRefs(props),
       isStringDataType,
       getMenu,
-      handleResizeSplitter
+      handleResizeSplitter,
+      columnTooltip
     }
   }
 })
@@ -205,6 +216,19 @@ export default defineComponent({
   padding: 0 2px;
   margin: auto;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+}
+
+.column-label-wrapper {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  display: inline-block;
+  max-width: 100%;
 }
 
 .icon {
