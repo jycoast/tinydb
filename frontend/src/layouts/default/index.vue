@@ -4,7 +4,7 @@
       <WarningOutlined/>
     </div>
     <div class="m-3">Sorry, tinydb is not supported on mobile devices.</div>
-    <div class="m-3">Please visit <a href="https://github.com/tiyongliu/tinydb">tinydb</a> for more
+    <div class="m-3">Please visit <a href="https://github.com/jycoast/tinydb">tinydb</a> for more
       info.
     </div>
   </div>

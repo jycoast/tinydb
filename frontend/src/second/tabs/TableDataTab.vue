@@ -15,12 +15,21 @@
       </div>
       <!-- Splitter: resize DDL panel width -->
       <div
+        v-if="!ddlCollapsed"
         class="table-tab-splitter"
         v-splitterDrag="'clientX'"
         :resizeSplitter="(e) => handleResizeDdl(e.detail)"
       />
-      <div class="table-tab-ddl" :style="ddlPanelStyle">
-        <div class="table-tab-ddl-header">DDL</div>
+      <div v-if="!ddlCollapsed" class="table-tab-ddl" :style="ddlPanelStyle">
+        <div class="table-tab-ddl-header">
+          <span>DDL</span>
+          <FontIcon
+            icon="icon chevron-up"
+            class="ddl-collapse-btn"
+            @click="toggleDdlCollapse"
+            title="收起"
+          />
+        </div>
         <div class="table-tab-ddl-body">
           <div v-if="ddlLoading" class="table-tab-ddl-loading">Loading DDL…</div>
           <div v-else-if="ddlError" class="table-tab-ddl-error">{{ ddlError }}</div>
@@ -30,6 +39,17 @@
             mode="mysql"
             :options="ddlEditorOptions"
             readOnly
+          />
+        </div>
+      </div>
+      <div v-else class="table-tab-ddl-collapsed">
+        <div class="table-tab-ddl-header">
+          <span>DDL</span>
+          <FontIcon
+            icon="icon chevron-down"
+            class="ddl-collapse-btn"
+            @click="toggleDdlCollapse"
+            title="展开"
           />
         </div>
       </div>
@@ -70,6 +90,7 @@ import createUndoReducer from '/@/second/utility/createUndoReducer'
 import useGridConfig from '/@/second/utility/useGridConfig'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import AceEditor from '/@/second/query/AceEditor'
+import FontIcon from '/@/second/icons/FontIcon.vue'
 
 export const matchingProps = ['conid', 'database', 'schemaName', 'pureName']
 export const allowAddToFavorites = _ => true
@@ -82,6 +103,7 @@ export default defineComponent({
     ToolStripCommandButton,
     ToolStripCommandSplitButton,
     AceEditor,
+    FontIcon,
   },
   props: {
     tabid: {
@@ -158,7 +180,13 @@ export default defineComponent({
 
     // --- Resizable right DDL panel ---
     const ddlWidth = ref<number>(Number(getLocalStorage('tableDataTab_ddl_width', 420)) || 420)
+    const ddlCollapsed = ref<boolean>(getLocalStorage('tableDataTab_ddl_collapsed', false))
     const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
+
+    function toggleDdlCollapse() {
+      ddlCollapsed.value = !ddlCollapsed.value
+      setLocalStorage('tableDataTab_ddl_collapsed', ddlCollapsed.value)
+    }
 
     function handleResizeDdl(diff: number) {
       // dragging splitter: diff is mouse deltaX; moving right should increase DDL width
@@ -270,6 +298,8 @@ export default defineComponent({
       ddlText,
       ddlError,
       ddlEditorOptions,
+      ddlCollapsed,
+      toggleDdlCollapse,
     }
   }
 })
@@ -335,6 +365,30 @@ export default defineComponent({
   font-size: 12px;
   color: var(--theme-font-2);
   border-bottom: 1px solid var(--theme-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ddl-collapse-btn {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.ddl-collapse-btn:hover {
+  opacity: 1;
+}
+
+.table-tab-ddl-collapsed {
+  flex: 0 0 auto;
+  min-width: 0;
+  background: var(--theme-bg-0);
+  border-left: 1px solid var(--theme-border);
+}
+
+.table-tab-ddl-collapsed .table-tab-ddl-header {
+  border-bottom: none;
 }
 
 .table-tab-ddl-body {

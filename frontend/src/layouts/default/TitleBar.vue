@@ -146,7 +146,7 @@ onUnmounted(() => {
 }
 
 .tb-btn {
-  width: 44px;
+  width: 40px;
   height: 100%;
   border-radius: 0;
   color: #1f1f1f;

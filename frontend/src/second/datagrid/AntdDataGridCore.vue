@@ -3,6 +3,7 @@
     <div v-if="errorMessage" class="ag-error">{{ errorMessage }}</div>
     <div v-else class="ag-table-wrap" ref="wrap" @scroll.passive="handleScroll">
       <ATable
+        bordered
         :columns="antdColumns"
         :dataSource="dataSource"
         :pagination="false"

@@ -3,8 +3,8 @@
   "version": "0.0.2.2",
   "author": {
     "name": "bob",
-    "email": "tiyongliu@163.com",
-    "url": "https://github.com/tiyongliu/tinydb"
+    "email": "jycoast@163.com",
+    "url": "https://github.com/jycoast/tinydb"
   },
   "scripts": {
     "commit": "czg",
