@@ -120,6 +120,8 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
     const newItem = {
       ...newTab,
       tabid,
+      // 确保 props 被正确保存
+      props: newTab.props || {},
     }
     if (dbKey != null) {
       const lastIndex = findLastIndex(items, x => getTabDbKey(x) == dbKey)
@@ -135,12 +137,16 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
     return [
       ...(files || []).map(x => ({
         ...x,
+        // 确保保留原有的 props
+        props: x.props || {},
         selected: false,
         tabOrder: findIndex(items, y => y.tabid == x.tabid)
       })),
       {
         ...newTab,
         tabid,
+        // 确保 props 被正确保存，特别是 pureName 等关键属性
+        props: newTab.props || {},
         selected: true,
         tabOrder: findIndex(items, y => y.tabid == tabid),
       }

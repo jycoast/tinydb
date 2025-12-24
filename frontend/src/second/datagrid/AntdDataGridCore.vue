@@ -179,19 +179,38 @@ watch([grider, columns], () => publishSelection())
 // Ant Table doesn't emit anything until scroll happens, so we need to trigger the first page load explicitly.
 const initialLoadRequested = ref(false)
 watchEffect(() => {
-  if (!grider.value) return
-  if (errorMessage?.value) return
-  if (isLoading?.value) return
-  if (isLoadedAll?.value) return
-  if (initialLoadRequested.value) return
+  if (!grider.value) {
+    console.log(`[AntdDataGridCore] Initial load check: no grider`)
+    return
+  }
+  if (errorMessage?.value) {
+    console.log(`[AntdDataGridCore] Initial load check: has error`, errorMessage.value)
+    return
+  }
+  if (isLoading?.value) {
+    console.log(`[AntdDataGridCore] Initial load check: already loading`)
+    return
+  }
+  if (isLoadedAll?.value) {
+    console.log(`[AntdDataGridCore] Initial load check: already loaded all`)
+    return
+  }
+  if (initialLoadRequested.value) {
+    console.log(`[AntdDataGridCore] Initial load check: already requested`)
+    return
+  }
   if (grider.value.rowCount === 0) {
+    console.log(`[AntdDataGridCore] Triggering initial load: rowCount=${grider.value.rowCount}`)
     initialLoadRequested.value = true
     emit('loadNextData')
+  } else {
+    console.log(`[AntdDataGridCore] Initial load check: rowCount=${grider.value.rowCount}, not triggering`)
   }
 })
 
 watch([display, columns], () => {
   // New table/display => allow initial load again
+  console.log(`[AntdDataGridCore] Display or columns changed, resetting initialLoadRequested`)
   initialLoadRequested.value = false
 })
 

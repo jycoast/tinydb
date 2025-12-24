@@ -2,43 +2,6 @@
   <div class="root">
     <div class="tabs" ref="domTabs" @wheel.prevent="handleTabsWheel">
       <div class="db-wrapper" v-for="tabGroup in groupedTabs">
-        <div
-          v-if="false"
-          class="db-name"
-             :class="{selected: draggingDbGroup ? tabGroup.grpid == draggingDbGroupTarget?.grpid : tabGroup.tabDbKey == currentDbKey}"
-             @mouseup="e => {
-               if (e.button == 1) {
-                  closeMultipleTabs(tab => tabGroup.tabs.find(x => x.tabid == tab.tabid));
-               } else {
-                  handleSetDb(tabGroup.tabs[0].props);
-               }
-             }"
-             @contextmenu="handleContextTabs($event, tabGroup.tabs)"
-             :draggable="true"
-             @dragstart="(e) => {
-               try { e.dataTransfer?.setData('text/plain', String(tabGroup.grpid || 'dbgroup')) } catch {}
-               draggingDbGroup = tabGroup
-             }"
-             @dragenter="(e) => draggingDbGroupTarget = tabGroup"
-             @dragover.prevent
-             @drop="dragDropTabs(draggingDbGroup.tabs, tabGroup.tabs)"
-             @dragend="(e) => {
-               draggingDbGroup = null
-               draggingDbGroupTarget = null
-             }"
-            >
-          <div class="db-name-inner">
-            <FontIcon :icon="getDbIcon(tabGroup.tabDbKey)"/>
-            {{ tabGroup.tabDbName }}
-            <FontIcon
-              v-if="connectionList && connectionList?.find(x => x._id == tabGroup.tabs[0]?.props?.conid)?.isReadOnly"
-              icon="icon lock"/>
-          </div>
-          <div class="close-button-right tabCloseButton"
-               @click="closeMultipleTabs(tab => tabGroup.tabs.find(x => x.tabid == tab.tabid))">
-            <FontIcon icon="icon close"/>
-          </div>
-        </div>
         <div class="db-group">
           <div class="file-tab-item"
                v-for="tab in tabGroup.tabs"
@@ -77,7 +40,7 @@
 
 <script lang="ts">
 import {computed, defineComponent, ref, unref} from 'vue'
-import {findIndex, isEqual, max, min} from 'lodash-es'
+import {findIndex, max, min} from 'lodash-es'
 import {storeToRefs} from 'pinia'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
@@ -435,15 +398,6 @@ export default defineComponent({
       })
     }
 
-    function handleDrop(tab) {
-      if (draggingTab.value) {
-        dragDropTabs([draggingTab], [tab]);
-      }
-      if (draggingDbGroup.value) {
-        dragDropTabs((draggingDbGroup.value as any).tabs, [tab])
-      }
-    }
-
     return {
       domTabs,
       connectionList,
@@ -457,16 +411,11 @@ export default defineComponent({
       handleTabsWheel,
       handleTabClick,
       handleMouseUp,
-      getDbIcon,
       closeMultipleTabs,
       handleSetDb,
       dragDropTabs,
       handleDragstart,
-      handleDrop,
-
-      handleContextTabs,
       handleContextTab,
-      getDatabaseContextMenu,
       closeTab,
     }
   },
@@ -483,26 +432,6 @@ export default defineComponent({
   align-items: stretch;
   overflow: hidden;
   border-bottom: 1px solid var(--theme-border);
-}
-
-.add-icon {
-  position: absolute;
-  right: 8px;
-  font-size: 18pt;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  color: var(--theme-font-3);
-  cursor: pointer;
-  padding: 0 8px;
-  transition: all 0.2s ease;
-  z-index: 2;
-}
-
-.add-icon:hover {
-  color: var(--theme-font-1);
-  background: var(--theme-bg-2);
 }
 
 .tabs {
@@ -544,39 +473,6 @@ export default defineComponent({
   display: flex;
   flex-direction: row;
   align-items: stretch;
-}
-
-.db-name {
-  display: flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 500;
-  border-right: 1px solid var(--theme-border);
-  cursor: pointer;
-  user-select: none;
-  padding: 0 10px;
-  position: relative;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: background-color 0.2s ease;
-  background: var(--theme-bg-1);
-}
-
-.db-name:hover {
-  background-color: var(--theme-bg-hover);
-}
-
-.db-name.selected {
-  background-color: var(--theme-bg-0);
-}
-
-.db-name-inner {
-  justify-content: center;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .file-tab-item {
@@ -640,18 +536,4 @@ export default defineComponent({
   opacity: 1;
 }
 
-.close-button-right {
-  margin-left: 6px;
-  margin-right: 6px;
-  color: var(--theme-font-3);
-  transition: all 0.2s ease;
-  padding: 2px;
-  border-radius: 2px;
-}
-
-.close-button:hover,
-.close-button-right:hover {
-  color: var(--theme-font-1);
-  background: var(--theme-bg-3);
-}
 </style>

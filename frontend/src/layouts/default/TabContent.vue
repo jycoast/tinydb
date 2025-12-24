@@ -9,6 +9,7 @@ import {Component, defineComponent, PropType, provide, ref, toRaw, toRef, watch}
 
 export default defineComponent({
   name: 'TabContent',
+  inheritAttrs: false, // 禁用默认的 attribute 继承，确保 $attrs 正确传递
   props: {
     tabVisible: {
       type: Boolean as PropType<boolean>,
@@ -20,7 +21,7 @@ export default defineComponent({
       type: [Object, String] as PropType<string | Component>,
     },
   },
-  setup(props) {
+  setup(props, { attrs }) {
     const tabComponent = toRaw(props.tabComponent)
     const tabVisible = toRef(props, 'tabVisible')
     const tabid = toRef(props, 'tabid')
@@ -33,6 +34,18 @@ export default defineComponent({
     watch(() => tabVisible.value, () => {
       tabVisibleStore.value = tabVisible.value
     })
+
+    // 调试：检查传递给子组件的 attrs
+    if (props.tabid && typeof props.tabComponent === 'string' && props.tabComponent === 'TableDataTab') {
+      console.log(`[TabContent] Tab ${props.tabid} attrs:`, {
+        tabid: props.tabid,
+        attrs: attrs,
+        pureName: attrs.pureName,
+        conid: attrs.conid,
+        database: attrs.database,
+        schemaName: attrs.schemaName
+      })
+    }
 
     return {
       tabVisible,

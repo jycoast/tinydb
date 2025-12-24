@@ -1,64 +1,70 @@
 <template>
   <div style="display: flex; flex-direction: column; height: 100%; width: 100%;">
     <!-- 顶部工具栏 -->
-    <div style="flex: 0 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--theme-border);">
-    
+    <div
+      style="flex: 0 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--theme-border);">
+
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <Space>
-          <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList" size="small">转 IN 列表</AButton>
-          <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql" size="small">SQL 美化</AButton>
-          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection" size="small">去重</AButton>
+          <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList"
+                   size="small">转 IN 列表
+          </AButton>
+          <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql" size="small">SQL 美化
+          </AButton>
+          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection" size="small">去重
+          </AButton>
         </Space>
       </div>
 
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <Space>
-        <ASelect
-          v-model:value="selectedConid"
-          style="min-width: 220px"
-          size="small"
-          show-search
-          allow-clear
-          placeholder="选择数据源"
-          :options="connectionOptions"
-          :filter-option="filterSelectOption"
-          @change="handleChangeConid"
-        />
-        <ASelect
-          v-model:value="selectedObject"
-          style="min-width: 260px"
-          size="small"
-          show-search
-          allow-clear
-          placeholder="选择库/表"
-          :filter-option="filterSelectOption"
-          @select="handleSelectObject"
-        >
-          <ASelectOptGroup v-if="databaseOptions.length" label="Databases">
-            <ASelectOption
-              v-for="db in databaseOptions"
-              :key="`db:${db}`"
-              :value="`db:${db}`"
-            >
-              {{ db }}
-            </ASelectOption>
-          </ASelectOptGroup>
+          <ASelect
+            v-model:value="selectedConid"
+            style="min-width: 220px"
+            size="small"
+            show-search
+            allow-clear
+            placeholder="选择数据源"
+            :options="connectionOptions"
+            :filter-option="filterSelectOption"
+            @change="handleChangeConid"
+          />
+          <ASelect
+            v-model:value="selectedObject"
+            style="min-width: 260px"
+            size="small"
+            show-search
+            allow-clear
+            placeholder="选择库/表"
+            :filter-option="filterSelectOption"
+            @select="handleSelectObject"
+          >
+            <ASelectOptGroup v-if="databaseOptions.length" label="Databases">
+              <ASelectOption
+                v-for="db in databaseOptions"
+                :key="`db:${db}`"
+                :value="`db:${db}`"
+              >
+                {{ db }}
+              </ASelectOption>
+            </ASelectOptGroup>
 
-          <ASelectOptGroup v-if="tableOptions.length" label="Tables">
-            <ASelectOption
-              v-for="t in tableOptions"
-              :key="`table:${t}`"
-              :value="`table:${t}`"
-            >
-              {{ t }}
-            </ASelectOption>
-          </ASelectOptGroup>
-        </ASelect>
+            <ASelectOptGroup v-if="tableOptions.length" label="Tables">
+              <ASelectOption
+                v-for="t in tableOptions"
+                :key="`table:${t}`"
+                :value="`table:${t}`"
+              >
+                {{ t }}
+              </ASelectOption>
+            </ASelectOptGroup>
+          </ASelect>
 
-        <AButton type="primary" :icon="h(PlayCircleOutlined)" :loading="executing" @click="handleExecute">
-          执行
-        </AButton>
-        <AButton :icon="h(DeleteOutlined)" @click="handleClear">清空</AButton>
+          <AButton type="primary" :icon="h(PlayCircleOutlined)" :loading="executing"
+                   @click="handleExecute">
+            执行
+          </AButton>
+          <AButton :icon="h(DeleteOutlined)" @click="handleClear">清空</AButton>
         </Space>
       </div>
 
@@ -76,17 +82,23 @@
     </div>
 
     <!-- 结果区 -->
-    <div v-if="showResults" style="flex: 0 0 38%; min-height: 200px; max-height: 50%; display: flex; flex-direction: column; border-top: 1px solid var(--theme-border);">
-      <Card :bordered="false" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+    <div v-if="showResults"
+         style="flex: 0 0 38%; min-height: 200px; max-height: 50%; display: flex; flex-direction: column; border-top: 1px solid var(--theme-border);">
+      <Card :bordered="false"
+            style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
         <template #title>
           <Space>
             <span>查询结果</span>
-            <Text v-if="resultsInfo" type="secondary" style="font-size: 12px;">{{ resultsInfo }}</Text>
+            <Text v-if="resultsInfo" type="secondary" style="font-size: 12px;">{{
+                resultsInfo
+              }}
+            </Text>
           </Space>
         </template>
         <template #extra>
           <Space>
-            <AButton size="small" :icon="h(CopyOutlined)" @click="handleCopyResults">复制 (Ctrl+C)</AButton>
+            <AButton size="small" :icon="h(CopyOutlined)" @click="handleCopyResults">复制 (Ctrl+C)
+            </AButton>
             <AButton size="small" @click="clearResultSelection">清除选择</AButton>
           </Space>
         </template>
@@ -97,7 +109,8 @@
           @mousedown="focusResultsHotkeyHost"
           @keydown="handleResultsKeyDown"
         >
-          <AAlert v-if="error" type="error" message="执行失败" show-icon closable @close="error = ''">
+          <AAlert v-if="error" type="error" message="执行失败" show-icon closable
+                  @close="error = ''">
             <template #description>
               <pre class="sql-error-pre">{{ error }}</pre>
             </template>
@@ -116,7 +129,8 @@
             :custom-row="customRow"
           />
 
-          <AEmpty v-else-if="queryResult && resultTableData.length === 0" description="查询成功，但没有返回数据" />
+          <AEmpty v-else-if="queryResult && resultTableData.length === 0"
+                  description="查询成功，但没有返回数据"/>
         </div>
       </Card>
     </div>
@@ -130,38 +144,57 @@ export const allowAddToFavorites = (_: any) => true
 </script>
 
 <script lang="ts" setup>
-import { computed, h, nextTick, onBeforeUnmount, onMounted, PropType, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useBootstrapStore } from '/@/store/modules/bootstrap'
-import { Alert as AAlert, Button as AButton, Card, Empty as AEmpty, Input as AInput, Select as ASelect, Space, Table as ATable, Tag, Typography, message } from 'ant-design-vue'
-import { DeleteOutlined, PlayCircleOutlined, OrderedListOutlined, FormatPainterOutlined, CopyOutlined, FilterOutlined } from '@ant-design/icons-vue'
-import { databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
-import { getConnectionInfo, useDatabaseInfo } from '/@/api/bridge'
+import {computed, h, nextTick, onBeforeUnmount, onMounted, PropType, ref, watch} from 'vue'
+import {storeToRefs} from 'pinia'
+import {useBootstrapStore} from '/@/store/modules/bootstrap'
+import {debounce} from 'lodash-es'
+import {
+  Alert as AAlert,
+  Button as AButton,
+  Card,
+  Empty as AEmpty,
+  Input as AInput,
+  Select as ASelect,
+  Space,
+  Table as ATable,
+  Typography,
+  message
+} from 'ant-design-vue'
+import {
+  DeleteOutlined,
+  PlayCircleOutlined,
+  OrderedListOutlined,
+  FormatPainterOutlined,
+  CopyOutlined,
+  FilterOutlined
+} from '@ant-design/icons-vue'
+import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
+import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
 import AceEditor from '/@/second/query/AceEditor'
 import * as ace from 'ace-builds/src-noconflict/ace'
 import 'ace-builds/src-noconflict/ext-language_tools'
-import type { DatabaseInfo, TableInfo, ColumnInfo } from '/@/second/tinydb-types'
-import { useClusterApiStore } from '/@/store/modules/clusterApi'
-import { copyRowsToClipboard } from '/@/second/utility/clipboard'
+import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/second/tinydb-types'
+import {useClusterApiStore} from '/@/store/modules/clusterApi'
+import {copyRowsToClipboard} from '/@/second/utility/clipboard'
 
-const { Text } = Typography
+const {Text} = Typography
 
 const ASelectOption = (ASelect as any).Option
 const ASelectOptGroup = (ASelect as any).OptGroup
 
 const props = defineProps({
-  tabid: { type: String as PropType<string>, required: true },
-  conid: { type: String as PropType<string> },
-  database: { type: String as PropType<string> },
-  tabVisible: { type: Boolean as PropType<boolean>, default: true },
+  tabid: {type: String as PropType<string>, required: true},
+  conid: {type: String as PropType<string>},
+  database: {type: String as PropType<string>},
+  tabVisible: {type: Boolean as PropType<boolean>, default: true},
   // If true, don't auto-select currentDatabase; user must pick connection/db manually
-  noPrefill: { type: Boolean as PropType<boolean>, default: false },
+  noPrefill: {type: Boolean as PropType<boolean>, default: false},
 })
 
 const bootstrap = useBootstrapStore()
-const { currentDatabase } = storeToRefs(bootstrap)
+const {currentDatabase} = storeToRefs(bootstrap)
 const clusterApi = useClusterApiStore()
-const { connectionList } = storeToRefs(clusterApi)
+const {connectionList} = storeToRefs(clusterApi)
 
 const defaultPlaceholder = '-- 请输入 SQL 查询语句\nSELECT * FROM table_name LIMIT 100;'
 
@@ -239,7 +272,7 @@ watch(
   () => {
     void refreshConnectionLabel()
   },
-  { immediate: true }
+  {immediate: true}
 )
 
 function filterSelectOption(input: string, option: any) {
@@ -309,21 +342,62 @@ async function handleFormatSql() {
     return
   }
 
+  // 检查文件大小，如果太大则提示用户
+  const lineCount = source.split('\n').length
+  const LARGE_FILE_THRESHOLD = 100000 // 10万行
+  if (lineCount > LARGE_FILE_THRESHOLD) {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const hide = message.loading({
+        content: `文件较大（${lineCount.toLocaleString()} 行），格式化可能需要较长时间，是否继续？`,
+        duration: 0,
+        key: 'format-confirm',
+      })
+      // 自动确认，但显示提示
+      setTimeout(() => {
+        hide()
+        resolve(true)
+      }, 2000)
+    })
+    if (!confirmed) return
+  }
+
+  const loadingKey = 'formatting-sql'
+  const hideLoading = message.loading({
+    content: lineCount > 10000 ? `正在格式化 SQL（${lineCount.toLocaleString()} 行）...` : '正在格式化 SQL...',
+    duration: 0,
+    key: loadingKey,
+  })
+
   try {
     // Lazy-load to keep initial bundle small
     const mod: any = await import('sql-formatter')
     const formatFn = mod?.format || mod?.default?.format
     if (typeof formatFn !== 'function') {
+      hideLoading()
       message.error('SQL 格式化模块加载失败')
       return
     }
 
-    const formatted = formatFn(source, {
+    let formatted: string
+
+    // 对于超大文件，使用分批处理避免阻塞主线程
+    const CHUNK_SIZE = 10000 // 每次处理1万行
+    const formatOptions = {
       language: 'mysql',
       keywordCase: 'upper',
       linesBetweenQueries: 1,
       tabWidth: 2,
+    }
+
+    formatted = await formatLargeFile(source, formatFn, CHUNK_SIZE, formatOptions, (progress) => {
+      message.loading({
+        content: `正在格式化 SQL... ${progress}%`,
+        duration: 0,
+        key: loadingKey,
+      })
     })
+
+    hideLoading()
 
     if (selectedText && selectedText.trim()) {
       // @ts-ignore
@@ -331,6 +405,7 @@ async function handleFormatSql() {
       ed.session.replace(range, formatted)
       ed.clearSelection()
       ed.focus()
+      message.success('SQL 格式化完成')
       return
     }
 
@@ -338,8 +413,8 @@ async function handleFormatSql() {
     ed.setValue(formatted, -1)
     // Best-effort: restore cursor
     try {
-      const lineCount = ed.session.getLength()
-      const row = Math.min(Math.max(0, pos.row), Math.max(0, lineCount - 1))
+      const newLineCount = ed.session.getLength()
+      const row = Math.min(Math.max(0, pos.row), Math.max(0, newLineCount - 1))
       const line = ed.session.getLine(row) || ''
       const col = Math.min(Math.max(0, pos.column), line.length)
       ed.moveCursorTo(row, col)
@@ -347,9 +422,120 @@ async function handleFormatSql() {
       // ignore
     }
     ed.focus()
+    message.success('SQL 格式化完成')
   } catch (e: any) {
-    message.error(`SQL 美化失败：${e?.message || e}`)
+    message.error({
+      content: `SQL 美化失败：${e?.message || e}`,
+      key: loadingKey,
+      duration: 5,
+    })
   }
+}
+
+// 分批处理大文件，避免阻塞主线程
+async function formatLargeFile(
+  source: string,
+  formatFn: (sql: string, options: any) => string,
+  chunkSize: number,
+  formatOptions: any,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  const lines = source.split('\n')
+  const totalLines = lines.length
+  const chunks: string[] = []
+
+  // 按 SQL 语句分割，而不是简单按行分割
+  // 这样可以避免在 SQL 语句中间分割
+  const sqlStatements = splitSqlStatements(source)
+
+  if (sqlStatements.length === 1) {
+    // 如果只有一个大的 SQL 语句，按行分割处理
+    for (let i = 0; i < lines.length; i += chunkSize) {
+      const chunk = lines.slice(i, i + chunkSize).join('\n')
+      const formatted = formatFn(chunk, formatOptions)
+      chunks.push(formatted)
+
+      if (onProgress) {
+        const progress = Math.min(100, Math.round(((i + chunkSize) / totalLines) * 100))
+        onProgress(progress)
+      }
+
+      // 让出控制权，避免阻塞主线程
+      // 使用 requestIdleCallback 如果可用，否则使用 setTimeout
+      if (typeof requestIdleCallback !== 'undefined') {
+        await new Promise(resolve => requestIdleCallback(() => resolve(undefined), {timeout: 100}))
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+    }
+  } else {
+    // 按 SQL 语句处理，每处理一批后让出控制权
+    const BATCH_SIZE = 50 // 每批处理50个语句
+    for (let i = 0; i < sqlStatements.length; i += BATCH_SIZE) {
+      const batch = sqlStatements.slice(i, i + BATCH_SIZE)
+      for (const statement of batch) {
+        const formatted = formatFn(statement, formatOptions)
+        chunks.push(formatted)
+      }
+
+      if (onProgress) {
+        const progress = Math.min(100, Math.round(((i + BATCH_SIZE) / sqlStatements.length) * 100))
+        onProgress(progress)
+      }
+
+      // 让出控制权
+      if (typeof requestIdleCallback !== 'undefined') {
+        await new Promise(resolve => requestIdleCallback(() => resolve(undefined), {timeout: 100}))
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+    }
+  }
+
+  return sqlStatements.length === 1 ? chunks.join('\n') : chunks.join('\n\n')
+}
+
+// 简单的 SQL 语句分割（按分号分割，但保留字符串中的分号）
+function splitSqlStatements(sql: string): string[] {
+  const statements: string[] = []
+  let current = ''
+  let inString = false
+  let stringChar = ''
+
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i]
+    const prevChar = i > 0 ? sql[i - 1] : ''
+
+    // 检测字符串开始/结束
+    if ((char === '"' || char === "'" || char === '`') && prevChar !== '\\') {
+      if (!inString) {
+        inString = true
+        stringChar = char
+      } else if (char === stringChar) {
+        inString = false
+        stringChar = ''
+      }
+    }
+
+    current += char
+
+    // 如果不在字符串中，遇到分号则分割
+    if (!inString && char === ';') {
+      const trimmed = current.trim()
+      if (trimmed) {
+        statements.push(trimmed)
+      }
+      current = ''
+    }
+  }
+
+  // 添加最后一部分
+  const trimmed = current.trim()
+  if (trimmed) {
+    statements.push(trimmed)
+  }
+
+  return statements.length > 0 ? statements : [sql]
 }
 
 function handleDeduplicateSelection() {
@@ -358,20 +544,20 @@ function handleDeduplicateSelection() {
     message.warning('编辑器未就绪')
     return
   }
-  
+
   const selectedText = (ed.getSelectedText?.() as string) || ''
   if (!selectedText || !selectedText.trim()) {
     message.info('请先选中要去重的内容（每行一个值）')
     return
   }
-  
+
   // 按行分割
   const lines = selectedText.split(/\r?\n/)
-  
+
   // 使用 Set 来跟踪已出现的行（保留第一次出现的行）
   const seen = new Set<string>()
   const uniqueLines: string[] = []
-  
+
   for (const line of lines) {
     // 使用 trim() 后的内容作为去重的键，但保留原始行的格式
     const trimmed = line.trim()
@@ -380,23 +566,23 @@ function handleDeduplicateSelection() {
       uniqueLines.push(line)
     }
   }
-  
+
   // 重新组合成文本
   const deduplicated = uniqueLines.join('\n')
-  
+
   // 如果去重后没有变化，提示用户
   if (deduplicated === selectedText) {
     message.info('选中内容中没有重复的行')
     return
   }
-  
+
   // 替换选中的内容
   // @ts-ignore
   const range = ed.getSelectionRange()
   ed.session.replace(range, deduplicated)
   ed.clearSelection()
   ed.focus()
-  
+
   const removedCount = lines.length - uniqueLines.length
   message.success(`去重完成，已移除 ${removedCount} 行重复数据`)
 }
@@ -412,7 +598,7 @@ async function handleChangeConid(conid?: string) {
   }
 
   try {
-    const conn = await getConnectionInfo({ conid })
+    const conn = await getConnectionInfo({conid})
     if (!conn) {
       message.error('无法获取连接信息')
       return
@@ -459,7 +645,7 @@ async function handleSelectObject(val: string) {
     const db = val.slice(3)
     selectedDatabase.value = db
     try {
-      const conn = await getConnectionInfo({ conid, database: db })
+      const conn = await getConnectionInfo({conid, database: db})
       if (!conn) {
         message.error('无法获取连接信息')
         return
@@ -477,7 +663,8 @@ async function handleSelectObject(val: string) {
 
   if (val.startsWith('table:')) {
     const table = val.slice(6)
-    const tpl = `SELECT *\nFROM \`${table}\`\nLIMIT 100;`
+    const tpl = `SELECT *
+                 FROM \`${table}\` LIMIT 100;`
     // If it's still placeholder-ish, replace; otherwise just append
     const cur = (sqlContent.value || '').trim()
     if (!cur || cur === defaultPlaceholder.trim() || cur.includes('SELECT * FROM table_name')) {
@@ -504,7 +691,7 @@ function recalcResultsScroll() {
 const databaseInfoStore = ref<DatabaseInfo | null>(null)
 if (currentConid.value && currentDatabaseName.value) {
   useDatabaseInfo(
-    { conid: currentConid.value, database: currentDatabaseName.value },
+    {conid: currentConid.value, database: currentDatabaseName.value},
     databaseInfoStore
   )
 }
@@ -514,10 +701,10 @@ watch(
   ([conid, database]) => {
     if (conid && database) {
       databaseInfoStore.value = null
-      useDatabaseInfo({ conid, database }, databaseInfoStore)
+      useDatabaseInfo({conid, database}, databaseInfoStore)
     }
   },
-  { immediate: true }
+  {immediate: true}
 )
 
 watch(
@@ -525,7 +712,7 @@ watch(
   (v) => {
     if (v) selectedConid.value = v
   },
-  { immediate: true }
+  {immediate: true}
 )
 
 watch(
@@ -534,7 +721,7 @@ watch(
     // If user didn't pick a DB explicitly, follow the current database
     if (!selectedDatabase.value && v) selectedDatabase.value = v
   },
-  { immediate: true }
+  {immediate: true}
 )
 
 watch(databaseInfoStore, (newVal) => {
@@ -549,7 +736,7 @@ async function refreshConnectionLabel() {
   const conid = effectiveConid.value
   if (!conid) return
   try {
-    const conn = await getConnectionInfo({ conid })
+    const conn = await getConnectionInfo({conid})
     connectionName.value = conn?.displayName || conn?.host || 'Unknown'
   } catch (e) {
     console.error('Failed to get connection info:', e)
@@ -560,8 +747,14 @@ onMounted(async () => {
   recalcResultsScroll()
   window.addEventListener('resize', recalcResultsScroll)
 
-  const saved = localStorage.getItem(`sql_query_${props.tabid}`)
-  sqlContent.value = saved ?? defaultPlaceholder
+  // 安全地读取 localStorage，处理可能的错误
+  try {
+    const saved = localStorage.getItem(`sql_query_${props.tabid}`)
+    sqlContent.value = saved ?? defaultPlaceholder
+  } catch (e) {
+    console.warn('读取 SQL 内容失败，使用默认值:', e)
+    sqlContent.value = defaultPlaceholder
+  }
 
   await refreshConnectionLabel()
 
@@ -570,6 +763,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', recalcResultsScroll)
+  // 取消防抖，确保最后一次保存能够执行
+  debouncedSaveSql.flush()
 })
 
 watch(
@@ -577,26 +772,83 @@ watch(
   (v) => {
     if (v) focusEditor()
   },
-  { immediate: true },
+  {immediate: true},
 )
+
+// 安全地保存到 localStorage，处理配额超出错误
+function safeSetLocalStorage(key: string, value: string) {
+  try {
+    // 检查内容大小（localStorage 通常限制在 5-10MB）
+    // 估算：每个字符约 2 字节（UTF-16），留出安全边际
+    const MAX_SIZE = 2 * 1024 * 1024 // 2MB 安全限制
+    const size = new Blob([value]).size
+
+    if (size > MAX_SIZE) {
+      // 内容太大，只保存前一部分（保留前 500KB）
+      const MAX_SAVE_SIZE = 500 * 1024 // 500KB
+      const truncated = value.slice(0, Math.floor(MAX_SAVE_SIZE / 2)) // 字符数约为字节数的一半
+      localStorage.setItem(key, truncated)
+      console.warn(`SQL 内容过大（${(size / 1024 / 1024).toFixed(2)}MB），已截断保存前 ${(MAX_SAVE_SIZE / 1024).toFixed(0)}KB`)
+      return false
+    }
+
+    localStorage.setItem(key, value)
+    return true
+  } catch (e: any) {
+    if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+      // 配额超出，尝试清理旧数据或截断保存
+      console.warn('localStorage 配额超出，尝试清理旧数据')
+
+      // 尝试清理其他 SQL 查询的缓存
+      try {
+        const keysToRemove: string[] = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith('sql_query_') && key !== `sql_query_${props.tabid}`) {
+            keysToRemove.push(key)
+          }
+        }
+        // 删除最旧的一些键
+        keysToRemove.slice(0, Math.min(5, keysToRemove.length)).forEach(k => localStorage.removeItem(k))
+
+        // 再次尝试保存（如果还是太大，就截断）
+        const MAX_SAVE_SIZE = 500 * 1024
+        const truncated = value.slice(0, Math.floor(MAX_SAVE_SIZE / 2))
+        localStorage.setItem(key, truncated)
+        console.warn(`已清理旧缓存，当前 SQL 内容已截断保存`)
+        return false
+      } catch (e2) {
+        console.error('无法保存 SQL 内容到 localStorage:', e2)
+        return false
+      }
+    }
+    console.error('保存 SQL 内容到 localStorage 失败:', e)
+    return false
+  }
+}
+
+// 使用防抖来减少保存频率，避免频繁写入
+const debouncedSaveSql = debounce((tabid: string, content: string) => {
+  safeSetLocalStorage(`sql_query_${tabid}`, content)
+}, 1000) // 1秒防抖
 
 watch(
   () => sqlContent.value,
   (val) => {
-    localStorage.setItem(`sql_query_${props.tabid}`, val ?? '')
+    debouncedSaveSql(props.tabid, val ?? '')
   },
 )
 
 function handleEditorInit(editorInstance: ace.Editor) {
   editor.value = editorInstance
-  
+
   // 设置自动补全
   setupAutocomplete(editorInstance)
-  
+
   // 添加快捷键：F5 执行查询
   editorInstance.commands.addCommand({
     name: 'executeQuery',
-    bindKey: { win: 'F5', mac: 'F5' },
+    bindKey: {win: 'F5', mac: 'F5'},
     exec: () => {
       handleExecute()
     }
@@ -611,20 +863,20 @@ function handleSqlInput(value: string) {
 function setupAutocomplete(_editorInstance: ace.Editor) {
   // 获取 language_tools 扩展
   const langTools = ace.require('ace/ext/language_tools')
-  
+
   if (!langTools) {
     console.warn('Ace language_tools not available')
     return
   }
-  
+
   // 移除默认的文本补全器
   langTools.setCompleters([])
-  
+
   // 创建自定义补全器
   const sqlCompleter = {
     getCompletions: (_editor: ace.Editor, _session: ace.IEditSession, _pos: ace.Position, _prefix: string, callback: (error: any, results: any[]) => void) => {
       const completions: any[] = []
-      
+
       // SQL 关键词
       const sqlKeywords = [
         'SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
@@ -640,7 +892,7 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
         'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'CONSTRAINT', 'UNIQUE', 'CHECK', 'DEFAULT',
         'AUTO_INCREMENT', 'NOT', 'NULL', 'TRUE', 'FALSE'
       ]
-      
+
       sqlKeywords.forEach(keyword => {
         completions.push({
           caption: keyword,
@@ -650,11 +902,11 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
           value: keyword
         })
       })
-      
+
       // 表和字段补全
       if (databaseStructure.value) {
         const structure = databaseStructure.value
-        
+
         // 表名补全
         if (structure.tables) {
           structure.tables.forEach((table: TableInfo) => {
@@ -667,7 +919,7 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
                 score: 900,
                 value: tableName
               })
-              
+
               // 字段名补全（当输入 "表名." 时显示该表的字段）
               if (table.columns) {
                 table.columns.forEach((column: ColumnInfo) => {
@@ -694,7 +946,7 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
             }
           })
         }
-        
+
         // 视图名补全
         if (structure.views) {
           structure.views.forEach((view: any) => {
@@ -711,16 +963,16 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
           })
         }
       }
-      
+
       // 过滤匹配前缀的补全项
-      const filtered = completions.filter(item => 
+      const filtered = completions.filter(item =>
         item.value.toLowerCase().startsWith(_prefix.toLowerCase())
       )
-      
+
       callback(null, filtered)
     }
   }
-  
+
   // 添加补全器
   langTools.addCompleter(sqlCompleter)
 }
@@ -739,11 +991,11 @@ const tableColumns = computed(() => {
       // enable inline edit/copy interaction on every cell
       customCell: (record: any) => ({
         onClick: () => {
-          activeResultCell.value = { rowKey: record?.key, dataIndex: name }
+          activeResultCell.value = {rowKey: record?.key, dataIndex: name}
         },
         onDblclick: () => startEditResultCell(record?.key, name),
       }),
-      customRender: ({ text, record }: any) => {
+      customRender: ({text, record}: any) => {
         const rowKey = record?.key
         const isEditing = !!editingResultCell.value && editingResultCell.value.rowKey === rowKey && editingResultCell.value.dataIndex === name
         if (!isEditing) return text
@@ -762,9 +1014,9 @@ const tableColumns = computed(() => {
 
 function normalizeRowsToTableData(rows: any[], cols: any[]) {
   if (!Array.isArray(rows)) return []
-  if (!Array.isArray(cols) || cols.length === 0) return rows.map((r: any, i: number) => ({ key: i, ...(r || {}) }))
+  if (!Array.isArray(cols) || cols.length === 0) return rows.map((r: any, i: number) => ({key: i, ...(r || {})}))
   return rows.map((row: any, i: number) => {
-    const rec: any = { key: i }
+    const rec: any = {key: i}
     cols.forEach((col: any, cidx: number) => {
       const name = col?.columnName || `Column ${cidx + 1}`
       if (row && typeof row === 'object' && !Array.isArray(row) && row[name] !== undefined) rec[name] = row[name]
@@ -785,7 +1037,10 @@ const rowSelection = computed(() => ({
 function customRow(record: any) {
   return {
     onClick: () => {
-      activeResultCell.value = { rowKey: record?.key, dataIndex: (activeResultCell.value?.dataIndex || (tableColumns.value?.[0] as any)?.dataIndex) as string }
+      activeResultCell.value = {
+        rowKey: record?.key,
+        dataIndex: (activeResultCell.value?.dataIndex || (tableColumns.value?.[0] as any)?.dataIndex) as string
+      }
       focusResultsHotkeyHost()
     },
   }
@@ -797,7 +1052,7 @@ function focusResultsHotkeyHost() {
 
 function startEditResultCell(rowKey: string | number, dataIndex: string) {
   if (rowKey === undefined || rowKey === null) return
-  editingResultCell.value = { rowKey, dataIndex }
+  editingResultCell.value = {rowKey, dataIndex}
   const row = resultTableData.value.find((r) => r?.key === rowKey)
   editingResultValue.value = row?.[dataIndex] === null || row?.[dataIndex] === undefined ? '' : String(row?.[dataIndex])
   nextTick(() => focusResultsHotkeyHost())
@@ -806,7 +1061,7 @@ function startEditResultCell(rowKey: string | number, dataIndex: string) {
 function commitEditResultCell(rowKey: string | number, dataIndex: string) {
   const idx = resultTableData.value.findIndex((r) => r?.key === rowKey)
   if (idx >= 0) {
-    const next = { ...(resultTableData.value[idx] || {}) }
+    const next = {...(resultTableData.value[idx] || {})}
     next[dataIndex] = editingResultValue.value
     resultTableData.value.splice(idx, 1, next)
   }
@@ -852,7 +1107,7 @@ function handleCopyResults() {
   }
   const row = resultTableData.value.find((r) => r?.key === cell.rowKey)
   const value = row?.[cell.dataIndex]
-  copyRowsToClipboard('textWithoutHeaders', [cell.dataIndex], [{ [cell.dataIndex]: value }], {
+  copyRowsToClipboard('textWithoutHeaders', [cell.dataIndex], [{[cell.dataIndex]: value}], {
     schemaName: undefined,
     pureName: undefined,
     driver: undefined,
@@ -913,7 +1168,7 @@ async function handleExecute() {
     const result = await databaseConnectionsSqlSelectApi({
       conid: effectiveConid.value,
       database: effectiveDatabaseName.value,
-      select: { sql },
+      select: {sql},
     })
 
     // If backend returned an error, show the raw database error message
@@ -933,9 +1188,9 @@ async function handleExecute() {
       const cols = Array.isArray(payload.columns) ? payload.columns : []
       const derivedCols =
         cols.length > 0
-          ? cols.map((c: any) => ({ columnName: c?.columnName || String(c) }))
-          : Object.keys(payload.rows?.[0] || {}).map((k) => ({ columnName: k }))
-      queryResult.value = { rows: payload.rows, columns: derivedCols }
+          ? cols.map((c: any) => ({columnName: c?.columnName || String(c)}))
+          : Object.keys(payload.rows?.[0] || {}).map((k) => ({columnName: k}))
+      queryResult.value = {rows: payload.rows, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload.rows, derivedCols)
       clearResultSelection()
       return
@@ -943,8 +1198,8 @@ async function handleExecute() {
 
     // fallback: payload is plain array of row objects
     if (Array.isArray(payload)) {
-      const derivedCols = Object.keys(payload?.[0] || {}).map((k) => ({ columnName: k }))
-      queryResult.value = { rows: payload, columns: derivedCols }
+      const derivedCols = Object.keys(payload?.[0] || {}).map((k) => ({columnName: k}))
+      queryResult.value = {rows: payload, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload, derivedCols)
       clearResultSelection()
       return

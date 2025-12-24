@@ -231,8 +231,62 @@ export class TableGridDisplay extends GridDisplay {
   }
 
   createSelect(options = {}) {
-    if (!this.table) return null;
-    const select = this.createSelectBase(this.table, this.table.columns, options);
+    if (!this.table) {
+      console.warn(`[TableGridDisplay] createSelect: table is null`, {
+        tableName: this.tableName,
+        dbinfo: this.dbinfo,
+        hasTables: !!this.dbinfo?.tables,
+        tablesCount: this.dbinfo?.tables?.length || 0
+      })
+      return null;
+    }
+    if (!this.table.columns || this.table.columns.length === 0) {
+      console.warn(`[TableGridDisplay] createSelect: table has no columns`, {
+        table: this.table,
+        tableName: this.tableName
+      })
+      return null;
+    }
+    // 确保使用正确的表名信息
+    // 优先使用传入的 tableName（可能包含正确的 schemaName），如果 table 中的信息不完整
+    const tableNameInfo = {
+      schemaName: this.table.schemaName ?? this.tableName.schemaName,
+      pureName: this.table.pureName ?? this.tableName.pureName
+    }
+    
+    // 验证 pureName
+    if (!tableNameInfo.pureName || (typeof tableNameInfo.pureName === 'string' && tableNameInfo.pureName.trim() === '')) {
+      console.error(`[TableGridDisplay] createSelect: invalid pureName`, {
+        table: this.table,
+        tableName: this.tableName,
+        tableNameInfo,
+        tablePureName: this.table.pureName,
+        tableNamePureName: this.tableName.pureName
+      })
+      return null;
+    }
+    
+    console.log(`[TableGridDisplay] createSelect: using tableNameInfo`, {
+      tableNameInfo,
+      tablePureName: this.table.pureName,
+      tableSchemaName: this.table.schemaName,
+      tableNamePureName: this.tableName.pureName,
+      tableNameSchemaName: this.tableName.schemaName
+    })
+    
+    const select = this.createSelectBase(tableNameInfo, this.table.columns, options);
+    if (!select) {
+      console.error(`[TableGridDisplay] createSelect: createSelectBase returned null`, {
+        tableNameInfo,
+        columnsCount: this.table.columns.length,
+        firstColumn: this.table.columns[0]
+      })
+    } else {
+      console.log(`[TableGridDisplay] createSelect: select created successfully`, {
+        from: select.from,
+        columnsCount: select.columns?.length || 0
+      })
+    }
     return select;
   }
 

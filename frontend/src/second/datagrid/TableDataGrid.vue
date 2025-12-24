@@ -167,19 +167,76 @@ export default defineComponent({
       return (typeof s === 'string') ? s.trim() : s
     })
 
-    const display = computed(() => (connection.value && extensions.value && serverVersion.value) ? new TableGridDisplay(
-      {schemaName: normalizedSchemaName.value, pureName: normalizedPureName.value!},
-      findEngineDriver(connection.value, <ExtensionsDirectory>extensions.value!),
-      config.value!,
-      setConfig.value as ChangeConfigFunc,
-      cache.value!,
-      setCache.value as ChangeCacheFunc,
-      extendedDbInfo.value,
-      {showHintColumns: getBoolSettingsValue('dataGrid.showHintColumns', true)},
-      serverVersion.value,
-      table => getDictionaryDescription(table, conid.value!, database.value!, apps.value, connections.value) as any,
-      connection.value?.isReadOnly,
-    ) as GridDisplay : null)
+    const display = computed(() => {
+      const hasConnection = !!connection.value
+      const hasExtensions = !!extensions.value
+      const hasServerVersion = !!serverVersion.value
+      const hasPureName = !!normalizedPureName.value && String(normalizedPureName.value).trim() !== ''
+      const hasDbInfo = !!extendedDbInfo.value
+      
+      // 调试：检查依赖项状态
+      if (conid.value && database.value && pureName.value) {
+        if (!hasConnection || !hasExtensions || !hasServerVersion || !hasPureName || !hasDbInfo) {
+          console.warn(`[TableDataGrid] Display dependencies not ready for ${pureName.value}:`, {
+            conid: conid.value,
+            database: database.value,
+            pureName: pureName.value,
+            normalizedPureName: normalizedPureName.value,
+            hasConnection,
+            hasExtensions,
+            hasServerVersion,
+            hasPureName,
+            hasDbInfo,
+            connection: connection.value,
+            extensions: extensions.value,
+            serverVersion: serverVersion.value,
+            extendedDbInfo: extendedDbInfo.value
+          })
+        } else {
+          console.log(`[TableDataGrid] All dependencies ready for ${pureName.value}, creating display`, {
+            schemaName: normalizedSchemaName.value,
+            pureName: normalizedPureName.value,
+            hasTables: !!extendedDbInfo.value?.tables,
+            tablesCount: extendedDbInfo.value?.tables?.length || 0
+          })
+        }
+      }
+      
+      if (!connection.value || !extensions.value || !serverVersion.value || !hasPureName || !extendedDbInfo.value) {
+        return null
+      }
+      
+      const tableName = {
+        schemaName: normalizedSchemaName.value,
+        pureName: normalizedPureName.value!
+      }
+      
+      const displayInstance = new TableGridDisplay(
+        tableName,
+        findEngineDriver(connection.value, <ExtensionsDirectory>extensions.value!),
+        config.value!,
+        setConfig.value as ChangeConfigFunc,
+        cache.value!,
+        setCache.value as ChangeCacheFunc,
+        extendedDbInfo.value,
+        {showHintColumns: getBoolSettingsValue('dataGrid.showHintColumns', true)},
+        serverVersion.value,
+        table => getDictionaryDescription(table, conid.value!, database.value!, apps.value, connections.value) as any,
+        connection.value?.isReadOnly,
+      ) as GridDisplay
+      
+      // 调试：检查 display 是否正确创建
+      if (conid.value && database.value && pureName.value) {
+        console.log(`[TableDataGrid] Display created:`, {
+          isLoadedCorrectly: (displayInstance as any).isLoadedCorrectly,
+          hasTable: !!(displayInstance as any).table,
+          tableName: (displayInstance as any).table?.pureName,
+          tableColumns: (displayInstance as any).table?.columns?.length || 0
+        })
+      }
+      
+      return displayInstance
+    })
 
     const formDisplay = computed(() => (connection.value && extensions.value && serverVersion.value) ? new TableFormViewDisplay(
       {schemaName: normalizedSchemaName.value, pureName: normalizedPureName.value!},
@@ -303,3 +360,4 @@ export default defineComponent({
   flex: 1;
 }
 </style>
+

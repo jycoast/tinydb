@@ -59,18 +59,6 @@ export const useLocaleStore = defineStore({
     },
     getLocale(): LocaleType {
       return this.localInfo?.locale ?? 'zh_CN';
-    },
-    getDynamicProps(): { splitterVisible: boolean } {
-      return this.dynamicProps
-    },
-    getOpenedTabs(): TabDefinition[] {
-      return this.openedTabs
-    },
-    activeTabId(): string | undefined {
-      return this.openedTabs.find(x => x.selected)?.tabid
-    },
-    activeTab(): any {
-      return this.openedTabs.find(x => x.selected)
     }
   },
   actions: {
@@ -81,15 +69,6 @@ export const useLocaleStore = defineStore({
     setLocaleInfo(info: Partial<LocaleSetting>) {
       this.localInfo = {...this.localInfo, ...info};
       ls.set(LOCALE_KEY, this.localInfo);
-    },
-    /**
-     * Initialize multilingual information and load the existing configuration from the local cache
-     */
-    initLocale() {
-      this.setLocaleInfo({
-        ...localeSetting,
-        ...this.localInfo,
-      });
     },
     setSelectedWidget(name: Nullable<string>) {
       this.selectedWidget = name
@@ -116,9 +95,6 @@ export const useLocaleStore = defineStore({
     },
     setCssVariable(value, transform, cssVariable) {
       document.documentElement.style.setProperty(cssVariable, transform(value));
-    },
-    setDynamicProps(value: { splitterVisible: boolean }) {
-      this.dynamicProps = value
     },
     updateOpenedTabs(updater) {
       this.openedTabs = updater(this.openedTabs)
