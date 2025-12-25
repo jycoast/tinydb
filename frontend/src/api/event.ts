@@ -36,60 +36,23 @@ export default function dispatchRuntimeEvent() {
 
   // 构建查询 SQL（后端会等待 handleSqlSelectReturn；这里必须保证一定会 emit 一个 string）
   EventsOn('handleSqlSelect', (selectParams: any) => {
-    console.log(`[handleSqlSelect] Event received:`, {
-      type: typeof selectParams,
-      isString: typeof selectParams === 'string',
-      hasSql: selectParams && typeof selectParams === 'object' && typeof selectParams.sql === 'string',
-      from: (selectParams as any)?.from
-    })
     try {
       // 如果前端已经传了原始 SQL，直接回传
       if (typeof selectParams === 'string') {
-        console.log(`[handleSqlSelect] Returning string SQL directly`)
         EventsEmit('handleSqlSelectReturn', selectParams)
         return
       }
       if (selectParams && typeof selectParams === 'object' && typeof selectParams.sql === 'string') {
-        console.log(`[handleSqlSelect] Returning SQL from sql property`)
         EventsEmit('handleSqlSelectReturn', selectParams.sql)
         return
       }
 
-      // 尝试从多个来源获取 connection
-      // 1. 全局 connection (clusterApi)
-      // 2. currentDatabase 中的 connection (bootstrap)
       const currentConnection = connection.value || currentDatabase.value?.connection
       const driver = extensions.value && currentConnection ? findEngineDriver(currentConnection, extensions.value) : null
-      console.log(`[handleSqlSelect] Driver check:`, {
-        hasExtensions: !!extensions.value,
-        hasGlobalConnection: !!connection.value,
-        hasCurrentDatabase: !!currentDatabase.value,
-        hasCurrentDatabaseConnection: !!currentDatabase.value?.connection,
-        hasConnection: !!currentConnection,
-        hasDriver: !!driver
-      })
       if (driver) {
-        // 调试：检查 selectParams 中的表名信息
-        const fromName = (selectParams as any)?.from?.name
-        if (fromName) {
-          console.log(`[handleSqlSelect] From name info:`, {
-            pureName: fromName.pureName,
-            schemaName: fromName.schemaName,
-            hasPureName: !!fromName.pureName,
-            hasSchemaName: !!fromName.schemaName,
-            pureNameType: typeof fromName.pureName,
-            schemaNameType: typeof fromName.schemaName
-          })
-        } else {
-          console.error(`[handleSqlSelect] Missing from.name in selectParams:`, selectParams)
-        }
-        
         const dmp = driver.createDumper()
         dumpSqlSelect(dmp, selectParams as Select)
         const out = dmp?.s || ''
-        
-        // 调试：检查生成的 SQL
-        console.log(`[handleSqlSelect] Generated SQL:`, out)
 
         // Guard: if generated SQL contains an empty quoted identifier token `` (likely missing table/column name),
         // fallback to a minimal safe SELECT to keep table browsing usable.

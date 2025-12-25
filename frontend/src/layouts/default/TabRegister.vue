@@ -40,52 +40,21 @@ export default defineComponent({
     const mountedTabs = ref({})
     const selectedTab = computed(() => (openedTabs.value as TabDefinition[]).find(x => x.selected && x.closedTime == null))
 
-    // 使用 computed 创建响应式的 props map，确保 props 变化时能正确更新
     const tabPropsMap = computed(() => {
       const propsMap: Record<string, any> = {}
       const openTabs = (openedTabs.value as TabDefinition[]).filter(x => x.closedTime == null)
       for (const tab of openTabs) {
         if (tab.tabid) {
-          // 确保 props 存在，如果不存在则使用空对象
           const props = tab.props || {}
-          // 创建新的对象引用，确保 Vue 能检测到变化
-          // 特别确保 pureName, conid, database 等关键属性存在
           propsMap[tab.tabid] = { ...props }
-          
-          // 调试：检查关键属性是否存在（包括空字符串的情况）
-          const tabComponentName = typeof tab.tabComponent === 'string' ? tab.tabComponent : (tab.tabComponent as any)?.name || ''
-          if (tabComponentName === 'TableDataTab') {
-            const hasPureName = props.pureName && String(props.pureName).trim() !== ''
-            if (!hasPureName) {
-              console.warn(`[TabRegister] TableDataTab ${tab.tabid} missing or empty pureName:`, {
-                tabid: tab.tabid,
-                title: tab.title,
-                props: props,
-                pureName: props.pureName,
-                pureNameType: typeof props.pureName,
-                fullTab: tab,
-                openedTabsSnapshot: JSON.parse(JSON.stringify(openedTabs.value))
-              })
-            } else {
-              console.log(`[TabRegister] TableDataTab ${tab.tabid} props OK:`, {
-                tabid: tab.tabid,
-                conid: props.conid,
-                database: props.database,
-                schemaName: props.schemaName,
-                pureName: props.pureName
-              })
-            }
-          }
         }
       }
       return propsMap
     })
 
-    // 生成 tab 的唯一 key，用于强制重新渲染当 props 变化时
     function getTabKey(tabid: string) {
       const props = tabPropsMap.value[tabid]
       if (!props) return ''
-      // 只使用关键属性生成 key，避免性能问题
       const keyProps = {
         conid: props.conid,
         database: props.database,

@@ -17,39 +17,19 @@ import AntdDataGridCore from '/@/second/datagrid/AntdDataGridCore.vue'
 async function loadDataPage(props: any, offset: number, limit: number) {
   const {display, conid, database} = props
   
-  // 调试：检查 display 状态
   if (!display) {
-    console.error(`[AntdSqlDataGridCore] loadDataPage: display is null`)
     return {errorMessage: 'Display is not available'}
   }
   
   if ((display as any).isLoadedCorrectly === false) {
-    console.error(`[AntdSqlDataGridCore] loadDataPage: display.isLoadedCorrectly is false`, {
-      hasTable: !!(display as any).table,
-      tableName: (display as any).tableName,
-      table: (display as any).table
-    })
     return {errorMessage: 'Table not found or not loaded correctly'}
   }
   
   const select = display.getPageQuery(offset, limit)
   
-  // 调试：检查生成的 SQL select
   if (!select) {
-    console.error(`[AntdSqlDataGridCore] loadDataPage: getPageQuery returned null`, {
-      hasDisplay: !!display,
-      isLoadedCorrectly: (display as any).isLoadedCorrectly,
-      hasTable: !!(display as any).table,
-      tableName: (display as any).tableName
-    })
     return {errorMessage: 'Failed to generate SQL query'}
   }
-  
-  console.log(`[AntdSqlDataGridCore] loadDataPage: executing query`, {
-    offset,
-    limit,
-    select: JSON.stringify(select, null, 2)
-  })
   
   try {
     const response = (await databaseConnectionsSqlSelectApi({
@@ -59,7 +39,6 @@ async function loadDataPage(props: any, offset: number, limit: number) {
     })) as any
 
     if (response?.errorMessage) {
-      console.error(`[AntdSqlDataGridCore] loadDataPage: API error`, response.errorMessage)
       return response
     }
 
@@ -72,7 +51,6 @@ async function loadDataPage(props: any, offset: number, limit: number) {
     }
     return {errorMessage: 'Unexpected response while loading rows'}
   } catch (e: any) {
-    console.error(`[AntdSqlDataGridCore] loadDataPage: exception`, e)
     return {errorMessage: e?.message || String(e || 'Load rows failed')}
   }
 }

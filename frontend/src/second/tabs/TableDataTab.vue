@@ -124,31 +124,6 @@ export default defineComponent({
   },
   setup(props) {
     const {tabid, conid, database, schemaName, pureName} = toRefs(props)
-    
-    // 调试：检查关键 props 是否存在（包括空字符串的情况）
-    if (tabid.value) {
-      const hasPureName = pureName.value && String(pureName.value).trim() !== ''
-      if (!hasPureName) {
-        console.warn(`[TableDataTab] Tab ${tabid.value} missing or empty pureName on mount:`, {
-          tabid: tabid.value,
-          conid: conid.value,
-          database: database.value,
-          schemaName: schemaName.value,
-          pureName: pureName.value,
-          pureNameType: typeof pureName.value,
-          allProps: props,
-          propsKeys: Object.keys(props)
-        })
-      } else {
-        console.log(`[TableDataTab] Tab ${tabid.value} props OK:`, {
-          tabid: tabid.value,
-          conid: conid.value,
-          database: database.value,
-          schemaName: schemaName.value,
-          pureName: pureName.value
-        })
-      }
-    }
 
     let autoRefreshTimer: number | null = null
 

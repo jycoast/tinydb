@@ -542,37 +542,18 @@ export abstract class GridDisplay {
 
   createSelectBase(name: NamedObjectInfo, columns: ColumnInfo[], options) {
     if (!columns) {
-      console.warn(`[GridDisplay] createSelectBase: no columns provided`)
       return null;
     }
-    // Validate table name to prevent SQL syntax errors
     if (!name || !name.pureName || (typeof name.pureName === 'string' && name.pureName.trim() === '')) {
-      console.error(`[GridDisplay] createSelectBase: invalid name`, {
-        name,
-        pureName: name?.pureName,
-        pureNameType: typeof name?.pureName
-      })
       return null;
     }
     
-    // 使用 pick 时，如果 schemaName 是 undefined，pick 仍然会包含它
-    // 我们需要确保只包含有效的属性，避免 undefined 值导致问题
     const pickedName: NamedObjectInfo = {
       pureName: name.pureName
     }
-    // 只有当 schemaName 存在且非空时才包含它
     if (name.schemaName != null && typeof name.schemaName === 'string' && name.schemaName.trim() !== '') {
       pickedName.schemaName = name.schemaName
     }
-    
-    console.log(`[GridDisplay] createSelectBase: creating select`, {
-      name,
-      pickedName,
-      pickedNameKeys: Object.keys(pickedName),
-      hasSchemaName: 'schemaName' in pickedName,
-      columnsCount: columns.length,
-      firstColumn: columns[0]?.columnName
-    })
     
     const orderColumnName = columns[0].columnName;
     const select: Select = {
@@ -591,12 +572,7 @@ export abstract class GridDisplay {
       ],
     };
     
-    // 验证生成的 select 对象
     if (!select.from?.name?.pureName || (typeof select.from.name.pureName === 'string' && select.from.name.pureName.trim() === '')) {
-      console.error(`[GridDisplay] createSelectBase: select.from.name has invalid pureName`, {
-        selectFrom: select.from,
-        pickedName
-      })
       return null;
     }
     
@@ -608,13 +584,6 @@ export abstract class GridDisplay {
     this.applyFilterOnSelect(select, displayedColumnInfo);
     this.applyGroupOnSelect(select, displayedColumnInfo);
     this.applySortOnSelect(select, displayedColumnInfo);
-    
-    console.log(`[GridDisplay] createSelectBase: select created`, {
-      from: select.from,
-      columnsCount: select.columns?.length || 0,
-      hasWhere: !!select.where,
-      hasOrderBy: !!select.orderBy
-    })
     
     return select;
   }
