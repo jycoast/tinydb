@@ -53,6 +53,8 @@ export function configThemePlugin(isBuild: boolean): PluginOption[] {
       ],
       filter: (id) => (isBuild ? !id.endsWith('antd.less') : true),
       // extractCss: false,
+      // 开发模式下禁用 CSS 提取以加快启动速度
+      extractCss: isBuild,
       darkModifyVars: {
         ...generateModifyVars(true),
         'text-color': '#c9d1d9',

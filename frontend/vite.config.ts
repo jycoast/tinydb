@@ -61,7 +61,12 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       strictPort: true,
       // Load proxy configuration from .env
       proxy: createProxy(VITE_PROXY),
-      cors: true
+      cors: true,
+      // 优化开发服务器性能
+      watch: {
+        // 忽略 node_modules 和 dist 目录的变更，减少文件监听
+        ignored: ['**/node_modules/**', '**/dist/**', '**/.git/**'],
+      },
     },
     esbuild: {
       pure: VITE_DROP_CONSOLE ? ['console.log', 'debugger'] : [],
@@ -102,7 +107,15 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         'ant-design-vue/es/locale/zh_CN',
         'ant-design-vue/es/locale/en_US',
         'ace-builds',
+        'vue',
+        'vue-router',
+        'pinia',
+        'ant-design-vue',
+        'lodash-es',
+        'dayjs',
       ],
+      // 排除一些不需要预构建的依赖
+      exclude: ['@wailsapp/runtime'],
     },
   };
 };
