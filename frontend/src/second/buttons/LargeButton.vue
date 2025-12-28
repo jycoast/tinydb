@@ -51,28 +51,6 @@ export default defineComponent({
 })
 </script>
 
-<!--<script lang="ts" setup>
-import {defineEmits, defineProps, toRefs, withDefaults} from 'vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
-//<{ icon?: string, disabled: boolean, fillHorizontal: boolean }>
-//<{icon?: string}, {disabled: boolean, fillHorizontal: boolean}>
-// const defaultProps = withDefaults()
-const defaultProps = withDefaults<any, any>(defineProps({
-  icon: String
-}), {
-  fillHorizontal: Boolean,
-  disabled: Boolean,
-})
-
-const {disabled, fillHorizontal} = toRefs(defaultProps)
-const emit = defineEmits(['visible'])
-const handleClick = () => {
-  if (!disabled.value) {
-    emit('visible')
-  }
-}
-</script>-->
-
 <style scoped>
 .button {
   padding: 0 15px;
@@ -81,23 +59,6 @@ const handleClick = () => {
   width: 120px;
   background-color: var(--theme-bg-1);
   cursor: pointer;
-}
-
-.button.fillHorizontal {
-  width: auto;
-  margin: 0 10px;
-}
-
-.button:not(.disabled):hover {
-  background-color: var(--theme-bg-2);
-}
-
-.button:not(.disabled):active {
-  background-color: var(--theme-bg-3);
-}
-
-.button.disabled {
-  color: var(--theme-font-3);
 }
 
 .icon {

@@ -88,8 +88,8 @@ import {useClusterApiStore} from '/@/store/modules/clusterApi'
 
 import {Button, Input, Space, Tooltip} from 'ant-design-vue'
 import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
-import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
 import { useModal } from '/@/components/Modal'
+import CreateTableModal from "/@/second/modals/CreateTableModal.vue";
 
 export default defineComponent({
   name: "SqlObjectList",
@@ -102,6 +102,7 @@ export default defineComponent({
     }
   },
   components: {
+    CreateTableModal,
     AppObjectList,
     WidgetsInnerContainer,
     LoadingInfo,

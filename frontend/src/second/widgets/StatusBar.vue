@@ -104,7 +104,6 @@ export default defineComponent({
 
     const connectionLabel = computed(() => getConnectionLabel(unref(connection), {allowExplicitDatabase: false}))
     const contextItems = []
-    // const databaseButtonBackground = useConnectionColor(dbid, 6, 'dark', true, false)
     const databaseButtonBackground = '------'
     const connectionButtonBackground = '------'
 

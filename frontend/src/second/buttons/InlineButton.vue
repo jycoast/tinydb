@@ -68,30 +68,10 @@
   display: flex;
 }
 
-.narrow {
-  padding: 3px 1px;
-}
-
-.outer.disabled {
-  color: var(--theme-font-3);
-}
-
-.outer:hover:not(.disabled) {
-  border: 1px solid var(--theme-font-1);
-}
-
-.outer:active:not(.disabled) {
-  background: linear-gradient(to bottom, var(--bg-2) 5%, var(--bg-1) 100%);
-  background-color: var(--bg-2);
-}
-
 .inner {
   margin: auto;
   flex: 1;
   text-align: center;
 }
 
-.square {
-  width: 18px;
-}
 </style>

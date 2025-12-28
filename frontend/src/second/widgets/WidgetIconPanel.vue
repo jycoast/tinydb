@@ -29,10 +29,6 @@ export default {
         name: 'database',
         title: 'Database connections',
       },
-      // {
-      //   icon: 'fa-table',
-      //   name: 'table',
-      // },
       {
         icon: 'icon file',
         name: 'file',

@@ -56,17 +56,9 @@ export default defineComponent({
   user-select: none;
 }
 
-.button.disabled {
-  color: var(--theme-font-3);
-}
-
 .icon {
   margin-right: 5px;
   color: var(--theme-font-link);
-}
-
-.icon.disabled {
-  color: var(--theme-font-3);
 }
 
 .inner {
@@ -85,13 +77,4 @@ export default defineComponent({
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
-.inner:hover:not(.disabled) {
-  background: var(--theme-bg-hover);
-  border-color: var(--theme-font-link);
-}
-
-.inner:active:not(.disabled) {
-  background: var(--theme-bg-2);
-  border-color: var(--theme-font-link);
-}
 </style>

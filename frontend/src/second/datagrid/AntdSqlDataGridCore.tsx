@@ -57,7 +57,9 @@ async function loadDataPage(props: any, offset: number, limit: number) {
 
 async function loadRowCount(props: any) {
   const {display, conid, database} = props
+  if (!display) return null
   const select = display.getCountQuery()
+  if (!select) return null
   try {
     const response = (await databaseConnectionsSqlSelectApi({
       conid: unref(conid)!,
@@ -65,14 +67,36 @@ async function loadRowCount(props: any) {
       select,
     })) as any
 
+    if (response?.errorMessage) {
+      return null
+    }
+
     const payload: any = response?.rows
     const rows = payload && typeof payload === 'object' && Array.isArray(payload.rows) ? payload.rows : payload
-    const first = Array.isArray(rows) ? rows[0] : undefined
-    const count = first?.count ?? first?.COUNT ?? first?.Count ?? first?.['COUNT(1)']
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return null
+    }
+    
+    const first = rows[0]
+    if (!first || typeof first !== 'object') {
+      return null
+    }
+    
+    // Try multiple possible count field names
+    const count = first.count ?? first.COUNT ?? first.Count ?? first?.['COUNT(1)'] ?? first?.['count(*)'] ?? first?.['COUNT(*)']
+    if (count == null) {
+      // If no count field found, try to get the first numeric value
+      const numericValue = Object.values(first).find(v => typeof v === 'number' && Number.isFinite(v))
+      if (numericValue != null) {
+        return Number(numericValue)
+      }
+      return null
+    }
+    
     const n = typeof count === 'number' ? count : Number(count)
-    return Number.isFinite(n) ? n : 0
+    return Number.isFinite(n) && n >= 0 ? n : null
   } catch {
-    return 0
+    return null
   }
 }
 

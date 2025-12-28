@@ -53,13 +53,10 @@ import {buildUUID} from '/@/utils/uuid'
 import localforage from 'localforage'
 import {message} from 'ant-design-vue'
 import {
-  closeMultipleTabs,
-  closeTab,
   closeAll,
+  closeMultipleTabs,
   closeOthers,
-  closeWithOtherDb,
-  closeWithSameDb,
-  getDbIcon,
+  closeTab,
   getTabDbName
 } from './TabsPanel_'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
@@ -278,42 +275,15 @@ export default defineComponent({
 
       message.warning('该标签页暂不支持加入收藏')
     }
-
-    function handleContextTabs(e: MouseEvent, tabs: any[]) {
-      createContextMenu({
-        event: e,
-        items: getDatabaseContextMenu(tabs),
-      });
-    }
-
-    function getDatabaseContextMenu(tabs) {
-      const {tabid, props} = tabs[0];
-      const {conid, database} = props || {};
-
-      return [
-        conid &&
-        database && [
-          {
-            text: `Close tabs with DB ${database}`,
-            onClick: () => closeWithSameDb(tabid),
-          },
-          {
-            text: `Close tabs with other DB than ${database}`,
-            onClick: () => closeWithOtherDb(tabid),
-          },
-        ],
-      ];
-    }
-
     function handleContextTab(e: MouseEvent, tab: any) {
       createContextMenu({
         event: e,
         items: getContextMenu(tab),
       })
     }
-    
+
     function getContextMenu(tab: any) {
-      const { tabid, props, tabComponent, appObject, appObjectData } = tab;
+      const {tabid, appObjectData} = tab;
       const isPinned = appObjectData?.objectTypeField
         ? (pinnedTables.value || []).some(x => isSamePinnedTable(x, appObjectData))
         : false
@@ -336,13 +306,13 @@ export default defineComponent({
           onClick: () => duplicateTab(tab),
         },
         [
-          { divider: true },
+          {divider: true},
           {
             text: isPinned ? 'Remove from favorites' : 'Add to favorites',
             onClick: () => toggleFavorite(tab),
           },
         ],
-        { divider: true },
+        {divider: true},
       ];
     }
 

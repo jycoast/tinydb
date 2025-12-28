@@ -1,12 +1,13 @@
-import {computed, defineComponent, PropType, toRefs, unref} from 'vue'
+import {defineComponent, PropType, toRefs, unref} from 'vue'
 import {storeToRefs} from 'pinia'
-import {get, isEqual, uniqWith} from 'lodash-es'
+import {get} from 'lodash-es'
 import AppObjectCore from './AppObjectCore.vue'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
-import {useLocaleStore} from '/@/store/modules/locale'
 import {IPinnedDatabasesItem} from "/@/second/typings/types/standard.d"
 import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
 import { useModal } from '/@/components/Modal'
+import {databaseConnectionsRefreshApi} from '/@/api/simpleApis'
+import {Modal, message} from 'ant-design-vue'
 
 export default defineComponent({
   name: 'DatabaseAppObject',
@@ -25,19 +26,15 @@ export default defineComponent({
 
     const bootstrap = useBootstrapStore()
     const {getCurrentDatabase: currentDatabase} = storeToRefs(bootstrap)
-    const localeStore = useLocaleStore()
-    const {pinnedDatabases} = storeToRefs(localeStore)
 
     const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
-
-    const isPinned = computed(() =>
-      !!unref(pinnedDatabases).find(x => unref(x).name == unref(data)!.name && unref(x).connection?._id == unref(data)!.connection?._id))
 
     const createMenu = () => {
       return getDatabaseMenuItems(
         data.value?.connection?._id,
         data.value?.name,
-        openCreateTableModal
+        openCreateTableModal,
+        bootstrap
       )
     }
 
@@ -54,10 +51,6 @@ export default defineComponent({
           onClick={() => bootstrap.setCurrentDatabase(data.value!)}
           menu={createMenu}
           showPinnedInsteadOfUnpin={unref(passProps)?.showPinnedInsteadOfUnpin}
-          pin={isPinned.value ? null : () => localeStore.updatePinnedDatabases(list => uniqWith([...list, data.value], isEqual))}
-          unpin={isPinned.value ?
-            () => localeStore.updatePinnedDatabases(list => list.filter(x => x.name != data.value!.name || x.connection?._id != data.value!.connection?._id))
-            : null}
         />
         <CreateTableModal onRegister={registerCreateTableModal} />
       </>
@@ -65,7 +58,7 @@ export default defineComponent({
   }
 })
 
-export function getDatabaseMenuItems(conid?: string, database?: string, openCreateTableModal?: (visible: boolean, data?: any) => void) {
+export function getDatabaseMenuItems(conid?: string, database?: string, openCreateTableModal?: (visible: boolean, data?: any) => void, bootstrap?: ReturnType<typeof useBootstrapStore>) {
   const handleNewQuery = () => {
   }
 
@@ -96,6 +89,38 @@ export function getDatabaseMenuItems(conid?: string, database?: string, openCrea
 
   }
 
+  const handleCloseDatabase = () => {
+    if (!conid || !database) return
+
+    Modal.confirm({
+      title: '关闭数据库',
+      content: `确定要关闭数据库 "${database}" 吗？`,
+      okText: '关闭',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await databaseConnectionsRefreshApi({
+            conid,
+            database,
+            keepOpen: false
+          })
+          
+          // 如果当前数据库是正在关闭的数据库，则清除当前数据库
+          if (bootstrap) {
+            const current = bootstrap.currentDatabase as any
+            if (current?.connection?._id === conid && current?.name === database) {
+              bootstrap.setCurrentDatabase(null)
+            }
+          }
+          
+          message.success('数据库已关闭')
+        } catch (e: any) {
+          message.error(`关闭数据库失败：${e?.message || String(e)}`)
+        }
+      }
+    })
+  }
+
   return [
     {onClick: handleNewQuery, text: 'New query', isNewQuery: true},
     {onClick: handleNewTable, text: 'New table'},
@@ -105,5 +130,6 @@ export function getDatabaseMenuItems(conid?: string, database?: string, openCrea
     {onClick: handleSqlRestore, text: 'Restore/import SQL dump'},
     {onClick: handleSqlDump, text: 'Backup/export SQL dump'},
     {divider: true},
+    {onClick: handleCloseDatabase, text: '关闭数据库'},
   ]
 }
