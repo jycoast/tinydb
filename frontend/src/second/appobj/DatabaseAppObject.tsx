@@ -97,13 +97,13 @@ export function getDatabaseMenuItems(conid?: string, database?: string, openCrea
   }
 
   return [
-    {onClick: handleNewQuery, text: 'New query', isNewQuery: true},
-    {onClick: handleNewTable, text: 'New table'},
-    {onClick: handleNewCollection, text: 'New collection'},
-    {onClick: handleImport, text: 'Import wizard'},
-    {onClick: handleExport, text: 'Export wizard'},
-    {onClick: handleSqlRestore, text: 'Restore/import SQL dump'},
-    {onClick: handleSqlDump, text: 'Backup/export SQL dump'},
+    {onClick: handleNewQuery, text: '新建查询', isNewQuery: true},
+    {onClick: handleNewTable, text: '新建表'},
+    {onClick: handleNewCollection, text: '新建集合'},
+    {onClick: handleImport, text: '导入向导'},
+    {onClick: handleExport, text: '导出向导'},
+    {onClick: handleSqlRestore, text: '恢复/导入 SQL 转储'},
+    {onClick: handleSqlDump, text: '备份/导出 SQL 转储'},
     {divider: true},
   ]
 }
