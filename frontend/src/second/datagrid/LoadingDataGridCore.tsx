@@ -72,9 +72,10 @@ export default defineComponent({
 
     const handleLoadRowCount = async () => {
       try {
-        allRowCount.value = await loadRowCount.value!(Object.assign({}, props, attrs))
+        const count = await loadRowCount.value!(Object.assign({}, props, attrs))
+        allRowCount.value = count != null ? count : null
       } catch (e: any) {
-        allRowCount.value = 0
+        allRowCount.value = null
         errorMessage.value = e?.message || String(e || 'Load row count failed')
       }
     }
@@ -192,7 +193,7 @@ export default defineComponent({
       onLoadNextData={handleLoadNextData}
       errorMessage={errorMessage.value}
       isLoading={isLoading.value}
-      allRowCount={(rowCountLoaded.value || allRowCount.value)!}
+      allRowCount={rowCountLoaded.value ?? allRowCount.value ?? undefined}
       isLoadedAll={isLoadedAll.value}
       loadedTime={loadedTime.value}
       grider={grider.value}

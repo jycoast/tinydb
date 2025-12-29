@@ -1,6 +1,6 @@
 import {computed, defineComponent, PropType, toRefs, unref} from 'vue'
 import {isNaN} from 'lodash-es'
-import {filterName} from '/@/second/tinydb-tools'
+import {filterName, findEngineDriver} from '/@/second/tinydb-tools'
 import AppObjectCore from '/@/second/appobj/AppObjectCore.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
 import {storeToRefs} from "pinia"
@@ -8,7 +8,12 @@ import {getConnectionInfo} from '/@/api/bridge'
 import fullDisplayName from '/@/second/utility/fullDisplayName'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
 import openNewTab from '/@/second/utility/openNewTab'
-import {message} from 'ant-design-vue'
+import {message, Modal} from 'ant-design-vue'
+import {databaseConnectionsSqlSelectApi, databaseConnectionsRefreshApi} from '/@/api/simpleApis'
+import {useBootstrapStore} from '/@/store/modules/bootstrap'
+import {useModal} from '/@/components/Modal'
+import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
+import type {ContextMenuItem} from '/@/second/modals/typing'
 
 export const extractKey = ({schemaName, pureName}) =>
   (schemaName ? `${schemaName}.${pureName}` : pureName)
@@ -33,6 +38,25 @@ export const defaultTabs = {
 }
 export const menus = {
   tables: [
+    {
+      label: '打开表',
+      isOpenTable: true,
+    },
+    {
+      label: '新建表',
+      isCreateTable: true,
+    },
+    {
+      label: '删除表',
+      isDropTable: true,
+    },
+    {
+      label: '清空表',
+      isTruncateTable: true,
+    },
+    {
+      divider: true,
+    },
     {
       label: 'Open data',
       tab: 'TableDataTab',
@@ -403,6 +427,10 @@ export default defineComponent({
 
     const localeStore = useLocaleStore()
     const {pinnedTables} = storeToRefs(localeStore)
+    const bootstrap = useBootstrapStore()
+    const {extensions} = storeToRefs(bootstrap)
+
+    const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
 
     const isPinned = computed(() => !!unref(pinnedTables).find(x => testEqual(unref(data), unref(x))))
 
@@ -410,18 +438,176 @@ export default defineComponent({
       handleDatabaseObjectClick(data.value, forceNewTab)
     }
 
-    return () => <AppObjectCore
-      {...attrs}
-      data={data.value}
-      title={data.value!.schemaName ? `${data.value!.schemaName}.${data.value!.pureName}` : data.value!.pureName}
-      icon={databaseObjectIcons[data.value!.objectTypeField]}
-      showPinnedInsteadOfUnpin={passProps.value?.showPinnedInsteadOfUnpin}
-      pin={isPinned.value ? null : () => localeStore.updatePinnedTables(list => [...list, data.value])}
-      unpin={isPinned.value ? () => localeStore.updatePinnedTables(list => list.filter(x => !testEqual(x, data.value))) : null}
-      extInfo={data.value!.tableRowCount != null ? `${formatRowCount(data.value!.tableRowCount)} rows` : null}
-      onClick={() => handleClick()}
-      onMiddleclick={() => handleClick(true)}
-    />
+    async function handleOpenTable() {
+      handleDatabaseObjectClick(data.value, false)
+    }
+
+    function handleCreateTable() {
+      if (data.value?.conid && data.value?.database) {
+        openCreateTableModal(true, { conid: data.value.conid, database: data.value.database })
+      }
+    }
+
+    async function handleDropTable() {
+      const tableName = data.value?.schemaName 
+        ? `${data.value.schemaName}.${data.value.pureName}` 
+        : data.value?.pureName
+      
+      Modal.confirm({
+        title: '删除表',
+        content: `确定要删除表 "${tableName}" 吗？此操作不可恢复！`,
+        okText: '删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            const connection = await getConnectionInfo({conid: data.value?.conid})
+            if (!connection) {
+              message.error('无法获取数据库连接信息')
+              return
+            }
+            const driver = findEngineDriver(connection, extensions.value!)
+            if (!driver) {
+              message.error('无法获取数据库驱动')
+              return
+            }
+            const dumper = driver.createDumper()
+            dumper.dropTable({
+              schemaName: data.value?.schemaName,
+              pureName: data.value?.pureName,
+              columns: [],
+              primaryKey: null,
+              foreignKeys: [],
+              indexes: []
+            } as any)
+            const sql = dumper.s
+
+            const response = await databaseConnectionsSqlSelectApi({
+              conid: data.value!.conid!,
+              database: data.value!.database!,
+              select: {sql}
+            }) as any
+
+            if (response?.errorMessage) {
+              message.error(`删除表失败：${response.errorMessage}`)
+            } else {
+              message.success('表已删除')
+              // 刷新数据库结构
+              try {
+                await databaseConnectionsRefreshApi({
+                  conid: data.value!.conid!,
+                  database: data.value!.database!,
+                  keepOpen: true
+                })
+              } catch (e) {
+                console.warn('刷新数据库结构失败', e)
+              }
+            }
+          } catch (e: any) {
+            message.error(`删除表失败：${e?.message || String(e)}`)
+          }
+        }
+      })
+    }
+
+    async function handleTruncateTable() {
+      const tableName = data.value?.schemaName 
+        ? `${data.value.schemaName}.${data.value.pureName}` 
+        : data.value?.pureName
+      
+      Modal.confirm({
+        title: '清空表',
+        content: `确定要清空表 "${tableName}" 的所有数据吗？此操作不可恢复！`,
+        okText: '清空',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            const connection = await getConnectionInfo({conid: data.value?.conid})
+            if (!connection) {
+              message.error('无法获取数据库连接信息')
+              return
+            }
+            const driver = findEngineDriver(connection, extensions.value!)
+            if (!driver) {
+              message.error('无法获取数据库驱动')
+              return
+            }
+            const dumper = driver.createDumper()
+            dumper.truncateTable({
+              schemaName: data.value?.schemaName,
+              pureName: data.value?.pureName
+            })
+            const sql = dumper.s
+
+            const response = await databaseConnectionsSqlSelectApi({
+              conid: data.value!.conid!,
+              database: data.value!.database!,
+              select: {sql}
+            }) as any
+
+            if (response?.errorMessage) {
+              message.error(`清空表失败：${response.errorMessage}`)
+            } else {
+              message.success('表已清空')
+            }
+          } catch (e: any) {
+            message.error(`清空表失败：${e?.message || String(e)}`)
+          }
+        }
+      })
+    }
+
+    function createMenu(): ContextMenuItem[] {
+      if (data.value?.objectTypeField !== 'tables') {
+        return []
+      }
+
+      const menuItems: ContextMenuItem[] = [
+        {
+          label: '打开表',
+          onClick: handleOpenTable
+        },
+        {
+          label: '新建表',
+          onClick: handleCreateTable
+        },
+        {
+          label: '删除表',
+          onClick: handleDropTable
+        },
+        {
+          label: '清空表',
+          onClick: handleTruncateTable
+        },
+        {
+          divider: true
+        }
+      ]
+
+      return menuItems
+    }
+
+    return () => (
+      <>
+        <AppObjectCore
+          {...attrs}
+          data={data.value}
+          title={data.value!.schemaName ? `${data.value!.schemaName}.${data.value!.pureName}` : data.value!.pureName}
+          icon={databaseObjectIcons[data.value!.objectTypeField]}
+          showPinnedInsteadOfUnpin={passProps.value?.showPinnedInsteadOfUnpin}
+          pin={isPinned.value ? null : () => localeStore.updatePinnedTables(list => [...list, data.value])}
+          unpin={isPinned.value ? () => localeStore.updatePinnedTables(list => list.filter(x => !testEqual(x, data.value))) : null}
+          extInfo={data.value!.tableRowCount != null ? `${formatRowCount(data.value!.tableRowCount)} rows` : null}
+          onClick={() => handleClick()}
+          onMiddleclick={() => handleClick(true)}
+          menu={createMenu}
+        />
+        {data.value?.objectTypeField === 'tables' && (
+          <CreateTableModal onRegister={registerCreateTableModal} />
+        )}
+      </>
+    )
   },
   extractKey,
   createMatcher,

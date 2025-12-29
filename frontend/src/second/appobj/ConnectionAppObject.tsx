@@ -193,11 +193,6 @@ export default defineComponent({
               message.warning('developing')
             }
           },
-          // {onClick: handleNewQuery, text: 'New query', isNewQuery: true},
-          // {
-          //   text: 'Connect',
-          //   onClick: handleConnect,
-          // },
           (data.value && bootstrap.getOpenedConnections.includes(data.value?._id) && data.value?.status) && {
             text: 'Refresh',
             onClick: handleRefresh,

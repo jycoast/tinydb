@@ -6,9 +6,9 @@
         bordered
         :columns="antdColumns"
         :dataSource="dataSource"
-        :pagination="false"
+        :pagination="{}"
         :loading="isLoading"
-        size="small"
+        size="middle"
         :rowKey="rowKey"
         :rowSelection="rowSelection"
         :rowClassName="rowClassName"

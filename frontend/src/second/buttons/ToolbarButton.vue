@@ -1,9 +1,9 @@
 <template>
   <div class="button" @click="handleClick" :class="disabled && 'disabled'" :title="title">
     <div class="inner">
-      <img v-if="externalImage" :src="externalImage" />
+      <img v-if="externalImage" :src="externalImage"/>
       <span>
-        <FontIcon :class="disabled && 'disabled'" :icon="icon" />
+        <FontIcon :class="disabled && 'disabled'" :icon="icon"/>
         <slot></slot>
       </span>
     </div>
@@ -37,10 +37,12 @@ export default defineComponent({
   emits: ['click'],
   setup(props, {emit}) {
     const disabled = toRef(props, 'disabled')
+
     function handleClick() {
       if (disabled.value) return
       emit('click')
     }
+
     return {
       ...toRefs(props),
       handleClick
@@ -61,28 +63,14 @@ export default defineComponent({
   display: flex;
   user-select: none;
 }
-.button.disabled {
-  color: var(--theme-font-3);
-}
-.button:hover:not(.disabled) {
-  background: var(--theme-bg-2);
-}
-.button:active:hover:not(.disabled) {
-  background: var(--theme-bg-3);
-}
-.icon {
-  margin-right: 5px;
-  color: var(--theme-font-link);
-}
-.icon.disabled {
-  color: var(--theme-font-3);
-}
+
 .inner {
   /* position: relative;
   top: 2px; */
   white-space: nowrap;
   align-self: center;
 }
+
 img {
   width: 20px;
   height: 20px;

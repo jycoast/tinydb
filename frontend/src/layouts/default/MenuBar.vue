@@ -19,8 +19,9 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted, onUnmounted } from 'vue'
+import { reactive, onMounted, onUnmounted, h } from 'vue'
 import runCommand from '/@/second/commands/runCommand'
+import { Modal } from 'ant-design-vue'
 
 type MenuChildItem = {
   key: string
@@ -70,18 +71,6 @@ const menus = reactive<MenuBarMenu[]>([
     ]
   },
   {
-    key: 'view',
-    label: '查看',
-    showDropdown: false,
-    children: [
-      { key: 'refresh', label: '刷新', keyText: 'F5' },
-      { key: 'fullscreen', label: '全屏', keyText: 'F11' },
-      { key: 'view.divider.1', divider: true },
-      { key: 'show.left.panel', label: '显示左侧面板' },
-      { key: 'show.statusbar', label: '显示状态栏' }
-    ]
-  },
-  {
     key: 'tools',
     label: '工具',
     showDropdown: false,
@@ -99,7 +88,57 @@ const menus = reactive<MenuBarMenu[]>([
     label: '帮助',
     showDropdown: false,
     children: [
-      { key: 'about', label: '关于' }
+      { 
+        key: 'about', 
+        label: '关于',
+        onClick: () => {
+          const appInfo = {
+            name: 'TinyDB',
+            version: '0.0.2.2',
+            author: 'bob',
+            email: 'jycoast@163.com',
+            url: 'https://github.com/jycoast/tinydb',
+            description: '轻量级数据库管理工具'
+          }
+          
+          Modal.info({
+            title: '关于 TinyDB',
+            width: 500,
+            content: h('div', { style: 'padding: 20px 0;' }, [
+              h('div', { style: 'text-align: center; margin-bottom: 20px;' }, [
+                h('h2', { style: 'margin: 0 0 10px 0; font-size: 24px; color: #1890ff;' }, appInfo.name),
+                h('p', { style: 'margin: 0; color: #666; font-size: 14px;' }, `版本 ${appInfo.version}`)
+              ]),
+              h('div', { style: 'line-height: 1.8; color: #333;' }, [
+                h('p', { style: 'margin: 10px 0;' }, [
+                  h('strong', { style: 'display: inline-block; width: 80px;' }, '作者：'),
+                  appInfo.author
+                ]),
+                h('p', { style: 'margin: 10px 0;' }, [
+                  h('strong', { style: 'display: inline-block; width: 80px;' }, '邮箱：'),
+                  h('a', { 
+                    href: `mailto:${appInfo.email}`, 
+                    style: 'color: #1890ff; text-decoration: none;'
+                  }, appInfo.email)
+                ]),
+                h('p', { style: 'margin: 10px 0;' }, [
+                  h('strong', { style: 'display: inline-block; width: 80px;' }, '项目地址：'),
+                  h('a', { 
+                    href: appInfo.url, 
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    style: 'color: #1890ff; text-decoration: none;'
+                  }, appInfo.url)
+                ]),
+                h('p', { style: 'margin: 20px 0 0 0; padding-top: 20px; border-top: 1px solid #e8e8e8; color: #999; font-size: 12px; text-align: center;' }, 
+                  appInfo.description
+                )
+              ])
+            ]),
+            okText: '确定'
+          })
+        }
+      }
     ]
   }
 ])

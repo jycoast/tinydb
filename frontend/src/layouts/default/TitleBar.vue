@@ -86,9 +86,7 @@ onUnmounted(() => {
   background: #ffffff;
   border-bottom: 1px solid #d9d9d9;
   user-select: none;
-  /* Make the whole titlebar draggable in frameless mode */
   -webkit-app-region: drag;
-  /* Wails CSSDragProperty hook (main.go sets CSSDragProperty/Value) */
   --wails-draggable: drag;
 }
 

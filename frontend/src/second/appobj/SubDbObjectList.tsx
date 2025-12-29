@@ -10,6 +10,8 @@ import { useConnectionInfo, useDatabaseInfo, useDatabaseStatus } from '/@/api/br
 import { useClusterApiStore } from '/@/store/modules/clusterApi'
 import type { DbCategoryNode } from './DbCategoryAppObject'
 import { chevronExpandIcon } from '/@/second/icons/expandIcons'
+import { databaseConnectionsRefreshApi } from '/@/api/simpleApis'
+import { Button } from 'ant-design-vue'
 
 export default defineComponent({
   name: 'SubDbObjectList',
@@ -35,6 +37,13 @@ export default defineComponent({
     watch(
       () => [data.value.conid, data.value.database],
       () => {
+        if (!data.value.conid || !data.value.database) {
+          objects.value = null
+          status.value = null
+          return
+        }
+        objects.value = null
+        status.value = null
         useDatabaseInfo({ conid: data.value.conid, database: data.value.database }, objects)
         useDatabaseStatus({ conid: data.value.conid, database: data.value.database }, status)
         useConnectionInfo({ conid: data.value.conid }, clusterApi.setConnection)
@@ -54,6 +63,18 @@ export default defineComponent({
     const handleExpandable = (row: any) =>
       unref(row).objectTypeField === 'tables' || unref(row).objectTypeField === 'views' || unref(row).objectTypeField === 'matviews'
 
+    const handleRefresh = async () => {
+      try {
+        await databaseConnectionsRefreshApi({
+          conid: data.value.conid,
+          database: data.value.database,
+          keepOpen: true
+        })
+      } catch (e: any) {
+        console.error('刷新数据库结构失败', e)
+      }
+    }
+
     onBeforeUnmount(() => {
       objects.value = null
       status.value = null
@@ -65,10 +86,13 @@ export default defineComponent({
           <ErrorInfo message="暂无内容" icon="img alert" />
         ) : status.value && status.value.name === 'error' ? (
           <ErrorInfo message={`${status.value.message}`} icon="img error" />
-        ) : !objects.value ||
-          (status.value &&
-            (status.value.name === 'pending' || status.value.name === 'checkStructure' || status.value.name === 'loadStructure')) ? (
-          <LoadingInfo message="Loading database structure" />
+        ) : (!status.value || status.value.name === 'pending' || status.value.name === 'checkStructure' || status.value.name === 'loadStructure' || !objects.value) ? (
+          <div>
+            <LoadingInfo message="Loading database structure" />
+            <div style="margin-top: 8px; text-align: center;">
+              <Button size="small" onClick={handleRefresh}>刷新</Button>
+            </div>
+          </div>
         ) : (
           <AppObjectList
             module={DatabaseObjectAppObject}

@@ -1,6 +1,5 @@
 <template>
   <div v-show="!hidden" class="dbw-root">
-    <!-- Navicat-like unified tree: Connection -> Database -> (Tables/Views/Functions/Queries) -->
     <ConnectionList />
   </div>
 </template>

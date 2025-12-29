@@ -100,12 +100,6 @@ export default defineComponent({
     colorMark: {
 
     },
-    pin: {
-      type: Function as PropType<Nullable<Function>>
-    },
-    unpin: {
-      type: Function as PropType<Nullable<Function>>
-    },
     showPinnedInsteadOfUnpin: {
       type: Boolean as PropType<boolean>,
       default: false
@@ -120,7 +114,6 @@ export default defineComponent({
   },
   emits: ['click', 'expand', 'dblclick', 'middleclick'],
   setup(props, {emit}) {
-    const {pin, unpin} = toRefs(props)
     let checkedObjectsStore = null
 
     const handleExpand = () => {
@@ -153,26 +146,12 @@ export default defineComponent({
       }
     }
 
-    function handlePin(e) {
-      e.preventDefault()
-      e.stopPropagation()
-      pin.value && pin.value()
-    }
-
-    function handleUnpin(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      unpin.value && unpin.value()
-    }
-
     return {
       ...toRefs(props),
       handleExpand,
       handleClick,
       handleMouseUp,
-      handleContext,
-      handlePin,
-      handleUnpin
+      handleContext
     }
   }
 })

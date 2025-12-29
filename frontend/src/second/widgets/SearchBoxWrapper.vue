@@ -1,5 +1,5 @@
 <template>
-  <div class="searchBoxWrapper"><slot /></div>
+  <div class="searchBoxWrapper"><slot></slot></div>
 </template>
 
 <style>
