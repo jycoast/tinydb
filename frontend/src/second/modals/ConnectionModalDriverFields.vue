@@ -63,7 +63,7 @@
     </a-form-item>
 
     <a-form-item label="">
-      <a-checkbox value="1" name="type">Is read only</a-checkbox>
+      <a-checkbox v-model:checked="driverForm.isReadOnly">只读</a-checkbox>
     </a-form-item>
 
 
@@ -151,12 +151,13 @@ export default defineComponent({
       "useDatabaseUrl": ""
     }
 
-    const driverForm = reactive<{ [key in string]: string | null | undefined } & { port: string | number }>({
+    const driverForm = reactive<{ [key in string]: any } & { port: string | number; isReadOnly: boolean }>({
       engine: '',
       host: 'localhost',
       username: '',
       password: '',
       port: '',
+      isReadOnly: false,
       displayName: null
     })
 
@@ -166,6 +167,7 @@ export default defineComponent({
 
     const engine = ref($values.engine)
     const dispatchConnections = inject('dispatchConnections') as any
+    const connectionModalInitial = inject('connectionModalInitial', ref<any>(null)) as any
 
     const rulesRef = reactive({
       host: [{ required: true, message: 'Please input your username!' }],
@@ -179,8 +181,13 @@ export default defineComponent({
       try {
         await validate()
         const dynamicProps = cloneDeep(toRaw(driverForm))
+        const initial = (connectionModalInitial?.value && (connectionModalInitial.value.connection || connectionModalInitial.value)) || null
         const [shortName] = unref(engine).split('@')
         dynamicProps.engine = shortName
+        // When editing, include _id so backend updates instead of inserting
+        if (initial?._id) {
+          dynamicProps._id = initial._id
+        }
         if (!dynamicProps.port) {
           dynamicProps.port = `${driver.value!.defaultPort}`
         }
@@ -198,6 +205,24 @@ export default defineComponent({
     )
 
     onMounted(() => {
+      // Prefill when opening modal for edit
+      const initial = (connectionModalInitial?.value && (connectionModalInitial.value.connection || connectionModalInitial.value)) || null
+      if (initial && typeof initial === 'object') {
+        const initialHost = (initial as any).host || (initial as any).server
+        const initialUser = (initial as any).username || (initial as any).user
+        if (initialHost != null) driverForm.host = String(initialHost)
+        if (initialUser != null) driverForm.username = String(initialUser)
+        if ((initial as any).password != null) driverForm.password = String((initial as any).password)
+        if ((initial as any).port != null) driverForm.port = String((initial as any).port)
+        if ((initial as any).displayName != null) driverForm.displayName = String((initial as any).displayName)
+
+        const eng = (initial as any).engine
+        if (eng) {
+          const direct = $extensions.drivers.find((d: any) => d.engine === eng)
+          const mapped = direct || $extensions.drivers.find((d: any) => String(d.engine).startsWith(String(eng) + '@'))
+          if (mapped?.engine) engine.value = mapped.engine
+        }
+      }
       void notificationTest()
     })
 

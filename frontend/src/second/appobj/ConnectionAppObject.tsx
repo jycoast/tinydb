@@ -1,4 +1,4 @@
-import {createVNode, defineComponent, onMounted, PropType, ref, toRefs, unref, watch} from 'vue'
+import {createVNode, defineComponent, onMounted, PropType, ref, toRaw, toRefs, unref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {filterName} from '/@/second/tinydb-tools'
 import {Modal, message} from "ant-design-vue";
@@ -174,39 +174,47 @@ export default defineComponent({
         });
       }
 
+      const handleViewOrEdit = () => {
+        const isOpened = !!(data.value && bootstrap.getOpenedConnections.includes(data.value?._id))
+        if (isOpened) {
+          handleServerSummary()
+          return
+        }
+        // Ask ConnectionList (owner of the singleton ConnectionModal) to open in edit mode
+        const payload = toRaw(data.value as any)
+        window.dispatchEvent(new CustomEvent('open-connection-modal', { detail: payload }))
+      }
+
       return [
         [
           {
-            label: data.value && bootstrap.getOpenedConnections.includes(data.value?._id) ? 'View details' : 'Edit',
-            onClick: () => {
-              message.warning('developing')
-            },
+            label: data.value && bootstrap.getOpenedConnections.includes(data.value?._id) ? '查看详情' : '编辑',
+            onClick: handleViewOrEdit,
           },
-          // !(data.value && bootstrap.getOpenedConnections.includes(data.value?._id)) && {
           {
-            label: 'Delete',
+            label: '删除',
             onClick: handleDelete,
           },
           {
-            label: 'Duplicate',
+            label: '复制',
             onClick: () => {
               message.warning('developing')
             }
           },
           (data.value && bootstrap.getOpenedConnections.includes(data.value?._id) && data.value?.status) && {
-            text: 'Refresh',
+            text: '刷新',
             onClick: handleRefresh,
           },
           data.value && bootstrap.getOpenedConnections.includes(data.value?._id) && {
-            text: 'Disconnect',
+            text: '断开连接',
             onClick: handleDisconnect,
           },
           {
-            text: 'Create database',
+            text: '创建数据库',
             onClick: handleCreateDatabase,
           },
           {
-            text: 'Server summary',
+            text: '服务器概览',
             onClick: handleServerSummary,
           }
         ],
@@ -215,7 +223,7 @@ export default defineComponent({
         ],
         (driver && driver?.databaseEngineTypes?.includes('sql')) && {
           onClick: handleSqlRestore,
-          text: 'Restore/import SQL dump'
+          text: '恢复/导入 SQL 转储'
         }
       ]
     }

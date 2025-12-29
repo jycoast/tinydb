@@ -6,7 +6,7 @@
       @ok="handleSubmit"
       class="connectionModal"
       width="50%"
-      title="Add connection">
+      :title="modalTitle">
       <TabControl isInline :tabs="tabs"/>
       <Alert
         v-if="errorMessage"
@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, provide, unref, ref} from 'vue'
+import {computed, defineComponent, provide, unref, ref} from 'vue'
 import {storeToRefs} from 'pinia'
 import {pickBy} from 'lodash-es'
 import {Alert, Tabs} from 'ant-design-vue'
@@ -57,7 +57,14 @@ export default defineComponent({
   },
   emits: ['register', 'closeCurrentModal'],
   setup(_, {emit}) {
-    const [register, {closeModal, setModalProps}] = useModalInner()
+    const initialPayload = ref<any>(null)
+    const [register, {closeModal, setModalProps}] = useModalInner((data: any) => {
+      initialPayload.value = data || null
+      // Update title based on whether we are editing an existing connection
+      const conn = (data && (data.connection || data)) || null
+      const isEdit = !!conn?._id
+      setModalProps({ title: isEdit ? '编辑连接' : '新建连接' })
+    })
     const {createMessage, notification} = useMessage()
     let connParams = {}
     const bootstrap = useBootstrapStore()
@@ -65,8 +72,16 @@ export default defineComponent({
     const errorMessage = ref('')
     const testing = ref(false)
     
+    // Provide initial data to inner field components (driver/ssh/ssl)
+    provide('connectionModalInitial', initialPayload)
     provide('dispatchConnections', (dynamicProps) => {
       connParams = dynamicProps
+    })
+
+    const modalTitle = computed(() => {
+      const data = initialPayload.value
+      const conn = (data && (data.connection || data)) || null
+      return conn?._id ? '编辑连接' : '新建连接'
     })
 
     const handleTest = async () => {
@@ -152,6 +167,7 @@ export default defineComponent({
       handleSubmit,
       errorMessage,
       testing,
+      modalTitle,
       setModalProps: () => {
         //bodyStyle
         setModalProps({title: 'Modal New Title', bodyStyle: {padding: `0`}});

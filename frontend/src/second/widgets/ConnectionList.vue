@@ -48,7 +48,7 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, onMounted, ref, unref, watch} from 'vue'
+import {computed, defineComponent, onMounted, onUnmounted, ref, unref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {sortBy} from 'lodash-es'
 import WidgetsInnerContainer from '/@/second/widgets//WidgetsInnerContainer.vue'
@@ -141,6 +141,19 @@ export default defineComponent({
     }
 
     const [register, {openModal, closeModal}] = useModal()
+    // Allow child items (ConnectionAppObject) to request opening the modal with payload (e.g. edit connection)
+    const openConnectionModalHandler = (ev: any) => {
+      const detail = ev?.detail
+      openModal(true, detail)
+    }
+
+    onMounted(() => {
+      window.addEventListener('open-connection-modal', openConnectionModalHandler as any)
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('open-connection-modal', openConnectionModalHandler as any)
+    })
 
     return {
       hidden,
