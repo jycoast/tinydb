@@ -3,7 +3,6 @@ import {isArray} from 'lodash-es'
 import {isFunction} from '/@/utils/is'
 import stableStringify from 'json-stable-stringify'
 import {extendDatabaseInfo} from '/@/second/tinydb-tools'
-import {setLocalStorage} from '/@/second/utility/storageCache'
 import {EventsOn} from '/@/wailsjs/runtime/runtime'
 import {apiCall} from '/@/second/utility/api'
 import {loadCachedValue} from '/@/second/utility/cache'
@@ -24,9 +23,6 @@ const databaseListLoader = ({conid}) => ({
   url: 'bridge.ServerConnections.ListDatabases',
   params: {conid},
   reloadTrigger: `database-list-changed-${conid}`,
-  onLoaded: value => {
-    if (value?.length > 0) setLocalStorage(`database_list_${conid}`, value);
-  },
 })
 
 const databaseServerVersionLoader = ({conid, database}) => ({

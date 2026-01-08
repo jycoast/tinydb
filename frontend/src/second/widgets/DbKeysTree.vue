@@ -1,23 +1,23 @@
 <template>
   <div class="dkt-toolbar">
-    <ASpace :size="6">
-      <AInput
-        v-model:value="filter"
-        allowClear
+    <el-space :size="6">
+      <el-input
+        v-model="filter"
+        clearable
         size="small"
         placeholder="Search connection or database"
       />
-      <ATooltip title="Add new key">
-        <AButton size="small" type="text" @click="handleAddKey">
-          <template #icon><PlusOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="Refresh key list">
-        <AButton size="small" type="text" @click="handleRefreshDatabase">
-          <template #icon><ReloadOutlined /></template>
-        </AButton>
-      </ATooltip>
-    </ASpace>
+      <el-tooltip content="Add new key" placement="bottom">
+        <el-button size="small" text @click="handleAddKey">
+          <el-icon><Plus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="Refresh key list" placement="bottom">
+        <el-button size="small" text @click="handleRefreshDatabase">
+          <el-icon><Refresh /></el-icon>
+        </el-button>
+      </el-tooltip>
+    </el-space>
   </div>
 
   <WidgetsInnerContainer>
@@ -28,19 +28,12 @@
 <script lang="ts">
 import {ref} from 'vue'
 import WidgetsInnerContainer from './WidgetsInnerContainer.vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 
-import {Button, Input, Space, Tooltip} from 'ant-design-vue'
-import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
 export default {
   name: 'DbKeysTree',
   components: {
     WidgetsInnerContainer,
-    [Button.name]: Button,
-    [Input.name]: Input,
-    [Space.name]: Space,
-    [Tooltip.name]: Tooltip,
-    PlusOutlined,
-    ReloadOutlined,
   },
   setup() {
     const filter = ref('')
@@ -51,7 +44,9 @@ export default {
     return {
       filter,
       handleAddKey,
-      handleRefreshDatabase
+      handleRefreshDatabase,
+      Plus,
+      Refresh,
     }
   }
 }

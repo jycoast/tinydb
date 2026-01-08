@@ -37,14 +37,6 @@ export async function databaseConnectionsCollectionDataApi<T>(params: { conid: s
 export async function databaseConnectionsCreateTableApi(params: { conid: string, database: string, tableName: string, columns: any[] }) {
   return await apiCall('bridge.DatabaseConnections.CreateTable', params)
 }
-
-/**
- * @description plugins
- */
-export async function pluginsScriptApi(params: { packageName: string }) {
-  return await apiCall('bridge.Plugins.Script', params)
-}
-
 /**
  * @description serverConnections
  */

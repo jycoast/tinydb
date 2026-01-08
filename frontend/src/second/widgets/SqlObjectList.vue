@@ -1,7 +1,7 @@
 <template>
   <WidgetsInnerContainer v-if="status && status.name == 'error'">
     <ErrorInfo :message="`${status.message}`" icon="img error"/>
-    <AButton size="small" @click="handleRefreshDatabase">Refresh</AButton>
+    <el-button size="small" @click="handleRefreshDatabase">Refresh</el-button>
   </WidgetsInnerContainer>
   <WidgetsInnerContainer v-else-if="objectList.length == 0 &&
   status && status.name != 'pending' && status.name != 'checkStructure' && status.name != 'loadStructure' &&
@@ -11,38 +11,38 @@
       icon="img alert"/>
     <div class="m-1"></div>
     <div class="m-1"></div>
-    <AButton size="small" @click="handleRefreshDatabase">Refresh</AButton>
+    <el-button size="small" @click="handleRefreshDatabase">Refresh</el-button>
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('sql')">
       <div class="m-1"></div>
-      <AButton size="small" @click="handleNewTable">New table</AButton>
+      <el-button size="small" @click="handleNewTable">New table</el-button>
     </template>
     <template
       v-if="driver && Array.isArray(driver?.databaseEngineTypes) && driver?.databaseEngineTypes?.includes('document')">
       <div class="m-1"></div>
-      <AButton size="small" @click="runCommand('new.collection')">New collection</AButton>
+      <el-button size="small" @click="runCommand('new.collection')">New collection</el-button>
     </template>
   </WidgetsInnerContainer>
 
   <div v-else class="sol-toolbar">
-    <ASpace :size="6">
-      <AInput
-        v-model:value="filter"
-        allowClear
+    <el-space :size="6">
+      <el-input
+        v-model="filter"
+        clearable
         size="small"
         placeholder="Search connection or database"
       />
-      <ATooltip title="Add (coming soon)">
-        <AButton size="small" type="text" disabled>
-          <template #icon><PlusOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="Refresh database connection and object list">
-        <AButton size="small" type="text" @click="handleRefreshDatabase">
-          <template #icon><ReloadOutlined /></template>
-        </AButton>
-      </ATooltip>
-    </ASpace>
+      <el-tooltip content="Add (coming soon)" placement="bottom">
+        <el-button size="small" text disabled>
+          <el-icon><Plus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="Refresh database connection and object list" placement="bottom">
+        <el-button size="small" text @click="handleRefreshDatabase">
+          <el-icon><Refresh /></el-icon>
+        </el-button>
+      </el-tooltip>
+    </el-space>
   </div>
   <WidgetsInnerContainer>
     <LoadingInfo
@@ -50,7 +50,7 @@
       message="Loading database structure"/>
     <AppObjectList
       v-else
-      :list="objectList.map(x => ({ ...x, conid, database }))"
+      :list="objectList.map((x: any) => ({ ...x, conid, database }))"
       :module="databaseObjectAppObject"
       :subItemsComponent="SubColumnParamList"
       :groupFunc="handleGroupFunc"
@@ -86,8 +86,7 @@ import {filterAppsForDatabase} from '/@/second/utility/appTools'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
 
-import {Button, Input, Space, Tooltip} from 'ant-design-vue'
-import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import { useModal } from '/@/components/Modal'
 import CreateTableModal from "/@/second/modals/CreateTableModal.vue";
 
@@ -107,12 +106,6 @@ export default defineComponent({
     WidgetsInnerContainer,
     LoadingInfo,
     ErrorInfo,
-    [Button.name]: Button,
-    [Input.name]: Input,
-    [Space.name]: Space,
-    [Tooltip.name]: Tooltip,
-    PlusOutlined,
-    ReloadOutlined,
   },
   setup(props) {
     const filter = ref('')
@@ -213,6 +206,8 @@ export default defineComponent({
       chevronExpandIcon,
       driver,
       registerCreateTableModal: registerCreateTableModal,
+      Plus,
+      Refresh,
     }
   }
 })

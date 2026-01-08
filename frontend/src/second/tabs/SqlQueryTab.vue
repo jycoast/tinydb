@@ -210,6 +210,7 @@ import 'ace-builds/src-noconflict/ext-language_tools'
 import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/second/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
 import {copyRowsToClipboard} from '/@/second/utility/clipboard'
+import {saveQueryHistory} from '/@/utils/queryHistory'
 
 const props = defineProps({
   tabid: {type: String as PropType<string>, required: true},
@@ -773,8 +774,24 @@ onMounted(async () => {
 
   // 安全地读取 localStorage，处理可能的错误
   try {
-    const saved = localStorage.getItem(`sql_query_${props.tabid}`)
-    sqlContent.value = saved ?? ''
+    // 首先尝试从临时存储读取（从查询历史打开时）
+    const tempTabId = (props as any)._tempTabId
+    if (tempTabId) {
+      const tempSql = localStorage.getItem(`sql_query_${tempTabId}`)
+      if (tempSql) {
+        sqlContent.value = tempSql
+        // 清理临时存储
+        localStorage.removeItem(`sql_query_${tempTabId}`)
+        // 保存到当前 tabid
+        localStorage.setItem(`sql_query_${props.tabid}`, tempSql)
+      } else {
+        const saved = localStorage.getItem(`sql_query_${props.tabid}`)
+        sqlContent.value = saved ?? ''
+      }
+    } else {
+      const saved = localStorage.getItem(`sql_query_${props.tabid}`)
+      sqlContent.value = saved ?? ''
+    }
   } catch (e) {
     console.warn('读取 SQL 内容失败，使用默认值:', e)
     sqlContent.value = ''
@@ -1194,6 +1211,9 @@ async function handleExecute() {
       queryResult.value = {rows: payload.rows, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload.rows, derivedCols)
       clearResultSelection()
+      
+      // 保存查询历史（仅在查询成功时保存）
+      saveQueryHistory(sql, effectiveConid.value, effectiveDatabaseName.value)
       return
     }
 
@@ -1203,6 +1223,9 @@ async function handleExecute() {
       queryResult.value = {rows: payload, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload, derivedCols)
       clearResultSelection()
+      
+      // 保存查询历史（仅在查询成功时保存）
+      saveQueryHistory(sql, effectiveConid.value, effectiveDatabaseName.value)
       return
     }
 

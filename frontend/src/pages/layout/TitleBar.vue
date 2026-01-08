@@ -72,7 +72,6 @@ function closeWindow() {
 let timer: number | null = null
 onMounted(() => {
   void refreshMaxState()
-  // Polling is simplest + reliable; avoids platform-specific events.
   timer = window.setInterval(refreshMaxState, 800)
 })
 
@@ -120,7 +119,7 @@ onUnmounted(() => {
 }
 
 .tb-title {
-  font-size: 12px;
+  font-size: 14px;
   color: #1f1f1f;
 }
 
@@ -167,5 +166,3 @@ onUnmounted(() => {
   color: #ffffff;
 }
 </style>
-
-

@@ -1,30 +1,27 @@
 <template>
-  <a-alert
+  <el-alert
     v-if="isSmall"
-    :message="message || 'Unknown error'"
+    :title="message || 'Unknown error'"
     type="error"
-    size="small"
     :show-icon="false"
+    :closable="false"
     class="error-alert-small"
   />
-  <a-alert
+  <el-alert
     v-else
-    :message="message || 'Unknown error'"
+    :title="message || 'Unknown error'"
     type="error"
     :show-icon="true"
+    :closable="false"
     :class="alignTop ? 'error-alert-top' : 'error-alert'"
   />
 </template>
 
 <script lang="ts">
   import {defineComponent, PropType} from 'vue'
-  import {Alert} from 'ant-design-vue'
 
   export default defineComponent({
     name: "ErrorInfo",
-    components: {
-      AAlert: Alert
-    },
     props: {
       message: {
         type: String as PropType<string>,

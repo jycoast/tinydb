@@ -42,6 +42,18 @@ export default function runCommand(id: string) {
       }
       break
 
+    case 'query.history':
+      // 打开查询历史标签页
+      openNewTab({
+        title: '查询历史',
+        icon: 'icon query',
+        tabComponent: 'QueryHistoryTab',
+        props: {},
+        selected: true,
+        busy: false
+      })
+      break
+
     default:
       console.log(`Command ${id} not implemented`)
   }

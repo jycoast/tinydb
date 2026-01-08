@@ -12,7 +12,6 @@
             <el-button
               :disabled="item.disabled"
               text
-              class="toolbar-btn"
               @click="handleToolbarClick(item)"
             >
               <template #icon>
@@ -33,7 +32,7 @@
 import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
-import { Document, Link } from '@element-plus/icons-vue'
+import { Document, Link, Clock } from '@element-plus/icons-vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import runCommand from '/@/second/commands/runCommand'
 
@@ -47,6 +46,8 @@ function getToolbarElIcon(item: any) {
       return Document
     case 'new.connection':
       return Link
+    case 'query.history':
+      return Clock
     default:
       return null
   }
@@ -67,7 +68,8 @@ const toolbarGroups = computed<ToolbarGroup[]>(() => {
         key: 'connection',
         items: [
           // { id: 'new.connection', name: '连接', icon: 'icon new-connection', toolbarName: '连接' },
-          { id: 'new.query', name: '新建查询', icon: 'icon query', toolbarName: '新建查询' }
+          { id: 'new.query', name: '新建查询', icon: 'icon query', toolbarName: '新建查询' },
+          { id: 'query.history', name: '查询历史', icon: 'icon history', toolbarName: '查询历史' }
         ]
       },
       // {
@@ -166,5 +168,3 @@ function handleToolbarClick(item: any) {
 }
 
 </style>
-
-

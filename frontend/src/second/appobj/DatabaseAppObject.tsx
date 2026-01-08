@@ -8,7 +8,6 @@ import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
 import { useModal } from '/@/components/Modal'
 import {databaseConnectionsRefreshApi} from '/@/api/simpleApis'
 import {Modal, message} from 'ant-design-vue'
-import openNewTab from '/@/second/utility/openNewTab';
 
 export default defineComponent({
   name: 'DatabaseAppObject',
