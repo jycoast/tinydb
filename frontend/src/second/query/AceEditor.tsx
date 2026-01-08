@@ -12,13 +12,6 @@ import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/mode-markdown';
 import 'ace-builds/src-noconflict/ext-searchbox';
 import 'ace-builds/src-noconflict/ext-language_tools';
-
-// import 'ace-builds/src-noconflict/theme-github';
-// import 'ace-builds/src-noconflict/theme-sqlserver';
-// import 'ace-builds/src-noconflict/theme-twilight';
-// import 'ace-builds/src-noconflict/theme-monokai';
-// import 'ace-builds/src-noconflict/theme-chaos';
-// import 'ace-builds/src-noconflict/theme-merbivore';
 import 'ace-builds/src-noconflict/theme-ambiance';
 import 'ace-builds/src-noconflict/theme-chaos';
 import 'ace-builds/src-noconflict/theme-chrome';

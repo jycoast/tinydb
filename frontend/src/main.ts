@@ -19,6 +19,10 @@ import {setupI18n} from '/@/locales/setupI18n';
 import {registerGlobComp} from '/@/components/registerGlobComp';
 import {isDevMode} from './utils/env'
 
+// 引入 Element Plus
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
+
 if (isDevMode()) {
   import('ant-design-vue/es/style')
 }
@@ -33,6 +37,10 @@ async function bootstrap() {
   // Initialize internal system configuration
   // 初始化内部系统配置
   initAppConfigStore();
+
+  // Register Element Plus
+  // 注册 Element Plus
+  app.use(ElementPlus);
 
   // Register global components
   // 注册全局组件

@@ -1,35 +1,33 @@
 <template>
   <div class="not-supported">
     <div class="m-5 big-icon">
-      <WarningOutlined/>
+      <el-icon :size="20"><Warning /></el-icon>
     </div>
     <div class="m-3">Sorry, tinydb is not supported on mobile devices.</div>
     <div class="m-3">Please visit <a href="https://github.com/jycoast/tinydb">tinydb</a> for more
       info.
     </div>
   </div>
-  <Layout class="root tinydb-screen" style="height: 100%; width: 100%; overflow: hidden;">
+  <el-container class="root tinydb-screen" style="height: 100%; width: 100%; overflow: hidden;">
     <!-- 自定义标题栏（Frameless window）：集成 MenuBar -->
     <TitleBar/>
 
     <!-- 工具栏 -->
-    <LayoutHeader class="toolbar-header" style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
+    <el-header class="toolbar-header" style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
       <ToolBar/>
-    </LayoutHeader>
+    </el-header>
 
     <!-- 主体内容 -->
-    <Layout style="flex: 1; min-height: 0;">
+    <el-container style="flex: 1; min-height: 0;">
       <!-- 左侧面板：固定显示 DatabaseWidget（去掉左侧图标栏/模块切换栏） -->
-      <LayoutSider
-        :width="leftPanelWidthPx"
-        :trigger="null"
-        :collapsible="false"
+      <el-aside
+        :width="`${leftPanelWidthPx}px`"
         style="overflow: hidden;"
       >
         <div style="height: 100%; display: flex; flex-direction: column; overflow: auto;">
           <WidgetContainer/>
         </div>
-      </LayoutSider>
+      </el-aside>
       <!-- 分割条 -->
       <div
         class="splitter"
@@ -38,26 +36,26 @@
       />
 
       <!-- 主内容区 -->
-      <Layout style="flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;">
+      <el-container style="flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;">
         <!-- 标签页栏 -->
         <div style="flex: 0 0 var(--dim-tabs-panel-height); height: var(--dim-tabs-panel-height); overflow: hidden;">
           <TabsPanel/>
         </div>
         <!-- 标签页内容 -->
-        <LayoutContent style="flex: 1; min-height: 0; position: relative; overflow: hidden;">
+        <el-main style="flex: 1; min-height: 0; position: relative; overflow: hidden; padding: 0;">
           <TabRegister/>
-        </LayoutContent>
-      </Layout>
-    </Layout>
+        </el-main>
+      </el-container>
+    </el-container>
 
     <!-- 底部状态栏 -->
-    <LayoutFooter style="height: var(--dim-statusbar-height); padding: 0; position: relative; z-index: 200; display: flex; align-items: stretch; overflow: visible;">
+    <el-footer style="height: var(--dim-statusbar-height); padding: 0; position: relative; z-index: 200; display: flex; align-items: stretch; overflow: visible;">
       <StatusBar/>
-    </LayoutFooter>
+    </el-footer>
 
     <!-- 通知容器 -->
     <div class="snackbar-container"></div>
-  </Layout>
+  </el-container>
 </template>
 
 <script lang="ts" setup>
@@ -71,16 +69,10 @@ import WidgetContainer from '/@/second/widgets/WidgetContainer.vue'
 import TabsPanel from '/@/second/widgets/TabsPanel.vue'
 import TabRegister from './TabRegister.vue'
 import StatusBar from '/@/second/widgets/StatusBar.vue'
-import {WarningOutlined} from '@ant-design/icons-vue'
+import { Warning } from '@element-plus/icons-vue'
 import ToolBar from './ToolBar.vue'
 import TitleBar from './TitleBar.vue'
 import bus from '/@/second/utility/bus'
-import {Layout} from 'ant-design-vue'
-
-const LayoutHeader = Layout.Header
-const LayoutSider = Layout.Sider
-const LayoutContent = Layout.Content
-const LayoutFooter = Layout.Footer
 
 const excludeFirst = ref(false)
 const localeStore = useLocaleStore()
@@ -130,15 +122,16 @@ subscribeRecentDatabaseSwitch()
 }
 
 /* Make the main workspace + left panel background white (Navicat-like) */
-.root :deep(.ant-layout),
-.root :deep(.ant-layout-content),
-.root :deep(.ant-layout-sider),
-.root :deep(.ant-layout-sider-children) {
+.root :deep(.el-container),
+.root :deep(.el-main),
+.root :deep(.el-aside),
+.root :deep(.el-header),
+.root :deep(.el-footer) {
   background: var(--theme-bg-0) !important;
 }
 
-/* antd Sider 内部容器需要显式变成 flex */
-.app-iconbar :deep(.ant-layout-sider-children) {
+/* Element Plus Container 内部容器需要显式变成 flex */
+.app-iconbar :deep(.el-aside) {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -148,7 +141,7 @@ subscribeRecentDatabaseSwitch()
 }
 
 /* 左侧面板：外层不滚动，内部各区块自己滚动 */
-.app-leftpanel :deep(.ant-layout-sider-children) {
+.app-leftpanel :deep(.el-aside) {
   height: 100%;
   display: flex;
   flex-direction: column;

@@ -16,12 +16,42 @@
       </div>
     </div>
   </div>
+  
+  <el-dialog
+    v-model="aboutDialogVisible"
+    title="关于 TinyDB"
+    width="500px"
+    :show-close="true"
+  >
+    <div class="about-content">
+      <div class="about-header">
+        <h2 class="about-title">{{ appInfo.name }}</h2>
+        <p class="about-version">版本 {{ appInfo.version }}</p>
+      </div>
+      <div class="about-body">
+        <p class="about-info">
+          <strong>作者：</strong>{{ appInfo.author }}
+        </p>
+        <p class="about-info">
+          <strong>邮箱：</strong>
+          <a :href="`mailto:${appInfo.email}`" class="about-link">{{ appInfo.email }}</a>
+        </p>
+        <p class="about-info">
+          <strong>项目地址：</strong>
+          <a :href="appInfo.url" target="_blank" rel="noopener noreferrer" class="about-link">{{ appInfo.url }}</a>
+        </p>
+        <p class="about-description">{{ appInfo.description }}</p>
+      </div>
+    </div>
+    <template #footer>
+      <el-button type="primary" @click="aboutDialogVisible = false">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted, onUnmounted, h } from 'vue'
+import { reactive, ref, onMounted, onUnmounted } from 'vue'
 import runCommand from '/@/second/commands/runCommand'
-import { Modal } from 'ant-design-vue'
 
 type MenuChildItem = {
   key: string
@@ -37,6 +67,17 @@ type MenuBarMenu = {
   label: string
   showDropdown: boolean
   children?: MenuChildItem[]
+}
+
+const aboutDialogVisible = ref(false)
+
+const appInfo = {
+  name: 'TinyDB',
+  version: '0.0.2.2',
+  author: 'bob',
+  email: 'jycoast@163.com',
+  url: 'https://github.com/jycoast/tinydb',
+  description: '轻量级数据库管理工具'
 }
 
 const menus = reactive<MenuBarMenu[]>([
@@ -92,51 +133,7 @@ const menus = reactive<MenuBarMenu[]>([
         key: 'about', 
         label: '关于',
         onClick: () => {
-          const appInfo = {
-            name: 'TinyDB',
-            version: '0.0.2.2',
-            author: 'bob',
-            email: 'jycoast@163.com',
-            url: 'https://github.com/jycoast/tinydb',
-            description: '轻量级数据库管理工具'
-          }
-          
-          Modal.info({
-            title: '关于 TinyDB',
-            width: 500,
-            content: h('div', { style: 'padding: 20px 0;' }, [
-              h('div', { style: 'text-align: center; margin-bottom: 20px;' }, [
-                h('h2', { style: 'margin: 0 0 10px 0; font-size: 24px; color: #1890ff;' }, appInfo.name),
-                h('p', { style: 'margin: 0; color: #666; font-size: 14px;' }, `版本 ${appInfo.version}`)
-              ]),
-              h('div', { style: 'line-height: 1.8; color: #333;' }, [
-                h('p', { style: 'margin: 10px 0;' }, [
-                  h('strong', { style: 'display: inline-block; width: 80px;' }, '作者：'),
-                  appInfo.author
-                ]),
-                h('p', { style: 'margin: 10px 0;' }, [
-                  h('strong', { style: 'display: inline-block; width: 80px;' }, '邮箱：'),
-                  h('a', { 
-                    href: `mailto:${appInfo.email}`, 
-                    style: 'color: #1890ff; text-decoration: none;'
-                  }, appInfo.email)
-                ]),
-                h('p', { style: 'margin: 10px 0;' }, [
-                  h('strong', { style: 'display: inline-block; width: 80px;' }, '项目地址：'),
-                  h('a', { 
-                    href: appInfo.url, 
-                    target: '_blank',
-                    rel: 'noopener noreferrer',
-                    style: 'color: #1890ff; text-decoration: none;'
-                  }, appInfo.url)
-                ]),
-                h('p', { style: 'margin: 20px 0 0 0; padding-top: 20px; border-top: 1px solid #e8e8e8; color: #999; font-size: 12px; text-align: center;' }, 
-                  appInfo.description
-                )
-              ])
-            ]),
-            okText: '确定'
-          })
+          aboutDialogVisible.value = true
         }
       }
     ]
@@ -281,6 +278,60 @@ onUnmounted(() => {
   margin-left: 24px;
   color: #787878;
   font-size: 12px;
+}
+
+/* 关于对话框样式 */
+.about-content {
+  padding: 20px 0;
+}
+
+.about-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.about-title {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: #409eff;
+}
+
+.about-version {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.about-body {
+  line-height: 1.8;
+  color: #333;
+}
+
+.about-info {
+  margin: 10px 0;
+}
+
+.about-info strong {
+  display: inline-block;
+  width: 80px;
+}
+
+.about-link {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.about-link:hover {
+  text-decoration: underline;
+}
+
+.about-description {
+  margin: 20px 0 0 0;
+  padding-top: 20px;
+  border-top: 1px solid #e8e8e8;
+  color: #999;
+  font-size: 12px;
+  text-align: center;
 }
 </style>
 

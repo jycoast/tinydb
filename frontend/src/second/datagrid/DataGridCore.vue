@@ -145,26 +145,26 @@
 
     <!-- Bottom-left edit actions: commit / delete / insert / discard -->
     <div v-if="grider && grider.editable" class="edit-actions" @mousedown.stop @click.stop>
-      <ATooltip title="提交当前修改">
-        <AButton size="small" shape="circle" type="default" :disabled="!grider.allowSave" @click="handleCommitChanges">
-          <template #icon><CheckOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="删除选中的行">
-        <AButton size="small" shape="circle" type="default" :disabled="!hasSelectedRows" @click="handleDeleteSelectedRows">
-          <template #icon><MinusOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="新增一行">
-        <AButton size="small" shape="circle" type="default" :disabled="!grider.canInsert" @click="handleInsertNewRow">
-          <template #icon><PlusOutlined /></template>
-        </AButton>
-      </ATooltip>
-      <ATooltip title="放弃当前修改">
-        <AButton size="small" shape="circle" type="default" :disabled="!grider.containsChanges" @click="handleDiscardAllChanges">
-          <template #icon><CloseOutlined /></template>
-        </AButton>
-      </ATooltip>
+      <el-tooltip content="提交当前修改" placement="top">
+        <el-button size="small" circle :disabled="!grider.allowSave" @click="handleCommitChanges">
+          <el-icon><Check /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="删除选中的行" placement="top">
+        <el-button size="small" circle :disabled="!hasSelectedRows" @click="handleDeleteSelectedRows">
+          <el-icon><Minus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="新增一行" placement="top">
+        <el-button size="small" circle :disabled="!grider.canInsert" @click="handleInsertNewRow">
+          <el-icon><Plus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="放弃当前修改" placement="top">
+        <el-button size="small" circle :disabled="!grider.containsChanges" @click="handleDiscardAllChanges">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </el-tooltip>
     </div>
     <div v-if="selectedCellsInfo" class="row-count-label">{{ selectedCellsInfo }}</div>
     <div v-else-if="allRowCount != null && multipleGridsOnTab" class="row-count-label">
@@ -214,8 +214,7 @@ import DataFilterControl from '/@/second/datagrid/DataFilterControl.vue'
 import DataGridRow from '/@/second/datagrid/DataGridRow.vue'
 import InlineButton from '/@/second/buttons/InlineButton.vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
-import {Button, Tooltip} from 'ant-design-vue'
-import {CheckOutlined, CloseOutlined, MinusOutlined, PlusOutlined} from '@ant-design/icons-vue'
+import { Check, Close, Minus, Plus } from '@element-plus/icons-vue'
 import {
   cellIsSelected,
   countColumnSizes,
@@ -239,7 +238,7 @@ import {
   topLeftCell
 } from './selection'
 import {registerMenu} from '/@/second/utility/contextMenu'
-import {message, Modal} from 'ant-design-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {copyRowsFormatDefs, copyRowsToClipboard} from '/@/second/utility/clipboard'
 import {getFilterType} from '/@/second/tinydb-filterparser'
 import createRef from '/@/second/utility/createRef'
@@ -299,12 +298,6 @@ export default defineComponent({
     DataGridRow,
     InlineButton,
     FontIcon,
-    [Button.name]: Button,
-    [Tooltip.name]: Tooltip,
-    CheckOutlined,
-    MinusOutlined,
-    PlusOutlined,
-    CloseOutlined,
   },
   props: {
     grider: {
@@ -804,7 +797,7 @@ export default defineComponent({
       const rowsToCopy = compact(rowIndexes.map((idx: number) => grider.value?.getRowData(idx)))
 
       if (!columnsToCopy.length || !rowsToCopy.length) {
-        message.info('没有可复制的数据')
+        ElMessage.info('没有可复制的数据')
         return
       }
 
@@ -825,7 +818,7 @@ export default defineComponent({
       const cell = cellFromEvent(event)
       if (!isRegularCell(cell)) return
       if (!grider.value?.editable) {
-        message.warning('当前数据源为只读，不能编辑')
+        ElMessage.warning('当前数据源为只读，不能编辑')
         return
       }
       if (!showMultilineCellEditorConditional(cell)) {
@@ -932,7 +925,7 @@ export default defineComponent({
 
       const base = display.value?.baseTableOrSimilar
       if (!base?.pureName) {
-        message.error('无法提交：未识别当前表')
+        ElMessage.error('无法提交：未识别当前表')
         return
       }
 
@@ -941,7 +934,7 @@ export default defineComponent({
 
       const cs = (grider.value as any)?.changeSet
       if (!cs) {
-        message.error('无法提交：缺少变更集')
+        ElMessage.error('无法提交：缺少变更集')
         return
       }
 
@@ -971,46 +964,54 @@ export default defineComponent({
       }
 
       if (!statements.length) {
-        message.info('没有可提交的修改（请先修改/新增/删除）')
+        ElMessage.info('没有可提交的修改（请先修改/新增/删除）')
         return
       }
 
-      Modal.confirm({
-        title: '提交修改',
-        content: `确定要提交 ${statements.length} 条变更吗？`,
-        okText: '提交',
-        cancelText: '取消',
-        onOk: async () => {
-          try {
-            for (const sql of statements) {
-              const res = await databaseConnectionsSqlSelectApi({
-                conid: conid.value,
-                database: database.value,
-                select: { sql },
-              })
-              if ((res as any)?.errorMessage) throw new Error(String((res as any).errorMessage))
-            }
-            grider.value?.revertAllChanges()
-            display.value?.reload?.()
-            message.success('提交成功')
-          } catch (e: any) {
-            message.error(e?.message || '提交失败')
+      ElMessageBox.confirm(
+        `确定要提交 ${statements.length} 条变更吗？`,
+        '提交修改',
+        {
+          confirmButtonText: '提交',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      ).then(async () => {
+        try {
+          for (const sql of statements) {
+            const res = await databaseConnectionsSqlSelectApi({
+              conid: conid.value,
+              database: database.value,
+              select: { sql },
+            })
+            if ((res as any)?.errorMessage) throw new Error(String((res as any).errorMessage))
           }
-        },
+          grider.value?.revertAllChanges()
+          display.value?.reload?.()
+          ElMessage.success('提交成功')
+        } catch (e: any) {
+          ElMessage.error(e?.message || '提交失败')
+        }
+      }).catch(() => {
+        // 用户取消
       })
     }
 
     function handleDiscardAllChanges() {
       if (!grider.value?.containsChanges) return
-      Modal.confirm({
-        title: '放弃修改',
-        content: '确定要放弃当前所有未提交的修改吗？',
-        okText: '放弃',
-        cancelText: '取消',
-        onOk: () => {
-          grider.value?.revertAllChanges()
-          message.success('已放弃修改')
-        },
+      ElMessageBox.confirm(
+        '确定要放弃当前所有未提交的修改吗？',
+        '放弃修改',
+        {
+          confirmButtonText: '放弃',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      ).then(() => {
+        grider.value?.revertAllChanges()
+        ElMessage.success('已放弃修改')
+      }).catch(() => {
+        // 用户取消
       })
     }
 
@@ -1018,17 +1019,21 @@ export default defineComponent({
       if (!grider.value?.editable) return
       const rows = getSelectedRowIndexes().filter(isNumber) as number[]
       if (!rows.length) return
-      Modal.confirm({
-        title: '删除行',
-        content: `确定要标记删除选中的 ${rows.length} 行吗？（点击对勾提交后才会写入数据库）`,
-        okText: '删除',
-        cancelText: '取消',
-        onOk: () => {
-          grider.value?.beginUpdate?.()
-          for (const r of rows) grider.value?.deleteRow?.(r)
-          grider.value?.endUpdate?.()
-          message.success('已标记删除')
-        },
+      ElMessageBox.confirm(
+        `确定要标记删除选中的 ${rows.length} 行吗？（点击对勾提交后才会写入数据库）`,
+        '删除行',
+        {
+          confirmButtonText: '删除',
+          cancelText: '取消',
+          type: 'warning',
+        }
+      ).then(() => {
+        grider.value?.beginUpdate?.()
+        for (const r of rows) grider.value?.deleteRow?.(r)
+        grider.value?.endUpdate?.()
+        ElMessage.success('已标记删除')
+      }).catch(() => {
+        // 用户取消
       })
     }
 
@@ -1040,7 +1045,7 @@ export default defineComponent({
       currentCell.value = cell
       selectedCells.value = [cell]
       scrollIntoView(cell)
-      message.success('已新增一行（编辑后点击对勾提交）')
+      ElMessage.success('已新增一行（编辑后点击对勾提交）')
     }
 
     function handleGridWheel(event) {

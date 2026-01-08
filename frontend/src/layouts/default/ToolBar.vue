@@ -1,30 +1,31 @@
 <template>
   <div class="toolbar-root">
-    <Space :size="0" class="toolbar-groups">
+    <el-space :size="0" class="toolbar-groups">
       <template v-for="(group, idx) in toolbarGroups" :key="group.key">
-        <Space :size="4" class="toolbar-group">
-          <Tooltip
+        <el-space :size="4" class="toolbar-group">
+          <el-tooltip
             v-for="item in group.items"
             :key="item.id"
-            :title="item.toolbarName || item.name"
+            :content="item.toolbarName || item.name"
+            placement="bottom"
           >
-            <Button
+            <el-button
               :disabled="item.disabled"
-              type="text"
+              text
               class="toolbar-btn"
               @click="handleToolbarClick(item)"
             >
               <template #icon>
-                <component v-if="getToolbarAntIcon(item)" :is="getToolbarAntIcon(item)" />
+                <component v-if="getToolbarElIcon(item)" :is="getToolbarElIcon(item)" />
                 <FontIcon v-else-if="item.icon" :icon="item.icon" />
               </template>
               <span class="toolbar-label">{{ item.toolbarName || item.name }}</span>
-            </Button>
-          </Tooltip>
-        </Space>
-        <Divider v-if="idx < toolbarGroups.length - 1" type="vertical" class="toolbar-divider" />
+            </el-button>
+          </el-tooltip>
+        </el-space>
+        <el-divider v-if="idx < toolbarGroups.length - 1" direction="vertical" class="toolbar-divider" />
       </template>
-    </Space>
+    </el-space>
   </div>
 </template>
 
@@ -32,21 +33,20 @@
 import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
-import { Button, Divider, Space, Tooltip } from 'ant-design-vue'
-import { CodeOutlined, LinkOutlined } from '@ant-design/icons-vue'
+import { Document, Link } from '@element-plus/icons-vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
 import runCommand from '/@/second/commands/runCommand'
 
 const bootstrap = useBootstrapStore()
 const { commandsCustomized } = storeToRefs(bootstrap)
 
-function getToolbarAntIcon(item: any) {
+function getToolbarElIcon(item: any) {
   // Ensure core actions always have a visible icon even if FontIcon mapping is missing
   switch (item?.id) {
     case 'new.query':
-      return CodeOutlined
+      return Document
     case 'new.connection':
-      return LinkOutlined
+      return Link
     default:
       return null
   }
@@ -165,13 +165,6 @@ function handleToolbarClick(item: any) {
   white-space: nowrap;
 }
 
-.toolbar-icon {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 4px;
-  font-size: 14px;
-  line-height: 1;
-}
 </style>
 
 

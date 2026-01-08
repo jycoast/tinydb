@@ -2,41 +2,65 @@
   <div class="ag-root">
     <div v-if="errorMessage" class="ag-error">{{ errorMessage }}</div>
     <div v-else class="ag-table-wrap" ref="wrap" @scroll.passive="handleScroll">
-      <ATable
-        bordered
-        :columns="antdColumns"
-        :dataSource="dataSource"
-        :pagination="{}"
+      <el-table
+        border
+        :data="dataSource"
         :loading="isLoading"
-        size="middle"
-        :rowKey="rowKey"
-        :rowSelection="rowSelection"
-        :rowClassName="rowClassName"
-        :scroll="{ x: 'max-content', y: '100%' }"
-      />
+        size="default"
+        :row-key="rowKey"
+        @selection-change="handleSelectionChange"
+        :row-class-name="rowClassName"
+        style="width: 100%"
+        height="100%"
+      >
+        <el-table-column type="selection" width="55" />
+        <el-table-column
+          v-for="col in elTableColumns"
+          :key="col.prop"
+          :prop="col.prop"
+          :label="col.label"
+          :show-overflow-tooltip="col.ellipsis"
+          :min-width="120"
+        >
+          <template #default="{ row }">
+            <div @dblclick="col.onDblclick(row)">
+              <el-input
+                v-if="col.isEditing(row)"
+                v-model="editValue"
+                size="small"
+                autofocus
+                @keyup.enter="saveEdit"
+                @keyup.esc="cancelEdit"
+                @blur="saveEdit"
+              />
+              <span v-else>{{ col.getCellValue(row) }}</span>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
     <!-- Bottom-left edit actions: commit / delete / insert / discard -->
     <div v-if="grider && grider.editable" class="ag-actions" @mousedown.stop @click.stop>
-      <Tooltip title="提交当前修改">
-        <Button size="small" shape="circle" type="default" :disabled="!grider.allowSave" @click="handleCommitChanges">
-          <template #icon><CheckOutlined /></template>
-        </Button>
-      </Tooltip>
-      <Tooltip title="删除选中的行">
-        <Button size="small" shape="circle" type="default" :disabled="!hasSelectedRows" @click="handleDeleteSelectedRows">
-          <template #icon><MinusOutlined /></template>
-        </Button>
-      </Tooltip>
-      <Tooltip title="新增一行">
-        <Button size="small" shape="circle" type="default" :disabled="!grider.canInsert" @click="handleInsertNewRow">
-          <template #icon><PlusOutlined /></template>
-        </Button>
-      </Tooltip>
-      <Tooltip title="放弃当前修改">
-        <Button size="small" shape="circle" type="default" :disabled="!grider.containsChanges" @click="handleDiscardAllChanges">
-          <template #icon><CloseOutlined /></template>
-        </Button>
-      </Tooltip>
+      <el-tooltip content="提交当前修改" placement="top">
+        <el-button size="small" circle :disabled="!grider.allowSave" @click="handleCommitChanges">
+          <el-icon><Check /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="删除选中的行" placement="top">
+        <el-button size="small" circle :disabled="!hasSelectedRows" @click="handleDeleteSelectedRows">
+          <el-icon><Minus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="新增一行" placement="top">
+        <el-button size="small" circle :disabled="!grider.canInsert" @click="handleInsertNewRow">
+          <el-icon><Plus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="放弃当前修改" placement="top">
+        <el-button size="small" circle :disabled="!grider.containsChanges" @click="handleDiscardAllChanges">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </el-tooltip>
     </div>
     <div class="ag-footer">
       <span v-if="allRowCount != null">Rows: {{ Number(allRowCount).toLocaleString() }}</span>
@@ -48,9 +72,9 @@
 </template>
 
 <script lang="ts" setup>
-import {computed, h, ref, toRefs, watch, watchEffect} from 'vue'
-import {Button, Input, Modal, Table as ATable, Tooltip, message} from 'ant-design-vue'
-import {CheckOutlined, CloseOutlined, MinusOutlined, PlusOutlined} from '@ant-design/icons-vue'
+import {computed, ref, toRefs, watch, watchEffect} from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Check, Close, Minus, Plus } from '@element-plus/icons-vue'
 import type Grider from '/@/second/datagrid/Grider'
 import type {GridDisplay} from '/@/second/tinydb-datalib'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
@@ -90,38 +114,26 @@ const editValue = ref<any>('')
 
 const hasSelectedRows = computed(() => selectedRowKeys.value.length > 0)
 
-const antdColumns = computed(() => {
+const elTableColumns = computed(() => {
   return columns.value.map((c: any) => ({
-    key: c.uniqueName,
-    dataIndex: c.uniqueName,
-    title: c.headerText || c.columnName || c.uniqueName,
+    prop: c.uniqueName,
+    label: c.headerText || c.columnName || c.uniqueName,
     ellipsis: true,
-    customRender: ({record}: any) => {
-      const idx = record?.__rowIndex
+    uniqueName: c.uniqueName,
+    isEditing: (row: any) => {
+      const idx = row?.__rowIndex
+      return !!editingCell.value && editingCell.value.row === idx && editingCell.value.col === c.uniqueName
+    },
+    getCellValue: (row: any) => {
+      const idx = row?.__rowIndex
       if (!grider.value || idx == null) return ''
-      const row = grider.value.getRowData(idx)
-      const v = row ? row[c.uniqueName] : undefined
-      const isEditing = !!editingCell.value && editingCell.value.row === idx && editingCell.value.col === c.uniqueName
-      if (isEditing && grider.value?.editable) {
-        return h(Input, {
-          size: 'small',
-          value: editValue.value,
-          autofocus: true,
-          'onUpdate:value': (val: any) => (editValue.value = val),
-          onPressEnter: () => saveEdit(),
-          onBlur: () => saveEdit(),
-          onKeydown: (e: KeyboardEvent) => {
-            if (e.key === 'Escape') cancelEdit()
-          },
-        })
-      }
+      const rowData = grider.value.getRowData(idx)
+      const v = rowData ? rowData[c.uniqueName] : undefined
       return v == null ? '' : String(v)
     },
-    customCell: (record: any) => {
-      const idx = record?.__rowIndex
-      return {
-        onDblclick: () => startEdit(idx, c.uniqueName),
-      }
+    onDblclick: (row: any) => {
+      const idx = row?.__rowIndex
+      if (idx != null) startEdit(idx, c.uniqueName)
     },
   }))
 })
@@ -135,12 +147,9 @@ const dataSource = computed(() => {
 
 const rowKey = (r: any) => String(r?.__rowIndex ?? '')
 
-const rowSelection = computed(() => ({
-  selectedRowKeys: selectedRowKeys.value,
-  onChange: (keys: Array<string | number>) => {
-    selectedRowKeys.value = keys
-  },
-}))
+function handleSelectionChange(selection: any[]) {
+  selectedRowKeys.value = selection.map((r: any) => String(r?.__rowIndex ?? ''))
+}
 
 const rowClassName = (record: any) => {
   const idx = record?.__rowIndex
@@ -290,21 +299,21 @@ async function handleCommitChanges() {
   if (!grider.value?.allowSave) return
   if (!props.conid || !props.database) return
 
-  const base = display.value?.baseTableOrSimilar as any
-  if (!base?.pureName) {
-    message.error('无法提交：未识别当前表')
-    return
-  }
+      const base = display.value?.baseTableOrSimilar as any
+      if (!base?.pureName) {
+        ElMessage.error('无法提交：未识别当前表')
+        return
+      }
 
-  const tableName = base.schemaName
-    ? `${quoteIdent(base.schemaName)}.${quoteIdent(base.pureName)}`
-    : `${quoteIdent(base.pureName)}`
+      const tableName = base.schemaName
+        ? `${quoteIdent(base.schemaName)}.${quoteIdent(base.pureName)}`
+        : `${quoteIdent(base.pureName)}`
 
-  const cs = (grider.value as any)?.changeSet
-  if (!cs) {
-    message.error('无法提交：缺少变更集')
-    return
-  }
+      const cs = (grider.value as any)?.changeSet
+      if (!cs) {
+        ElMessage.error('无法提交：缺少变更集')
+        return
+      }
 
   const statements: string[] = []
   for (const item of cs.deletes || []) {
@@ -328,47 +337,55 @@ async function handleCommitChanges() {
     statements.push(`INSERT INTO ${tableName} (${colSql}) VALUES (${valSql});`)
   }
 
-  if (!statements.length) {
-    message.info('没有可提交的修改（请先修改/新增/删除）')
-    return
-  }
-
-  Modal.confirm({
-    title: '提交修改',
-    content: `确定要提交 ${statements.length} 条变更吗？`,
-    okText: '提交',
-    cancelText: '取消',
-    onOk: async () => {
-      try {
-        for (const sql of statements) {
-          const res = await databaseConnectionsSqlSelectApi({
-            conid: props.conid!,
-            database: props.database!,
-            select: {sql},
-          })
-          if ((res as any)?.errorMessage) throw new Error(String((res as any).errorMessage))
-        }
-        grider.value?.revertAllChanges?.()
-        display.value?.reload?.()
-        message.success('提交成功')
-      } catch (e: any) {
-        message.error(e?.message || '提交失败')
+      if (!statements.length) {
+        ElMessage.info('没有可提交的修改（请先修改/新增/删除）')
+        return
       }
-    },
-  })
+
+      ElMessageBox.confirm(
+        `确定要提交 ${statements.length} 条变更吗？`,
+        '提交修改',
+        {
+          confirmButtonText: '提交',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      ).then(async () => {
+        try {
+          for (const sql of statements) {
+            const res = await databaseConnectionsSqlSelectApi({
+              conid: props.conid!,
+              database: props.database!,
+              select: {sql},
+            })
+            if ((res as any)?.errorMessage) throw new Error(String((res as any).errorMessage))
+          }
+          grider.value?.revertAllChanges?.()
+          display.value?.reload?.()
+          ElMessage.success('提交成功')
+        } catch (e: any) {
+          ElMessage.error(e?.message || '提交失败')
+        }
+      }).catch(() => {
+        // 用户取消
+      })
 }
 
 function handleDiscardAllChanges() {
   if (!grider.value?.containsChanges) return
-  Modal.confirm({
-    title: '放弃修改',
-    content: '确定要放弃当前所有未提交的修改吗？',
-    okText: '放弃',
-    cancelText: '取消',
-    onOk: () => {
-      grider.value?.revertAllChanges?.()
-      message.success('已放弃修改')
-    },
+  ElMessageBox.confirm(
+    '确定要放弃当前所有未提交的修改吗？',
+    '放弃修改',
+    {
+      confirmButtonText: '放弃',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    grider.value?.revertAllChanges?.()
+    ElMessage.success('已放弃修改')
+  }).catch(() => {
+    // 用户取消
   })
 }
 
@@ -376,18 +393,22 @@ function handleDeleteSelectedRows() {
   if (!grider.value?.editable) return
   const rows = selectedRowKeys.value.map((k) => Number(k)).filter((n) => Number.isFinite(n)) as number[]
   if (!rows.length) return
-  Modal.confirm({
-    title: '删除行',
-    content: `确定要标记删除选中的 ${rows.length} 行吗？（点击对勾提交后才会写入数据库）`,
-    okText: '删除',
-    cancelText: '取消',
-    onOk: () => {
-      grider.value?.beginUpdate?.()
-      // delete from bottom to top to reduce index shifting surprises
-      for (const r of [...rows].sort((a, b) => b - a)) grider.value?.deleteRow?.(r)
-      grider.value?.endUpdate?.()
-      message.success('已标记删除')
-    },
+  ElMessageBox.confirm(
+    `确定要标记删除选中的 ${rows.length} 行吗？（点击对勾提交后才会写入数据库）`,
+    '删除行',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(() => {
+    grider.value?.beginUpdate?.()
+    // delete from bottom to top to reduce index shifting surprises
+    for (const r of [...rows].sort((a, b) => b - a)) grider.value?.deleteRow?.(r)
+    grider.value?.endUpdate?.()
+    ElMessage.success('已标记删除')
+  }).catch(() => {
+    // 用户取消
   })
 }
 
@@ -400,8 +421,8 @@ function handleInsertNewRow() {
   if (wrap.value) {
     wrap.value.scrollTop = wrap.value.scrollHeight
   }
-  if (firstColumnUniqueName.value) startEdit(newRow, firstColumnUniqueName.value)
-  message.success('已新增一行（双击单元格编辑，点击对勾提交）')
+    if (firstColumnUniqueName.value) startEdit(newRow, firstColumnUniqueName.value)
+    ElMessage.success('已新增一行（双击单元格编辑，点击对勾提交）')
 }
 </script>
 
@@ -460,28 +481,24 @@ function handleInsertNewRow() {
   color: var(--theme-font-3);
 }
 
-.ag-root :deep(.ant-table) {
+.ag-root :deep(.el-table) {
   height: 100%;
 }
 
-.ag-root :deep(.ant-table-container) {
-  height: 100%;
-}
-
-.ag-root :deep(.ant-table-body) {
+.ag-root :deep(.el-table__body-wrapper) {
   max-height: 100% !important;
 }
 
-.ag-root :deep(.ant-table-row.ag-row-deleted) {
+.ag-root :deep(.el-table__row.ag-row-deleted) {
   opacity: 0.55;
   text-decoration: line-through;
 }
 
-.ag-root :deep(.ant-table-row.ag-row-updated) {
+.ag-root :deep(.el-table__row.ag-row-updated) {
   background: rgba(250, 173, 20, 0.10);
 }
 
-.ag-root :deep(.ant-table-row.ag-row-inserted) {
+.ag-root :deep(.el-table__row.ag-row-inserted) {
   background: rgba(82, 196, 26, 0.10);
 }
 </style>

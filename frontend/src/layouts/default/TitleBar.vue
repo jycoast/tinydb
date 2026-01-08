@@ -10,32 +10,31 @@
       </div>
     </div>
     <div class="tb-right" :style="noDragStyle" @dblclick.stop>
-      <Tooltip title="最小化">
-        <Button type="reset" class="tb-btn" @click="minimise">
-          <template #icon><MinusOutlined /></template>
-        </Button>
-      </Tooltip>
-      <Tooltip :title="isMaximised ? '还原' : '最大化'">
-        <Button type="reset" class="tb-btn" @click="toggleMaximise">
-          <template #icon>
-            <MinusSquareOutlined v-if="isMaximised" />
-            <BorderOutlined v-else />
-          </template>
-        </Button>
-      </Tooltip>
-      <Tooltip title="关闭">
-        <Button type="reset" class="tb-btn tb-btn-close" @click="closeWindow">
-          <template #icon><CloseOutlined /></template>
-        </Button>
-      </Tooltip>
+      <el-tooltip content="最小化" placement="bottom">
+        <el-button text class="tb-btn" @click="minimise">
+          <el-icon><Minus /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip :content="isMaximised ? '还原' : '最大化'" placement="bottom">
+        <el-button text class="tb-btn" @click="toggleMaximise">
+          <el-icon>
+            <CopyDocument v-if="isMaximised" />
+            <FullScreen v-else />
+          </el-icon>
+        </el-button>
+      </el-tooltip>
+      <el-tooltip content="关闭" placement="bottom">
+        <el-button text class="tb-btn tb-btn-close" @click="closeWindow">
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </el-tooltip>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import {onMounted, onUnmounted, ref} from 'vue'
-import {Button, Tooltip} from 'ant-design-vue'
-import {BorderOutlined, CloseOutlined, MinusOutlined, MinusSquareOutlined} from '@ant-design/icons-vue'
+import {Minus, Close, FullScreen, CopyDocument} from '@element-plus/icons-vue'
 import {WindowIsMaximised, WindowMinimise, WindowToggleMaximise, Quit} from '/@/wailsjs/runtime/runtime'
 import MenuBar from './MenuBar.vue'
 import logoUrl from '/src/assets/images/logo.png'
@@ -57,8 +56,13 @@ function minimise() {
   void WindowMinimise()
 }
 
-function toggleMaximise() {
-  void WindowToggleMaximise().then(refreshMaxState).catch(() => {})
+async function toggleMaximise() {
+  try {
+    await WindowToggleMaximise()
+    await refreshMaxState()
+  } catch {
+    // ignore
+  }
 }
 
 function closeWindow() {

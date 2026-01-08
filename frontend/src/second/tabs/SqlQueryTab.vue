@@ -5,67 +5,70 @@
       style="flex: 0 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--theme-border);">
 
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <Space>
-          <AButton :icon="h(OrderedListOutlined)" @click="handleConvertSelectionToInList"
-                   size="small">转 IN 列表
-          </AButton>
-          <AButton :icon="h(FormatPainterOutlined)" @click="handleFormatSql" size="small">SQL 美化
-          </AButton>
-          <AButton :icon="h(FilterOutlined)" @click="handleDeduplicateSelection" size="small">去重
-          </AButton>
-        </Space>
+        <el-space>
+          <el-button :icon="List" @click="handleConvertSelectionToInList" size="small">
+            转 IN 列表
+          </el-button>
+          <el-button :icon="Brush" @click="handleFormatSql" size="small">
+            SQL 美化
+          </el-button>
+          <el-button :icon="Filter" @click="handleDeduplicateSelection" size="small">
+            去重
+          </el-button>
+        </el-space>
       </div>
 
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <Space>
-          <ASelect
-            v-model:value="selectedConid"
+        <el-space>
+          <el-select
+            v-model="selectedConid"
             style="min-width: 220px"
             size="small"
-            show-search
-            allow-clear
+            filterable
+            clearable
             placeholder="选择数据源"
-            :options="connectionOptions"
-            :filter-option="filterSelectOption"
             @change="handleChangeConid"
-          />
-          <ASelect
-            v-model:value="selectedObject"
+          >
+            <el-option
+              v-for="opt in connectionOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+          <el-select
+            v-model="selectedObject"
             style="min-width: 260px"
             size="small"
-            show-search
-            allow-clear
+            filterable
+            clearable
             placeholder="选择库/表"
-            :filter-option="filterSelectOption"
-            @select="handleSelectObject"
+            @change="handleSelectObject"
           >
-            <ASelectOptGroup v-if="databaseOptions.length" label="Databases">
-              <ASelectOption
+            <el-option-group v-if="databaseOptions.length" label="Databases">
+              <el-option
                 v-for="db in databaseOptions"
                 :key="`db:${db}`"
+                :label="db"
                 :value="`db:${db}`"
-              >
-                {{ db }}
-              </ASelectOption>
-            </ASelectOptGroup>
+              />
+            </el-option-group>
 
-            <ASelectOptGroup v-if="tableOptions.length" label="Tables">
-              <ASelectOption
+            <el-option-group v-if="tableOptions.length" label="Tables">
+              <el-option
                 v-for="t in tableOptions"
                 :key="`table:${t}`"
+                :label="t"
                 :value="`table:${t}`"
-              >
-                {{ t }}
-              </ASelectOption>
-            </ASelectOptGroup>
-          </ASelect>
+              />
+            </el-option-group>
+          </el-select>
 
-          <AButton type="primary" :icon="h(PlayCircleOutlined)" :loading="executing"
-                   @click="handleExecute">
+          <el-button type="primary" :icon="VideoPlay" :loading="executing" @click="handleExecute">
             执行
-          </AButton>
-          <AButton :icon="h(DeleteOutlined)" @click="handleClear">清空</AButton>
-        </Space>
+          </el-button>
+          <el-button :icon="Delete" @click="handleClear">清空</el-button>
+        </el-space>
       </div>
 
     </div>
@@ -84,23 +87,26 @@
     <!-- 结果区 -->
     <div v-if="showResults"
          style="flex: 0 0 38%; min-height: 200px; max-height: 50%; display: flex; flex-direction: column; border-top: 1px solid var(--theme-border);">
-      <Card :bordered="false"
-            style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-        <template #title>
-          <Space>
-            <span>查询结果</span>
-            <Text v-if="resultsInfo" type="secondary" style="font-size: 12px;">{{
-                resultsInfo
-              }}
-            </Text>
-          </Space>
-        </template>
-        <template #extra>
-          <Space>
-            <AButton size="small" :icon="h(CopyOutlined)" @click="handleCopyResults">复制 (Ctrl+C)
-            </AButton>
-            <AButton size="small" @click="clearResultSelection">清除选择</AButton>
-          </Space>
+      <el-card
+        shadow="never"
+        style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
+        :body-style="{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }"
+      >
+        <template #header>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span>查询结果</span>
+              <span v-if="resultsInfo" style="font-size: 12px; color: #909399; margin-left: 8px;">
+                {{ resultsInfo }}
+              </span>
+            </div>
+            <el-space>
+              <el-button size="small" :icon="DocumentCopy" @click="handleCopyResults">
+                复制 (Ctrl+C)
+              </el-button>
+              <el-button size="small" @click="clearResultSelection">清除选择</el-button>
+            </el-space>
+          </div>
         </template>
         <div
           ref="resultsHotkeyHost"
@@ -109,30 +115,69 @@
           @mousedown="focusResultsHotkeyHost"
           @keydown="handleResultsKeyDown"
         >
-          <AAlert v-if="error" type="error" message="执行失败" show-icon closable
-                  @close="error = ''">
-            <template #description>
+          <el-alert
+            v-if="error"
+            type="error"
+            title="执行失败"
+            :closable="true"
+            @close="error = ''"
+            show-icon
+          >
+            <template #default>
               <pre class="sql-error-pre">{{ error }}</pre>
             </template>
-          </AAlert>
+          </el-alert>
 
-          <ATable
+          <el-table
             v-else-if="queryResult && resultTableData.length > 0"
-            :columns="tableColumns"
-            :data-source="resultTableData"
-            :pagination="paginationConfig"
-            :scroll="{ x: 'max-content', y: resultsScrollY }"
-            size="middle"
-            bordered
-            :loading="executing"
-            :row-selection="rowSelection"
-            :custom-row="customRow"
-          />
+            :data="resultTableData"
+            :row-key="(row: any) => row.key"
+            :max-height="resultsScrollY"
+            size="default"
+            border
+            v-loading="executing"
+            @row-click="handleTableRowClick"
+            @selection-change="handleSelectionChange"
+            style="width: 100%"
+          >
+            <el-table-column type="selection" width="55" />
+            <el-table-column
+              v-for="col in tableColumns"
+              :key="col.key"
+              :prop="col.dataIndex"
+              :label="col.title"
+              :width="col.width"
+              :show-overflow-tooltip="col.ellipsis"
+            >
+              <template #default="{ row, column }">
+                <div
+                  @click="handleCellClick(row, column.property)"
+                  @dblclick="startEditResultCell(row.key, column.property)"
+                >
+                  <el-input
+                    v-if="isEditingCell(row.key, column.property)"
+                    v-model="editingResultValue"
+                    size="small"
+                    autofocus
+                    @blur="commitEditResultCell(row.key, column.property)"
+                    @keyup.enter="commitEditResultCell(row.key, column.property)"
+                    @click.stop
+                  />
+                  <span v-else>{{ row[column.property] }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="查询成功，但没有返回数据" />
+            </template>
+          </el-table>
 
-          <AEmpty v-else-if="queryResult && resultTableData.length === 0"
-                  description="查询成功，但没有返回数据"/>
+          <el-empty
+            v-else-if="queryResult && resultTableData.length === 0"
+            description="查询成功，但没有返回数据"
+          />
         </div>
-      </Card>
+      </el-card>
     </div>
   </div>
 </template>
@@ -144,30 +189,19 @@ export const allowAddToFavorites = (_: any) => true
 </script>
 
 <script lang="ts" setup>
-import {computed, h, nextTick, onBeforeUnmount, onMounted, PropType, ref, watch} from 'vue'
+import {computed, nextTick, onBeforeUnmount, onMounted, PropType, ref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {debounce} from 'lodash-es'
+import { ElMessage } from 'element-plus'
 import {
-  Alert as AAlert,
-  Button as AButton,
-  Card,
-  Empty as AEmpty,
-  Input as AInput,
-  Select as ASelect,
-  Space,
-  Table as ATable,
-  Typography,
-  message
-} from 'ant-design-vue'
-import {
-  DeleteOutlined,
-  PlayCircleOutlined,
-  OrderedListOutlined,
-  FormatPainterOutlined,
-  CopyOutlined,
-  FilterOutlined
-} from '@ant-design/icons-vue'
+  Delete,
+  VideoPlay,
+  List,
+  Brush,
+  DocumentCopy,
+  Filter
+} from '@element-plus/icons-vue'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
 import AceEditor from '/@/second/query/AceEditor'
@@ -176,11 +210,6 @@ import 'ace-builds/src-noconflict/ext-language_tools'
 import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/second/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
 import {copyRowsToClipboard} from '/@/second/utility/clipboard'
-
-const {Text} = Typography
-
-const ASelectOption = (ASelect as any).Option
-const ASelectOptGroup = (ASelect as any).OptGroup
 
 const props = defineProps({
   tabid: {type: String as PropType<string>, required: true},
@@ -195,8 +224,6 @@ const bootstrap = useBootstrapStore()
 const {currentDatabase} = storeToRefs(bootstrap)
 const clusterApi = useClusterApiStore()
 const {connectionList} = storeToRefs(clusterApi)
-
-const defaultPlaceholder = '-- 请输入 SQL 查询语句\nSELECT * FROM table_name LIMIT 100;'
 
 const editor = ref<Nullable<ace.Editor>>(null)
 const sqlContent = ref('')
@@ -275,10 +302,7 @@ watch(
   {immediate: true}
 )
 
-function filterSelectOption(input: string, option: any) {
-  const v = (option?.label ?? option?.children ?? option?.value ?? '').toString().toLowerCase()
-  return v.includes((input || '').toLowerCase())
-}
+// Element Plus select 的 filterable 会自动处理，不需要手动过滤函数
 
 function normalizeValueToken(raw: string): string {
   let s = (raw || '').trim()
@@ -307,17 +331,17 @@ function toInListText(selectedText: string): string {
 function handleConvertSelectionToInList() {
   const ed = editor.value
   if (!ed) {
-    message.warning('编辑器未就绪')
+    ElMessage.warning('编辑器未就绪')
     return
   }
   const sel = (ed.getSelectedText?.() as string) || ''
   if (!sel || !sel.trim()) {
-    message.info('请先选中要转换的内容（每行一个值）')
+    ElMessage.info('请先选中要转换的内容（每行一个值）')
     return
   }
   const converted = toInListText(sel)
   if (!converted) {
-    message.info('选中内容为空，无法转换')
+    ElMessage.info('选中内容为空，无法转换')
     return
   }
   // Replace current selection
@@ -331,14 +355,14 @@ function handleConvertSelectionToInList() {
 async function handleFormatSql() {
   const ed = editor.value
   if (!ed) {
-    message.warning('编辑器未就绪')
+    ElMessage.warning('编辑器未就绪')
     return
   }
 
   const selectedText = (ed.getSelectedText?.() as string) || ''
   const source = selectedText && selectedText.trim() ? selectedText : ed.getValue()
   if (!source || !source.trim()) {
-    message.info('没有可美化的 SQL')
+    ElMessage.info('没有可美化的 SQL')
     return
   }
 
@@ -347,34 +371,41 @@ async function handleFormatSql() {
   const LARGE_FILE_THRESHOLD = 100000 // 10万行
   if (lineCount > LARGE_FILE_THRESHOLD) {
     const confirmed = await new Promise<boolean>((resolve) => {
-      const hide = message.loading({
-        content: `文件较大（${lineCount.toLocaleString()} 行），格式化可能需要较长时间，是否继续？`,
+      const loadingInstance = ElMessage({
+        message: `文件较大（${lineCount.toLocaleString()} 行），格式化可能需要较长时间，是否继续？`,
+        type: 'info',
         duration: 0,
-        key: 'format-confirm',
       })
       // 自动确认，但显示提示
       setTimeout(() => {
-        hide()
+        loadingInstance.close()
         resolve(true)
       }, 2000)
     })
     if (!confirmed) return
   }
 
-  const loadingKey = 'formatting-sql'
-  const hideLoading = message.loading({
-    content: lineCount > 10000 ? `正在格式化 SQL（${lineCount.toLocaleString()} 行）...` : '正在格式化 SQL...',
-    duration: 0,
-    key: loadingKey,
-  })
+  let loadingInstance: any = null
+  const showLoading = (text: string) => {
+    if (loadingInstance) {
+      loadingInstance.close()
+    }
+    loadingInstance = ElMessage({
+      message: text,
+      type: 'info',
+      duration: 0,
+    })
+  }
+
+  showLoading(lineCount > 10000 ? `正在格式化 SQL（${lineCount.toLocaleString()} 行）...` : '正在格式化 SQL...')
 
   try {
     // Lazy-load to keep initial bundle small
     const mod: any = await import('sql-formatter')
     const formatFn = mod?.format || mod?.default?.format
     if (typeof formatFn !== 'function') {
-      hideLoading()
-      message.error('SQL 格式化模块加载失败')
+      if (loadingInstance) loadingInstance.close()
+      ElMessage.error('SQL 格式化模块加载失败')
       return
     }
 
@@ -390,14 +421,10 @@ async function handleFormatSql() {
     }
 
     formatted = await formatLargeFile(source, formatFn, CHUNK_SIZE, formatOptions, (progress) => {
-      message.loading({
-        content: `正在格式化 SQL... ${progress}%`,
-        duration: 0,
-        key: loadingKey,
-      })
+      showLoading(`正在格式化 SQL... ${progress}%`)
     })
 
-    hideLoading()
+    if (loadingInstance) loadingInstance.close()
 
     if (selectedText && selectedText.trim()) {
       // @ts-ignore
@@ -405,7 +432,7 @@ async function handleFormatSql() {
       ed.session.replace(range, formatted)
       ed.clearSelection()
       ed.focus()
-      message.success('SQL 格式化完成')
+      ElMessage.success('SQL 格式化完成')
       return
     }
 
@@ -422,13 +449,10 @@ async function handleFormatSql() {
       // ignore
     }
     ed.focus()
-    message.success('SQL 格式化完成')
+    ElMessage.success('SQL 格式化完成')
   } catch (e: any) {
-    message.error({
-      content: `SQL 美化失败：${e?.message || e}`,
-      key: loadingKey,
-      duration: 5,
-    })
+    if (loadingInstance) loadingInstance.close()
+    ElMessage.error(`SQL 美化失败：${e?.message || e}`)
   }
 }
 
@@ -541,13 +565,13 @@ function splitSqlStatements(sql: string): string[] {
 function handleDeduplicateSelection() {
   const ed = editor.value
   if (!ed) {
-    message.warning('编辑器未就绪')
+    ElMessage.warning('编辑器未就绪')
     return
   }
 
   const selectedText = (ed.getSelectedText?.() as string) || ''
   if (!selectedText || !selectedText.trim()) {
-    message.info('请先选中要去重的内容（每行一个值）')
+    ElMessage.info('请先选中要去重的内容（每行一个值）')
     return
   }
 
@@ -572,7 +596,7 @@ function handleDeduplicateSelection() {
 
   // 如果去重后没有变化，提示用户
   if (deduplicated === selectedText) {
-    message.info('选中内容中没有重复的行')
+    ElMessage.info('选中内容中没有重复的行')
     return
   }
 
@@ -584,7 +608,7 @@ function handleDeduplicateSelection() {
   ed.focus()
 
   const removedCount = lines.length - uniqueLines.length
-  message.success(`去重完成，已移除 ${removedCount} 行重复数据`)
+  ElMessage.success(`去重完成，已移除 ${removedCount} 行重复数据`)
 }
 
 async function handleChangeConid(conid?: string) {
@@ -593,14 +617,14 @@ async function handleChangeConid(conid?: string) {
   selectedDatabase.value = undefined
 
   if (!conid) {
-    message.warning('请选择数据源')
+    ElMessage.warning('请选择数据源')
     return
   }
 
   try {
     const conn = await getConnectionInfo({conid})
     if (!conn) {
-      message.error('无法获取连接信息')
+      ElMessage.error('无法获取连接信息')
       return
     }
 
@@ -629,7 +653,7 @@ async function handleChangeConid(conid?: string) {
       selectedObject.value = `db:${db}`
     }
   } catch (e: any) {
-    message.error(`切换数据源失败：${e?.message || e}`)
+    ElMessage.error(`切换数据源失败：${e?.message || e}`)
   }
 }
 
@@ -637,7 +661,7 @@ async function handleSelectObject(val: string) {
   if (!val) return
   const conid = effectiveConid.value
   if (!conid) {
-    message.warning('请先选择数据源')
+    ElMessage.warning('请先选择数据源')
     return
   }
 
@@ -647,7 +671,7 @@ async function handleSelectObject(val: string) {
     try {
       const conn = await getConnectionInfo({conid, database: db})
       if (!conn) {
-        message.error('无法获取连接信息')
+        ElMessage.error('无法获取连接信息')
         return
       }
       bootstrap.setCurrentDatabase({
@@ -656,7 +680,7 @@ async function handleSelectObject(val: string) {
         title: db,
       } as any)
     } catch (e: any) {
-      message.error(`切换数据库失败：${e?.message || e}`)
+      ElMessage.error(`切换数据库失败：${e?.message || e}`)
     }
     return
   }
@@ -667,7 +691,7 @@ async function handleSelectObject(val: string) {
                  FROM \`${table}\` LIMIT 100;`
     // If it's still placeholder-ish, replace; otherwise just append
     const cur = (sqlContent.value || '').trim()
-    if (!cur || cur === defaultPlaceholder.trim() || cur.includes('SELECT * FROM table_name')) {
+    if (!cur || cur.includes('SELECT * FROM table_name')) {
       sqlContent.value = tpl
     } else {
       sqlContent.value = `${cur}\n\n${tpl}`
@@ -750,10 +774,10 @@ onMounted(async () => {
   // 安全地读取 localStorage，处理可能的错误
   try {
     const saved = localStorage.getItem(`sql_query_${props.tabid}`)
-    sqlContent.value = saved ?? defaultPlaceholder
+    sqlContent.value = saved ?? ''
   } catch (e) {
     console.warn('读取 SQL 内容失败，使用默认值:', e)
-    sqlContent.value = defaultPlaceholder
+    sqlContent.value = ''
   }
 
   await refreshConnectionLabel()
@@ -988,29 +1012,29 @@ const tableColumns = computed(() => {
       key: name,
       width: 160,
       ellipsis: true,
-      // enable inline edit/copy interaction on every cell
-      customCell: (record: any) => ({
-        onClick: () => {
-          activeResultCell.value = {rowKey: record?.key, dataIndex: name}
-        },
-        onDblclick: () => startEditResultCell(record?.key, name),
-      }),
-      customRender: ({text, record}: any) => {
-        const rowKey = record?.key
-        const isEditing = !!editingResultCell.value && editingResultCell.value.rowKey === rowKey && editingResultCell.value.dataIndex === name
-        if (!isEditing) return text
-        return h(AInput as any, {
-          size: 'small',
-          value: editingResultValue.value,
-          autofocus: true,
-          onChange: (e: any) => (editingResultValue.value = e?.target?.value ?? ''),
-          onPressEnter: () => commitEditResultCell(rowKey, name),
-          onBlur: () => commitEditResultCell(rowKey, name),
-        })
-      },
     }
   })
 })
+
+function isEditingCell(rowKey: string | number, dataIndex: string): boolean {
+  return !!editingResultCell.value && editingResultCell.value.rowKey === rowKey && editingResultCell.value.dataIndex === dataIndex
+}
+
+function handleCellClick(row: any, property: string) {
+  activeResultCell.value = {rowKey: row?.key, dataIndex: property}
+}
+
+function handleTableRowClick(row: any) {
+  activeResultCell.value = {
+    rowKey: row?.key,
+    dataIndex: (activeResultCell.value?.dataIndex || (tableColumns.value?.[0] as any)?.dataIndex) as string
+  }
+  focusResultsHotkeyHost()
+}
+
+function handleSelectionChange(selection: any[]) {
+  resultSelectedRowKeys.value = selection.map((r: any) => r?.key).filter(Boolean)
+}
 
 function normalizeRowsToTableData(rows: any[], cols: any[]) {
   if (!Array.isArray(rows)) return []
@@ -1027,24 +1051,6 @@ function normalizeRowsToTableData(rows: any[], cols: any[]) {
   })
 }
 
-const rowSelection = computed(() => ({
-  selectedRowKeys: resultSelectedRowKeys.value,
-  onChange: (keys: any[]) => {
-    resultSelectedRowKeys.value = keys || []
-  },
-}))
-
-function customRow(record: any) {
-  return {
-    onClick: () => {
-      activeResultCell.value = {
-        rowKey: record?.key,
-        dataIndex: (activeResultCell.value?.dataIndex || (tableColumns.value?.[0] as any)?.dataIndex) as string
-      }
-      focusResultsHotkeyHost()
-    },
-  }
-}
 
 function focusResultsHotkeyHost() {
   resultsHotkeyHost.value?.focus?.()
@@ -1078,7 +1084,7 @@ function handleCopyResults() {
   if (!queryResult.value) return
   const cols = (tableColumns.value || []).map((c: any) => c?.dataIndex).filter(Boolean)
   if (!cols.length) {
-    message.info('没有可复制的列')
+    ElMessage.info('没有可复制的列')
     return
   }
 
@@ -1086,7 +1092,7 @@ function handleCopyResults() {
   if (resultSelectedRowKeys.value.length > 0) {
     const rows = resultTableData.value.filter((r) => resultSelectedRowKeys.value.includes(r?.key))
     if (!rows.length) {
-      message.info('没有可复制的数据')
+      ElMessage.info('没有可复制的数据')
       return
     }
     copyRowsToClipboard('textWithHeaders', cols, rows, {
@@ -1095,14 +1101,14 @@ function handleCopyResults() {
       driver: undefined,
       keyColumns: [],
     })
-    message.success('已复制')
+    ElMessage.success('已复制')
     return
   }
 
   // Otherwise copy active cell
   const cell = activeResultCell.value
   if (!cell) {
-    message.info('请先点击一个单元格或选择行')
+    ElMessage.info('请先点击一个单元格或选择行')
     return
   }
   const row = resultTableData.value.find((r) => r?.key === cell.rowKey)
@@ -1113,7 +1119,7 @@ function handleCopyResults() {
     driver: undefined,
     keyColumns: [],
   })
-  message.success('已复制')
+  ElMessage.success('已复制')
 }
 
 function handleResultsKeyDown(e: KeyboardEvent) {
@@ -1125,13 +1131,8 @@ function handleResultsKeyDown(e: KeyboardEvent) {
   }
 }
 
-const paginationConfig = computed(() => ({
-  pageSize: 50,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  showTotal: (total: number) => `共 ${total} 条记录`,
-  pageSizeOptions: ['20', '50', '100', '200', '500'],
-}))
+// Element Plus 表格分页需要单独处理，这里暂时不使用分页
+// 如果需要分页，可以使用 el-pagination 组件
 
 const resultsInfo = computed(() => {
   if (error.value) return `错误: ${error.value}`

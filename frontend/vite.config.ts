@@ -111,6 +111,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         'vue-router',
         'pinia',
         'ant-design-vue',
+        'element-plus',
         'lodash-es',
         'dayjs',
       ],

@@ -51,7 +51,7 @@ import {setSelectedTab} from '/@/second/utility/common'
 import {useContextMenu} from '/@/hooks/web/useContextMenu'
 import {buildUUID} from '/@/utils/uuid'
 import localforage from 'localforage'
-import {message} from 'ant-design-vue'
+import { ElMessage } from 'element-plus'
 import {
   closeAll,
   closeMultipleTabs,
@@ -232,7 +232,7 @@ export default defineComponent({
         }])
       })
 
-      message.success('已复制标签页')
+      ElMessage.success('已复制标签页')
     }
 
     function toggleFavorite(tab: any) {
@@ -241,10 +241,10 @@ export default defineComponent({
         const exists = (pinnedTables.value || []).some(x => isSamePinnedTable(x, data))
         if (exists) {
           localeStore.updatePinnedTables(list => (list || []).filter(x => !isSamePinnedTable(x, data)))
-          message.success('已从收藏移除')
+          ElMessage.success('已从收藏移除')
         } else {
           localeStore.updatePinnedTables(list => [...(list || []), data])
-          message.success('已加入收藏')
+          ElMessage.success('已加入收藏')
         }
         return
       }
@@ -255,25 +255,25 @@ export default defineComponent({
       if (conid && database) {
         getConnectionInfo({conid, database}).then((conn: any) => {
           if (!conn) {
-            message.error('无法获取连接信息，收藏失败')
+            ElMessage.error('无法获取连接信息，收藏失败')
             return
           }
           const exists = (pinnedDatabases.value || []).some(x => x?.name == database && x?.connection?._id == conn._id)
           if (exists) {
             localeStore.updatePinnedDatabases(list => (list || []).filter(x => !(x?.name == database && x?.connection?._id == conn._id)))
-            message.success('已从收藏移除')
+            ElMessage.success('已从收藏移除')
           } else {
             localeStore.updatePinnedDatabases(list => [
               ...(list || []),
               {connection: conn, name: database, title: database} as any,
             ])
-            message.success('已加入收藏')
+            ElMessage.success('已加入收藏')
           }
-        }).catch((e) => message.error(`收藏失败：${e?.message || e}`))
+        }).catch((e) => ElMessage.error(`收藏失败：${e?.message || e}`))
         return
       }
 
-      message.warning('该标签页暂不支持加入收藏')
+      ElMessage.warning('该标签页暂不支持加入收藏')
     }
     function handleContextTab(e: MouseEvent, tab: any) {
       createContextMenu({

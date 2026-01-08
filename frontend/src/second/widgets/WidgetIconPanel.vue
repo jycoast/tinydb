@@ -59,14 +59,6 @@ export default {
         name: 'app',
         title: 'Application layers',
       },
-      // {
-      //   icon: 'icon settings',
-      //   name: 'settings',
-      // },
-      // {
-      //   icon: 'fa-check',
-      //   name: 'settings',
-      // },
     ])
 
     const localeStore = useLocaleStore()

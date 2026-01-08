@@ -1,24 +1,24 @@
 <template>
   <div class="cl-root">
     <div class="cl-toolbar">
-      <ASpace :size="6">
-        <AInput
-          v-model:value="filter"
-          allowClear
+      <el-space :size="6">
+        <el-input
+          v-model="filter"
+          clearable
           size="small"
           placeholder="Search connection or database"
         />
-        <ATooltip title="Add new connection">
-          <AButton size="small" type="text" @click="openModal">
-            <template #icon><PlusOutlined /></template>
-          </AButton>
-        </ATooltip>
-        <ATooltip title="Refresh connections">
-          <AButton size="small" type="text" @click="handleRefreshConnections">
-            <template #icon><ReloadOutlined /></template>
-          </AButton>
-        </ATooltip>
-      </ASpace>
+        <el-tooltip content="Add new connection" placement="bottom">
+          <el-button size="small" text @click="openModal">
+            <el-icon><Plus /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="Refresh connections" placement="bottom">
+          <el-button size="small" text @click="handleRefreshConnections">
+            <el-icon><Refresh /></el-icon>
+          </el-button>
+        </el-tooltip>
+      </el-space>
     </div>
     <WidgetsInnerContainer>
       <AppObjectList
@@ -34,12 +34,12 @@
         :setIsExpanded="handleSetIsExpanded"
       />
       <div v-else class="cl-empty">
-        <AEmpty description="No connections" />
+        <el-empty description="No connections" />
         <div class="cl-empty-actions">
-          <AButton type="primary" @click="openModal">
-            <template #icon><PlusOutlined /></template>
+          <el-button type="primary" @click="openModal">
+            <el-icon><Plus /></el-icon>
             Add new connection
-          </AButton>
+          </el-button>
         </div>
       </div>
       <ConnectionModal @register="register" @closeCurrentModal="closeModal"/>
@@ -65,8 +65,7 @@ import {serverConnectionsRefreshApi} from '/@/api/simpleApis'
 import {useConnectionList, useServerStatus} from '/@/api/bridge'
 import {IActiveConnection, IConnectionStatus} from '/@/second/typings/types/connections.d'
 
-import {Button, Empty, Input, Space, Tooltip} from 'ant-design-vue'
-import {PlusOutlined, ReloadOutlined} from '@ant-design/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 
 export default defineComponent({
   name: "ConnectionList",
@@ -74,13 +73,6 @@ export default defineComponent({
     WidgetsInnerContainer,
     AppObjectList,
     ConnectionModal,
-    [Button.name]: Button,
-    [Empty.name]: Empty,
-    [Input.name]: Input,
-    [Space.name]: Space,
-    [Tooltip.name]: Tooltip,
-    PlusOutlined,
-    ReloadOutlined,
   },
   setup() {
     const bootstrap = useBootstrapStore()
