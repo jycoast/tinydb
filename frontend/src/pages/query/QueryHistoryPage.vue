@@ -27,6 +27,7 @@
         v-else
         :data="filteredHistory"
         stripe
+        border
         :height="tableHeight"
         style="width: 100%"
         :row-class-name="tableRowClassName"
@@ -43,9 +44,8 @@
             <code class="sql-preview">{{ row.sql }}</code>
           </template>
         </el-table-column>
-        <el-table-column prop="conid" label="连接" width="120" show-overflow-tooltip />
         <el-table-column prop="database" label="数据库" width="120" show-overflow-tooltip />
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-space>
               <el-button
@@ -262,10 +262,14 @@ onBeforeUnmount(() => {
 <style scoped>
 .query-history-page {
   height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   padding: 16px;
+  margin: 0;
+  box-sizing: border-box;
   background: var(--theme-bg-0);
+  overflow: hidden;
 }
 
 .page-header {
