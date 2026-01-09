@@ -1,12 +1,12 @@
 <template>
   <div v-show="!hidden" class="dbw-root">
-    <ConnectionList />
+    <DatabaseTreePage />
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent, PropType, toRef} from 'vue'
-import ConnectionList from './ConnectionList.vue'
+import DatabaseTreePage from '/@/pages/database/DatabaseTreePage.vue'
 
 export default defineComponent({
   name: "DatabaseWidget",
@@ -16,7 +16,7 @@ export default defineComponent({
       default: false,
     }
   },
-  components: { ConnectionList },
+  components: { DatabaseTreePage },
   setup(props) {
     return {
       hidden: toRef(props, 'hidden'),
@@ -32,6 +32,6 @@ export default defineComponent({
   height: 100%;
   min-height: 0;
   background: var(--theme-bg-0);
-  overflow: hidden; /* ConnectionList handles inner scrolling */
+  overflow: hidden;
 }
 </style>

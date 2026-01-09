@@ -13,3 +13,6 @@ export { default as TabContent } from './layout/TabContent.vue'
 
 // 查询相关页面
 export { default as QueryHistoryPage } from './query/QueryHistoryPage.vue'
+
+// 数据库相关页面
+export { default as DatabaseTreePage } from './database/DatabaseTreePage.vue'
