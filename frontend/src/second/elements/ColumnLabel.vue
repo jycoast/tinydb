@@ -10,10 +10,6 @@
     <template v-if="showDataType">
       <a-space v-if="foreignKey" size="small" class="extinfo">
         <FontIcon icon="icon arrow-right"/>
-        <Link v-if="conid && database" @click.stop="handler($event)">{{
-          foreignKey.refTableName
-        }}</Link>
-        <a-typography-text v-else type="secondary">{{ foreignKey.refTableName }}</a-typography-text>
       </a-space>
 
       <a-tag v-else-if="dataType" size="small" color="default" class="extinfo">
@@ -30,7 +26,6 @@
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs, unref,} from 'vue'
 import FontIcon from '/@/second/icons/FontIcon.vue'
-import Link from '/@/second/elements/Link.vue'
 import {Space, Tag, Typography, Tooltip} from 'ant-design-vue'
 import {openDatabaseObjectDetail} from '/@/second/appobj/DatabaseObjectAppObject'
 
@@ -45,7 +40,6 @@ export default defineComponent( {
   name: "ColumnLabel",
   components: {
     FontIcon,
-    Link,
     ASpace: Space,
     ATag: Tag,
     ATypographyText: Typography.Text,

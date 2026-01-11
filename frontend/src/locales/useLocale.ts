@@ -32,6 +32,10 @@ export function useLocale() {
   const getShowLocalePicker = computed(() => localeStore.getShowPicker);
 
   const getAntdLocale = computed((): any => {
+    // 防御性检查：确保 i18n 已初始化
+    if (!i18n || !i18n.global) {
+      return {};
+    }
     return i18n.global.getLocaleMessage(unref(getLocale))?.antdLocale ?? {};
   });
 

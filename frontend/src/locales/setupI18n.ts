@@ -8,7 +8,18 @@ import { useLocaleStoreWithOut } from '/@/store/modules/locale';
 
 const { fallback, availableLocales } = localeSetting;
 
-export let i18n: ReturnType<typeof createI18n>;
+// 先创建一个默认的 i18n 实例，避免在异步加载完成前访问 undefined
+export let i18n: ReturnType<typeof createI18n> = createI18n({
+  legacy: false,
+  locale: fallback,
+  fallbackLocale: fallback,
+  messages: {},
+  availableLocales: availableLocales,
+  sync: true,
+  silentTranslationWarn: true,
+  missingWarn: false,
+  silentFallbackWarn: true,
+}) as I18n;
 
 async function createI18nOptions(): Promise<I18nOptions> {
   const localeStore = useLocaleStoreWithOut();
@@ -39,6 +50,22 @@ async function createI18nOptions(): Promise<I18nOptions> {
 // setup i18n instance with glob
 export async function setupI18n(app: App) {
   const options = await createI18nOptions();
-  i18n = createI18n(options) as I18n;
-  app.use(i18n);
+  
+  // 如果 app 已经挂载（i18n 已经注册），更新现有的 i18n 实例
+  if (i18n && app._instance) {
+    // 更新消息
+    Object.keys(options.messages).forEach(locale => {
+      i18n.global.setLocaleMessage(locale, options.messages[locale]);
+    });
+    // 更新 locale
+    if (i18n.mode === 'legacy') {
+      i18n.global.locale = options.locale;
+    } else {
+      (i18n.global.locale as any).value = options.locale;
+    }
+  } else {
+    // 如果 app 还未挂载，创建新的 i18n 实例并注册
+    i18n = createI18n(options) as I18n;
+    app.use(i18n);
+  }
 }

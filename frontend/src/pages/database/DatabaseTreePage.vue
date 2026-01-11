@@ -102,7 +102,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Connection, Folder, Grid, CircleCheck, CircleClose, Loading, DataBoard, Document } from '@element-plus/icons-vue'
+import { Search, Link, Folder, Grid, CircleCheck, CircleClose, Loading, DataBoard, Document } from '@element-plus/icons-vue'
 import openNewTab from '/@/second/utility/openNewTab'
 import { getConnectionInfo } from '/@/api/bridge'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'

@@ -8,11 +8,6 @@
   </div>
 
   <template v-if="isExpanded">
-    <div class="ml-2" v-if="checkedObjectsStore">
-      <Link @click="handleCheckAll(true)">Check all</Link>
-      |
-      <Link @click="handleCheckAll(false)">Uncheck all</Link>
-    </div>
     <AppObjectListItem
       v-for="item in items"
       :isHidden="!item.isMatched"
@@ -29,7 +24,6 @@
   import {Component, defineComponent, PropType, ref, toRef, toRefs, computed, unref} from 'vue'
   import AppObjectListItem from '/@/second/appobj/AppObjectListItem.vue'
   import FontIcon from '/@/second/icons/FontIcon.vue'
-  import Link from '/@/second/elements/Link.vue'
   import {plusExpandIcon} from '/@/second/icons/expandIcons'
   export default defineComponent({
     name: 'AppObjectGroup',
@@ -59,8 +53,7 @@
     },
     components: {
       AppObjectListItem,
-      FontIcon,
-      Link
+      FontIcon
     },
     setup(props) {
       const items = toRef(props, 'items')
