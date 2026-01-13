@@ -111,7 +111,6 @@ const filteredHistory = computed(() => {
 async function loadHistory() {
   loading.value = true
   try {
-    // 模拟异步操作，确保 loading 效果可见
     await new Promise(resolve => setTimeout(resolve, 100))
     history.value = getQueryHistory()
     history.value.sort((a, b) => b.timestamp - a.timestamp)
@@ -125,17 +124,14 @@ function formatTime(timestamp: number): string {
   const now = new Date()
   const diff = now.getTime() - timestamp
   
-  // 今天
   if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   }
   
-  // 昨天
   if (diff < 48 * 60 * 60 * 1000) {
     return `昨天 ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
   }
   
-  // 更早的日期
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -150,7 +146,6 @@ function tableRowClassName() {
 }
 
 function handleRowClick(row: QueryHistoryItem) {
-  // 点击行时打开查询
   handleOpenInNewTab(row)
 }
 
@@ -165,13 +160,10 @@ function handleCopySql(row: QueryHistoryItem) {
 }
 
 async function handleOpenInNewTab(row: QueryHistoryItem) {
-  // 生成一个临时的 tabid，用于传递 SQL 内容
   const tempTabId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   
-  // 先将 SQL 内容保存到临时存储
   localStorage.setItem(`sql_query_${tempTabId}`, row.sql)
   
-  // 打开新标签页，传递临时 tabid
   await openNewTab({
     title: '查询',
     icon: 'icon query',
@@ -180,7 +172,7 @@ async function handleOpenInNewTab(row: QueryHistoryItem) {
       conid: row.conid,
       database: row.database,
       noPrefill: !row.conid && !row.database,
-      _tempTabId: tempTabId, // 传递临时 tabid
+      _tempTabId: tempTabId,
     },
     selected: true,
     busy: false
@@ -203,7 +195,6 @@ function handleDelete(row: QueryHistoryItem) {
     loadHistory()
     ElMessage.success('删除成功')
   }).catch(() => {
-    // 用户取消
   })
 }
 
@@ -221,15 +212,13 @@ function handleClearAll() {
     loadHistory()
     ElMessage.success('已清空所有历史')
   }).catch(() => {
-    // 用户取消
   })
 }
 
 function updateTableHeight() {
   if (pageContentRef.value) {
     const rect = pageContentRef.value.getBoundingClientRect()
-    // 减去搜索框和间距的高度
-    const searchInputHeight = 32 + 16 // input height + margin
+    const searchInputHeight = 32 + 16
     tableHeight.value = Math.max(200, rect.height - searchInputHeight)
   }
 }
@@ -240,13 +229,11 @@ onMounted(() => {
   loadHistory()
   updateTableHeight()
   window.addEventListener('resize', debouncedUpdateTableHeight)
-  // 使用 ResizeObserver 监听容器大小变化
   if (pageContentRef.value) {
     const resizeObserver = new ResizeObserver(() => {
       updateTableHeight()
     })
     resizeObserver.observe(pageContentRef.value)
-    // 保存 observer 以便清理
     ;(pageContentRef.value as any).__resizeObserver = resizeObserver
   }
 })
@@ -254,7 +241,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', debouncedUpdateTableHeight)
   if (pageContentRef.value && (pageContentRef.value as any).__resizeObserver) {
-    ;(pageContentRef.value as any).__resizeObserver.disconnect()
+    (pageContentRef.value as any).__resizeObserver.disconnect()
   }
 })
 </script>

@@ -1,0 +1,58 @@
+---
+alwaysApply: true
+---
+# 项目技术栈
+- Backend: Go (Wails)
+- Frontend: Vue 3 + Composition API + <script setup>
+- UI组件库: Element Plus
+- 状态管理: 建议使用 Pinia
+- 构建工具: Vite
+- 语言: TypeScript 优先 (前后端都尽量用 TS)
+
+# 文件路径约定
+- 前端页面 → frontend/src/views/
+- 前端组件 → frontend/src/components/
+- 前端组件库优先使用 Element Plus 的组件
+
+# 代码风格偏好
+- Vue: 必须使用 <script setup> + defineProps / defineEmits
+- 不要使用 this
+- 优先使用 ref() / reactive()，尽量少用 ref.value（能解构就解构）
+- 组件命名：大驼峰 (UserInfoCard.vue)
+- 文件夹和路由路径：kebab-case (user-profile/)
+- Element Plus 属性统一使用 kebab-case (default-value, popper-class)
+- 字符串优先双引号
+- 尽量不用 any，定义清晰的 interface / type
+- Wails 调用统一走 async/await，不要用 .then
+- 只编写
+
+# 注释要求
+- 尽量不写注释
+- 只在复杂逻辑、Wails 调用边界、非显而易见的处理处加极简中文注释
+- 禁止生成无意义的 JSDoc 或每行注释
+
+# 常用导入顺序（建议）
+1. vue / pinia / router
+2. element-plus 组件
+3. 本地组件
+4. utils / api / constants
+5. types / interfaces
+6. styles
+
+# Wails 调用规范示例
+import { GetUserInfo, SaveSettings } from '@/api/wails'
+
+async function loadUser() {
+  try {
+    const user = await GetUserInfo()
+    // ...
+  } catch (err) {
+    ElMessage.error('获取用户信息失败')
+  }
+}
+
+# 禁止事项
+- 不要在前端直接 import "github.com/xxx"
+- 不要手动操作 window.backend（统一走绑定）
+- 不要在 <script setup> 外写逻辑
+- 避免巨型组件，超过 400 行建议拆分

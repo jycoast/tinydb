@@ -33,9 +33,12 @@
       >
         <template #default="{ node, data }">
           <div class="tree-node">
-            <el-icon v-if="data.type === 'connection'">
-              <Link />
-            </el-icon>
+            <img
+              v-if="data.type === 'connection'"
+              :src="databaseIcon"
+              alt="connection"
+              class="node-icon connection-icon"
+            />
             <el-icon v-else-if="data.type === 'database'" class="node-icon database-icon">
               <DataBoard />
             </el-icon>
@@ -61,7 +64,6 @@
         </template>
       </el-tree>
 
-      <!-- 右键菜单 -->
       <el-dropdown
         ref="contextMenuRef"
         :teleported="true"
@@ -93,7 +95,6 @@
       </el-dropdown>
     </div>
     
-    <!-- Modals -->
     <CreateDatabaseModal @register="registerCreateDatabaseModal" />
     <CreateTableModal @register="registerCreateTableModal" />
   </div>
@@ -102,7 +103,8 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Link, Folder, Grid, CircleCheck, CircleClose, Loading, DataBoard, Document } from '@element-plus/icons-vue'
+import { Search, Folder, Grid, CircleCheck, CircleClose, Loading, DataBoard, Document } from '@element-plus/icons-vue'
+import databaseIcon from '/@/assets/svg/database.svg'
 import openNewTab from '/@/second/utility/openNewTab'
 import { getConnectionInfo } from '/@/api/bridge'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
@@ -143,13 +145,11 @@ const treeData = ref<TreeNode[]>([])
 const treeRef = ref<InstanceType<typeof ElTree>>()
 const loading = ref(false)
 
-// 右键菜单相关
 const contextMenuVisible = ref(false)
 const contextMenuStyle = ref<{ position: string; left: string; top: string }>({ position: 'fixed', left: '0px', top: '0px' })
 const contextMenuItems = ref<any[]>([])
 const contextMenuNode = ref<TreeNode | null>(null)
 
-// Modal 注册
 const [registerCreateDatabaseModal, { openModal: openCreateDatabaseModal }] = useModal()
 const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
 
@@ -166,7 +166,6 @@ const treeProps = {
   label: 'label'
 }
 
-// 监听连接列表和服务器状态变化
 watch(() => [clusterConnections.value, serverStatus.value], () => {
   if (clusterConnections.value && serverStatus.value) {
     connectionsWithStatus.value = clusterConnections.value.map(conn => ({
@@ -179,7 +178,6 @@ watch(() => [clusterConnections.value, serverStatus.value], () => {
   buildTreeData()
 }, { deep: true, immediate: true })
 
-// 监听搜索文本变化
 watch(searchText, (val) => {
   treeRef.value?.filter(val)
 })
@@ -222,7 +220,6 @@ function filterNode(value: string, data: TreeNode) {
 async function loadConnections() {
   loading.value = true
   try {
-    // 刷新所有已打开的连接
     for (const conid of openedConnections.value) {
       try {
         await serverConnectionsRefreshApi({ conid, keepOpen: true })
@@ -230,7 +227,6 @@ async function loadConnections() {
         console.error(`刷新连接失败: ${conid}`, e)
       }
     }
-    // 重新加载连接列表
     useConnectionList<IActiveConnection[]>(clusterApi.setConnectionList)
     useServerStatus<{ [key: string]: IConnectionStatus }>(serverStatus)
   } finally {
@@ -258,7 +254,6 @@ async function buildTreeData() {
       children: []
     }
 
-    // 如果连接已展开，加载数据库列表
     if (expandedConnections.value.includes(conn._id)) {
       await loadDatabasesForConnection(connectionNode, conn)
     }
@@ -273,15 +268,12 @@ async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiv
   try {
     let databases: TablesNameSort[] = []
     
-    // 如果是单数据库连接
     if ((conn as any).singleDatabase) {
       const name = (conn as any).defaultDatabase || (conn as any).database || 'default'
       databases = [{ name, sortOrder: '0' }]
     } else {
-      // 使用 API 加载数据库列表
       const dbRef = ref<TablesNameSort[]>([])
       useDatabaseList<TablesNameSort[]>({ conid: String(conn._id) }, dbRef as any)
-      // 等待数据加载
       await new Promise(resolve => setTimeout(resolve, 100))
       databases = dbRef.value || []
     }
@@ -338,7 +330,6 @@ async function loadCategoryObjects(node: TreeNode) {
     const objectsRef = ref<any>(null)
     useDatabaseInfo({ conid: node.conid, database: node.database }, objectsRef)
     
-    // 等待数据加载，增加重试机制
     let retries = 0
     while (retries < 15 && (!objectsRef.value || Object.keys(objectsRef.value).length === 0)) {
       await new Promise(resolve => setTimeout(resolve, 200))
@@ -376,7 +367,6 @@ async function loadCategoryObjects(node: TreeNode) {
         children: []
       }
       
-      // 如果是表，添加一个占位符，表示可以展开查看列结构
       if (node.category === 'tables' && obj.objectTypeField === 'tables') {
         tableNode.children = [{ 
           id: `columns_placeholder_${tableNode.id}`,
@@ -389,7 +379,6 @@ async function loadCategoryObjects(node: TreeNode) {
       return tableNode
     })
     
-    // 如果没有加载到数据，显示提示
     if (node.children.length === 0 && retries >= 15) {
       node.children = [{
         id: `empty_${node.id}`,
@@ -453,7 +442,6 @@ function getStatusIcon(iconType: string) {
 }
 
 async function handleNodeClick(data: TreeNode, node: any) {
-  // 如果点击的是连接节点，展开/折叠数据库列表
   if (data.type === 'connection' && data.conid) {
     const isExpanded = expandedConnections.value.includes(data.conid)
     if (!isExpanded) {
@@ -471,14 +459,12 @@ async function handleNodeClick(data: TreeNode, node: any) {
         console.error('打开连接失败', e)
       }
       
-      // 重新加载该连接的数据库
       const connectionNode = treeData.value.find(n => n.id === `connection_${data.conid}`)
       if (connectionNode) {
         const conn = connectionsWithStatus.value.find(c => c._id === data.conid)
         if (conn) {
           await loadDatabasesForConnection(connectionNode, conn)
           await nextTick()
-          // 展开节点
           treeRef.value?.setCurrentKey(node.key)
           node.expanded = true
         }
@@ -489,22 +475,18 @@ async function handleNodeClick(data: TreeNode, node: any) {
     }
   }
   
-  // 如果点击的是数据库节点，展开/折叠分类列表
   if (data.type === 'database' && data.conid && data.database) {
     const key = `${data.conid}::${data.database}`
     const isExpanded = expandedConnections.value.includes(key)
     if (!isExpanded) {
       bootstrap.updateExpandedConnections((old) => [...old, key])
       
-      // 刷新数据库结构
       try {
         await serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true })
         await databaseConnectionsRefreshApi({ conid: data.conid, database: data.database, keepOpen: true })
         
-        // 等待数据库结构刷新完成
         await new Promise(resolve => setTimeout(resolve, 300))
         
-        // 刷新后，自动加载"表"分类的数据
         if (data.children && data.children.length > 0) {
           const tablesCategory = data.children.find((child: TreeNode) => child.category === 'tables')
           if (tablesCategory) {
@@ -522,31 +504,25 @@ async function handleNodeClick(data: TreeNode, node: any) {
     }
   }
   
-  // 如果点击的是分类节点，加载对象列表
   if (data.type === 'category') {
     if (node.expanded && (!data.children || data.children.length === 0)) {
       await loadCategoryObjects(data)
       await nextTick()
-      // 强制更新树
       treeRef.value?.setCurrentKey(node.key)
     }
   }
   
-  // 如果点击的是对象节点（表、视图等），打开数据
   if (data.type === 'object') {
     await handleOpenTableData(data)
   }
 }
 
-
 async function handleNodeExpand(data: TreeNode) {
-  // 当节点展开时，如果是分类节点且还没有加载数据，则加载
   if (data.type === 'category' && (!data.children || data.children.length === 0)) {
     await loadCategoryObjects(data)
     await nextTick()
   }
   
-  // 如果是表节点展开，加载表结构（列信息）
   if (data.type === 'object' && data.category === 'tables' && data.objectType === 'tables') {
     if (data.children && data.children.length === 1 && data.children[0].id.includes('columns_placeholder')) {
       await loadTableColumns(data)
@@ -562,7 +538,6 @@ async function loadTableColumns(tableNode: TreeNode) {
     const objectsRef = ref<any>(null)
     useDatabaseInfo({ conid: tableNode.conid, database: tableNode.database }, objectsRef)
     
-    // 等待数据加载，可能需要更长时间
     let retries = 0
     while (retries < 10 && (!objectsRef.value || !objectsRef.value.tables)) {
       await new Promise(resolve => setTimeout(resolve, 200))
@@ -577,7 +552,6 @@ async function loadTableColumns(tableNode: TreeNode) {
     )
     
     if (table && table.columns && Array.isArray(table.columns)) {
-      // 按序号排序，如果没有序号则按名称排序
       const columns = sortBy(table.columns, (col: any) => 
         col.ordinalPosition ?? col.columnName
       )
@@ -597,7 +571,6 @@ async function loadTableColumns(tableNode: TreeNode) {
         }
       })
     } else {
-      // 如果没有列信息，显示提示
       tableNode.children = [{
         id: `column_empty_${tableNode.id}`,
         label: '暂无列信息',
@@ -647,7 +620,6 @@ async function handleOpenTableData(data: TreeNode) {
   }
 }
 
-// 右键菜单处理
 function handleContextMenu(event: MouseEvent, data: TreeNode) {
   event.preventDefault()
   event.stopPropagation()
@@ -659,7 +631,6 @@ function handleContextMenu(event: MouseEvent, data: TreeNode) {
     top: `${event.clientY}px`
   }
   
-  // 根据节点类型生成菜单项
   contextMenuItems.value = getContextMenuItems(data)
   
   nextTick(() => {
@@ -784,7 +755,6 @@ async function handleMenuCommand(command: string) {
         await handleTruncateTable(node)
         break
       default:
-        // 处理数据库菜单项
         if (command.startsWith('db-')) {
           const menuItems = getDatabaseMenuItems(node.conid, node.database, openCreateTableModal, bootstrap)
           const item = menuItems.find((item: any) => `db-${item.text}` === command)
@@ -807,7 +777,6 @@ function handleMenuVisibleChange(visible: boolean) {
   }
 }
 
-// 连接相关操作
 async function handleEditConnection(node: TreeNode) {
   const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
   const isOpened = conn && openedConnections.value.includes(conn._id)
@@ -837,7 +806,6 @@ async function handleDeleteConnection(node: TreeNode) {
   try {
     await connectionDeleteApi({ _id: node.conid })
     ElMessage.success('连接已删除')
-    // 重新加载连接列表
     loadConnections()
   } catch (e: any) {
     ElMessage.error(`删除失败：${e?.message || String(e)}`)
@@ -881,7 +849,6 @@ async function handleServerSummary(node: TreeNode) {
   })
 }
 
-// 表相关操作
 async function handleDropTable(node: TreeNode) {
   const tableName = node.schemaName 
     ? `${node.schemaName}.${node.pureName}` 
@@ -934,14 +901,12 @@ async function handleDropTable(node: TreeNode) {
       ElMessage.error(`删除表失败：${response.errorMessage}`)
     } else {
       ElMessage.success('表已删除')
-      // 刷新数据库结构
       try {
         await databaseConnectionsRefreshApi({
           conid: node.conid!,
           database: node.database!,
           keepOpen: true
         })
-        // 重新加载表列表
         const categoryNode = treeData.value
           .flatMap(c => c.children || [])
           .flatMap(db => db.children || [])
@@ -1025,7 +990,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  // 清理工作
 })
 </script>
 
@@ -1035,28 +999,11 @@ onBeforeUnmount(() => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 20px;
   margin: 0;
   box-sizing: border-box;
   background: var(--theme-bg-0);
   overflow: hidden;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--theme-border);
-  flex-shrink: 0;
-}
-
-.page-header h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--theme-font-1);
 }
 
 .page-content {
@@ -1069,7 +1016,7 @@ onBeforeUnmount(() => {
 }
 
 .search-input {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   flex-shrink: 0;
 }
 
@@ -1089,28 +1036,29 @@ onBeforeUnmount(() => {
 
 .node-icon {
   margin-right: 6px;
-  font-size: 16px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 .connection-icon {
-  color: #409EFF;
-  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .database-icon {
   color: #67C23A;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .category-icon {
   color: #E6A23C;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .object-icon {
   color: #409EFF;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .column-icon {

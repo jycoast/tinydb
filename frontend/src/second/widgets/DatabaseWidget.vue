@@ -1,12 +1,12 @@
 <template>
   <div v-show="!hidden" class="dbw-root">
-    <DatabaseTreePage />
+    <DatabaseOverview />
   </div>
 </template>
 
 <script lang="ts">
 import {defineComponent, PropType, toRef} from 'vue'
-import DatabaseTreePage from '/@/pages/database/DatabaseTreePage.vue'
+import { DatabaseOverview } from '/@/views'
 
 export default defineComponent({
   name: "DatabaseWidget",
@@ -16,7 +16,7 @@ export default defineComponent({
       default: false,
     }
   },
-  components: { DatabaseTreePage },
+  components: { DatabaseOverview },
   setup(props) {
     return {
       hidden: toRef(props, 'hidden'),

@@ -1,5 +1,5 @@
 <template>
-  <QueryHistoryPage />
+  <QueryHistory />
 </template>
 
 <script lang="ts">
@@ -10,7 +10,7 @@ export const allowAddToFavorites = (_: any) => false
 
 <script lang="ts" setup>
 import { PropType } from 'vue'
-import QueryHistoryPage from '/@/pages/query/QueryHistoryPage.vue'
+import { QueryHistory } from '/@/views'
 
 defineProps({
   tabid: { type: String as PropType<string>, required: true },
@@ -19,5 +19,5 @@ defineProps({
 </script>
 
 <style scoped>
-/* 样式由 QueryHistoryPage 组件提供 */
+/* 样式由 QueryHistory 组件提供 */
 </style>
