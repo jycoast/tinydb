@@ -35,22 +35,34 @@
           <div class="tree-node">
             <img
               v-if="data.type === 'connection'"
+              :src="connectionIcon"
+              alt="connection"
+              class="node-icon connection-icon"
+            />
+            <img
+              v-if="data.type === 'database'"
               :src="databaseIcon"
               alt="connection"
               class="node-icon connection-icon"
             />
-            <el-icon v-else-if="data.type === 'database'" class="node-icon database-icon">
-              <DataBoard />
-            </el-icon>
-            <el-icon v-else-if="data.type === 'category'" class="node-icon category-icon">
-              <Folder />
-            </el-icon>
-            <el-icon v-else-if="data.type === 'object'" class="node-icon object-icon">
-              <Grid />
-            </el-icon>
-            <el-icon v-else-if="data.type === 'column'" class="node-icon column-icon">
-              <Document />
-            </el-icon>
+            <img
+              v-if="data.type === 'category'"
+              :src="tableIcon"
+              alt="connection"
+              class="node-icon connection-icon"
+            />
+            <img
+              v-if="data.type === 'object'"
+              :src="tableIcon"
+              alt="connection"
+              class="node-icon connection-icon"
+            />
+            <img
+              v-if="data.type === 'column'"
+              :src="columnsIcon"
+              alt="connection"
+              class="node-icon connection-icon"
+            />
             <span class="node-label">{{ node.label }}</span>
             <span v-if="data.extInfo" class="node-ext-info">{{ data.extInfo }}</span>
             <el-icon
@@ -103,8 +115,11 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Folder, Grid, CircleCheck, CircleClose, Loading, DataBoard, Document } from '@element-plus/icons-vue'
-import databaseIcon from '/@/assets/svg/database.svg'
+import { Search, CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue'
+import databaseIcon from '/src/assets/svg/database.svg'
+import connectionIcon from '/@/assets/svg/connection.svg'
+import tableIcon from '/@/assets/svg/table.svg'
+import columnsIcon from '/@/assets/svg/columns.svg'
 import openNewTab from '/@/second/utility/openNewTab'
 import { getConnectionInfo } from '/@/api/bridge'
 import getConnectionLabel from '/@/second/utility/getConnectionLabel'
