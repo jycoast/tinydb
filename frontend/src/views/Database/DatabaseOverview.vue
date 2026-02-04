@@ -1,112 +1,126 @@
 <template>
-  <div class="database-tree-page">
+  <div class="database-tree-page" :class="{ collapsed: isCollapsed }">
     <div class="page-content">
-      <el-input
-        v-model="searchText"
-        clearable
-        placeholder="搜索连接或数据库..."
-        size="small"
-        class="search-input"
-      >
-        <template #prefix>
-          <el-icon><Search /></el-icon>
-        </template>
-      </el-input>
+      <div class="search-row">
+        <el-input
+          v-show="!isCollapsed"
+          v-model="searchText"
+          clearable
+          placeholder="搜索连接或数据库..."
+          size="small"
+          class="search-input"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button
+          class="collapse-btn"
+          circle
+          size="small"
+          :title="isCollapsed ? '展开' : '折叠'"
+          @click="handleToggleCollapse"
+        >
+          <el-icon><DArrowLeft v-if="!isCollapsed" /><DArrowRight v-else /></el-icon>
+        </el-button>
+      </div>
 
-      <el-empty v-if="treeData.length === 0 && !loading" description="暂无连接" />
+      <template v-if="!isCollapsed">
+        <el-empty v-if="treeData.length === 0 && !loading" description="暂无连接" />
 
-      <el-tree
-        v-else
-        ref="treeRef"
-        :data="filteredTreeData"
-        :props="treeProps"
-        :expand-on-click-node="true"
-        :default-expand-all="false"
-        :filter-node-method="filterNode"
-        node-key="id"
-        :highlight-current="true"
-        :lazy="false"
-        class="database-tree"
-        @node-click="handleNodeClick"
-        @node-expand="handleNodeExpand"
-        @node-contextmenu="handleContextMenu"
-      >
-        <template #default="{ node, data }">
-          <div class="tree-node">
-            <img
-              v-if="data.type === 'connection'"
-              :src="connectionIcon"
-              alt="connection"
-              class="node-icon connection-icon"
-            />
-            <img
-              v-if="data.type === 'database'"
-              :src="databaseIcon"
-              alt="connection"
-              class="node-icon connection-icon"
-            />
-            <img
-              v-if="data.type === 'category'"
-              :src="tableIcon"
-              alt="connection"
-              class="node-icon connection-icon"
-            />
-            <img
-              v-if="data.type === 'object'"
-              :src="tableIcon"
-              alt="connection"
-              class="node-icon connection-icon"
-            />
-            <img
-              v-if="data.type === 'column'"
-              :src="columnsIcon"
-              alt="connection"
-              class="node-icon connection-icon"
-            />
-            <span class="node-label">{{ node.label }}</span>
-            <span v-if="data.extInfo" class="node-ext-info">{{ data.extInfo }}</span>
-            <el-icon
-              v-if="data.statusIcon"
-              :class="['status-icon', data.statusIcon]"
-              :title="data.statusTitle"
-            >
-              <component :is="getStatusIcon(data.statusIcon)" />
-            </el-icon>
-          </div>
-        </template>
-      </el-tree>
-
-      <el-dropdown
-        ref="contextMenuRef"
-        :teleported="true"
-        :visible="contextMenuVisible"
-        @command="handleMenuCommand"
-        @visible-change="handleMenuVisibleChange"
-      >
-        <div
-          v-show="false"
-          :style="{ position: contextMenuStyle.position as any, left: contextMenuStyle.left, top: contextMenuStyle.top }"
-        ></div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <template v-for="(item, index) in contextMenuItems" :key="index">
-              <el-dropdown-item
-                v-if="item.divider"
-                divided
-              ></el-dropdown-item>
-              <el-dropdown-item
-                v-else
-                :command="item.command"
-                :disabled="item.disabled"
+        <el-tree
+          v-else
+          ref="treeRef"
+          :data="filteredTreeData"
+          :props="treeProps"
+          :expand-on-click-node="true"
+          :default-expand-all="false"
+          :filter-node-method="filterNode"
+          node-key="id"
+          :highlight-current="true"
+          :lazy="false"
+          class="database-tree"
+          @node-click="handleNodeClick"
+          @node-expand="handleNodeExpand"
+          @node-contextmenu="handleContextMenu"
+        >
+          <template #default="{ node, data }">
+            <div class="tree-node">
+              <img
+                v-if="data.type === 'connection'"
+                :src="connectionIcon"
+                alt="connection"
+                class="node-icon connection-icon"
+              />
+              <img
+                v-if="data.type === 'database'"
+                :src="databaseIcon"
+                alt="connection"
+                class="node-icon connection-icon"
+              />
+              <img
+                v-if="data.type === 'category'"
+                :src="tableIcon"
+                alt="connection"
+                class="node-icon connection-icon"
+              />
+              <img
+                v-if="data.type === 'object'"
+                :src="tableIcon"
+                alt="connection"
+                class="node-icon connection-icon"
+              />
+              <img
+                v-if="data.type === 'column'"
+                :src="columnsIcon"
+                alt="connection"
+                class="node-icon connection-icon"
+              />
+              <span class="node-label">{{ node.label }}</span>
+              <span v-if="data.extInfo" class="node-ext-info">{{ data.extInfo }}</span>
+              <el-icon
+                v-if="data.statusIcon"
+                :class="['status-icon', data.statusIcon]"
+                :title="data.statusTitle"
               >
-                {{ item.label }}
-              </el-dropdown-item>
-            </template>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+                <component :is="getStatusIcon(data.statusIcon)" />
+              </el-icon>
+            </div>
+          </template>
+        </el-tree>
+
+        <el-dropdown
+          ref="contextMenuRef"
+          :teleported="true"
+          :visible="contextMenuVisible"
+          @command="handleMenuCommand"
+          @visible-change="handleMenuVisibleChange"
+        >
+          <div
+            v-show="false"
+            :style="{ position: contextMenuStyle.position as any, left: contextMenuStyle.left, top: contextMenuStyle.top }"
+          ></div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <template v-for="(item, index) in contextMenuItems" :key="index">
+                <el-dropdown-item
+                  v-if="item.divider"
+                  divided
+                ></el-dropdown-item>
+                <el-dropdown-item
+                  v-else
+                  :command="item.command"
+                  :disabled="item.disabled"
+                >
+                  {{ item.label }}
+                </el-dropdown-item>
+              </template>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </template>
     </div>
-    
+
     <CreateDatabaseModal @register="registerCreateDatabaseModal" />
     <CreateTableModal @register="registerCreateTableModal" />
   </div>
@@ -115,7 +129,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue'
+import { Search, CircleCheck, CircleClose, Loading, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import databaseIcon from '/src/assets/svg/database.svg'
 import connectionIcon from '/@/assets/svg/connection.svg'
 import tableIcon from '/@/assets/svg/table.svg'
@@ -127,6 +141,7 @@ import { storeToRefs } from 'pinia'
 import { sortBy } from 'lodash-es'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { useClusterApiStore } from '/@/store/modules/clusterApi'
+import { useLocaleStore } from '/@/store/modules/locale'
 import { useConnectionList, useDatabaseList, useDatabaseInfo, useServerStatus } from '/@/api/bridge'
 import { serverConnectionsRefreshApi, databaseConnectionsRefreshApi, connectionDeleteApi, databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
 import { disconnectServerConnection } from '/@/second/appobj/ConnectionAppObject'
@@ -164,6 +179,15 @@ const contextMenuVisible = ref(false)
 const contextMenuStyle = ref<{ position: string; left: string; top: string }>({ position: 'fixed', left: '0px', top: '0px' })
 const contextMenuItems = ref<any[]>([])
 const contextMenuNode = ref<TreeNode | null>(null)
+
+const COLLAPSED_WIDTH = 24
+const EXPANDED_DEFAULT_WIDTH = 280
+const localeStore = useLocaleStore()
+const { leftPanelWidth } = storeToRefs(localeStore)
+const isCollapsed = computed(() => Number(leftPanelWidth.value) < 80)
+function handleToggleCollapse() {
+  localeStore.updateLeftPanelWidth((w) => (w < 80 ? EXPANDED_DEFAULT_WIDTH : COLLAPSED_WIDTH))
+}
 
 const [registerCreateDatabaseModal, { openModal: openCreateDatabaseModal }] = useModal()
 const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
@@ -1014,7 +1038,6 @@ onBeforeUnmount(() => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px;
   margin: 0;
   box-sizing: border-box;
   background: var(--theme-bg-0);
@@ -1028,10 +1051,32 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  padding: 20px;
+}
+
+.database-tree-page.collapsed .page-content {
+  padding: 8px;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 20px;
+}
+
+.database-tree-page.collapsed .search-row {
+  margin-bottom: 0;
+  justify-content: center;
 }
 
 .search-input {
-  margin-bottom: 20px;
+  flex: 1;
+  min-width: 0;
+}
+
+.collapse-btn {
   flex-shrink: 0;
 }
 
@@ -1044,20 +1089,21 @@ onBeforeUnmount(() => {
 .tree-node {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex: 1;
   font-size: 14px;
   padding-right: 8px;
+  min-width: 0;
 }
 
 .node-icon {
-  margin-right: 6px;
   font-size: 20px;
   flex-shrink: 0;
 }
 
 .connection-icon {
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   object-fit: contain;
 }
 
@@ -1127,6 +1173,10 @@ onBeforeUnmount(() => {
 :deep(.el-tree-node__content) {
   height: 28px;
   cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 :deep(.el-tree-node__content:hover) {
@@ -1135,5 +1185,75 @@ onBeforeUnmount(() => {
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: var(--theme-bg-selected);
+}
+
+/* 展开/折叠用加减号表示，方框包裹，完全隐藏默认三角图标 */
+:deep(.el-tree-node__expand-icon) {
+  font-size: 14px;
+  transform: none !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--el-border-color);
+  border-radius: 2px;
+  color: var(--el-tree-expand-icon-color);
+  background: var(--el-fill-color-blank);
+}
+:deep(.el-tree-node__expand-icon .el-icon),
+:deep(.el-tree-node__expand-icon svg) {
+  display: none !important;
+}
+:deep(.el-tree-node__expand-icon::before) {
+  content: "+";
+  font-size: 13px;
+  line-height: 0;
+  font-weight: normal;
+}
+:deep(.el-tree-node__expand-icon.expanded::before) {
+  content: "−";
+}
+:deep(.el-tree-node__expand-icon.is-leaf) {
+  border-color: transparent;
+  background: transparent;
+  color: transparent;
+  visibility: hidden;
+}
+:deep(.el-tree-node__expand-icon.is-leaf::before) {
+  content: none;
+}
+
+/* 虚线连接线：所有层级的父子节点展开后都显示，竖线在子节点容器左侧，横线从竖线连到当前节点 */
+:deep(.el-tree-node.is-expanded > .el-tree-node__children) {
+  overflow: visible;
+}
+:deep(.el-tree-node__children) {
+  position: relative;
+}
+:deep(.el-tree-node__children::before) {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dotted var(--el-border-color);
+  pointer-events: none;
+}
+:deep(.el-tree-node > .el-tree-node__content::before) {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  width: 9px;
+  border-top: 1px dotted var(--el-border-color);
+  pointer-events: none;
+}
+:deep(.el-tree-node:first-child > .el-tree-node__content::before) {
+  display: none;
 }
 </style>

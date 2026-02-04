@@ -77,7 +77,7 @@ import bus from '/@/second/utility/bus'
 const excludeFirst = ref(false)
 const localeStore = useLocaleStore()
 const {selectedWidget, leftPanelWidth, visibleTitleBar} = storeToRefs(localeStore)
-const leftPanelWidthPx = computed(() => Math.max(200, Number(leftPanelWidth.value || 280)))
+const leftPanelWidthPx = computed(() => Math.max(24, Number(leftPanelWidth.value || 280)))
 
 window.addEventListener('resize', debounce(() => {
   if (excludeFirst.value) {

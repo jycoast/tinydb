@@ -4,71 +4,55 @@
     <div
       style="flex: 0 0 auto; padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--theme-border);">
 
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <el-space>
-          <el-button :icon="List" @click="handleConvertSelectionToInList" size="small">
-            转 IN 列表
-          </el-button>
-          <el-button :icon="Brush" @click="handleFormatSql" size="small">
-            SQL 美化
-          </el-button>
-          <el-button :icon="Filter" @click="handleDeduplicateSelection" size="small">
-            去重
-          </el-button>
-        </el-space>
-      </div>
-
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <el-space>
-          <el-select
-            v-model="selectedConid"
-            style="min-width: 220px"
-            size="small"
-            filterable
-            clearable
-            placeholder="选择数据源"
-            @change="handleChangeConid"
-          >
+      <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+        <el-select
+          v-model="selectedConid"
+          style="flex: 0 1 auto; width: 180px; max-width: 180px; min-width: 150px;"
+          size="small"
+          filterable
+          clearable
+          placeholder="选择数据源"
+          @change="handleChangeConid"
+        >
+          <el-option
+            v-for="opt in connectionOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
+        <el-select
+          v-model="selectedObject"
+          style="flex: 0 1 auto; width: 180px; max-width: 180px; min-width: 150px;"
+          size="small"
+          filterable
+          clearable
+          placeholder="选择库/表"
+          @change="handleSelectObject"
+        >
+          <el-option-group v-if="databaseOptions.length" label="Databases">
             <el-option
-              v-for="opt in connectionOptions"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
+              v-for="db in databaseOptions"
+              :key="`db:${db}`"
+              :label="db"
+              :value="`db:${db}`"
             />
-          </el-select>
-          <el-select
-            v-model="selectedObject"
-            style="min-width: 260px"
-            size="small"
-            filterable
-            clearable
-            placeholder="选择库/表"
-            @change="handleSelectObject"
-          >
-            <el-option-group v-if="databaseOptions.length" label="Databases">
-              <el-option
-                v-for="db in databaseOptions"
-                :key="`db:${db}`"
-                :label="db"
-                :value="`db:${db}`"
-              />
-            </el-option-group>
+          </el-option-group>
 
-            <el-option-group v-if="tableOptions.length" label="Tables">
-              <el-option
-                v-for="t in tableOptions"
-                :key="`table:${t}`"
-                :label="t"
-                :value="`table:${t}`"
-              />
-            </el-option-group>
-          </el-select>
+          <el-option-group v-if="tableOptions.length" label="Tables">
+            <el-option
+              v-for="t in tableOptions"
+              :key="`table:${t}`"
+              :label="t"
+              :value="`table:${t}`"
+            />
+          </el-option-group>
+        </el-select>
 
-          <el-button type="primary" :icon="VideoPlay" :loading="executing" @click="handleExecute">
-            执行
-          </el-button>
-          <el-button :icon="Delete" @click="handleClear">清空</el-button>
-        </el-space>
+        <el-button type="primary" :icon="VideoPlay" :loading="executing" @click="handleExecute" style="flex-shrink: 0;">
+          执行
+        </el-button>
+        <el-button :icon="Delete" @click="handleClear" style="flex-shrink: 0;">清空</el-button>
       </div>
 
     </div>
@@ -79,6 +63,7 @@
         :value="sqlContent"
         mode="mysql"
         :options="editorOptions"
+        :menu="contextMenuItems as any"
         @init="handleEditorInit"
         @input="handleSqlInput"
       />
@@ -197,11 +182,9 @@ import { ElMessage } from 'element-plus'
 import {
   Delete,
   VideoPlay,
-  List,
-  Brush,
-  DocumentCopy,
-  Filter
+  DocumentCopy
 } from '@element-plus/icons-vue'
+import type {ContextMenuItem} from '/@/second/modals/typing'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
 import AceEditor from '/@/second/query/AceEditor'
@@ -611,6 +594,22 @@ function handleDeduplicateSelection() {
   const removedCount = lines.length - uniqueLines.length
   ElMessage.success(`去重完成，已移除 ${removedCount} 行重复数据`)
 }
+
+// 右键菜单项（需要在函数定义之后）
+const contextMenuItems = computed<ContextMenuItem[]>(() => [
+  {
+    label: '转 IN 列表',
+    onClick: handleConvertSelectionToInList
+  },
+  {
+    label: 'SQL 美化',
+    onClick: handleFormatSql
+  },
+  {
+    label: '去重',
+    onClick: handleDeduplicateSelection
+  }
+])
 
 async function handleChangeConid(conid?: string) {
   selectedConid.value = conid
@@ -1258,5 +1257,3 @@ function handleClear() {
   line-height: 1.4;
 }
 </style>
-
-

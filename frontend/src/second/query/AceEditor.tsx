@@ -1,6 +1,6 @@
-import {defineComponent, onMounted, onBeforeUnmount, PropType, ref, toRefs, nextTick} from 'vue'
-import {useBootstrapStore} from "/@/store/modules/bootstrap";
+import {defineComponent, onMounted, onBeforeUnmount, PropType, ref, toRefs, nextTick, unref} from 'vue'
 import queryParserWorkerFallback from './queryParserWorkerFallback'
+import {createContextMenu} from '/@/second/modals/createContextMenu'
 import * as ace from 'ace-builds/src-noconflict/ace'
 import 'ace-builds/src-noconflict/mode-sql';
 import 'ace-builds/src-noconflict/mode-mysql';
@@ -86,9 +86,6 @@ export default defineComponent({
     }
   },
   setup(props, {emit}) {
-
-    const bootstrap = useBootstrapStore()
-
     const EDITOR_ID = `svelte-ace-editor-div:${Math.floor(Math.random() * 10000000000)}`
     const {value, mode, readOnly, splitterOptions, currentPart, options, menu} = toRefs(props)
     const editor = ref<Nullable<ace.Editor>>()
@@ -119,10 +116,18 @@ export default defineComponent({
     function updateAnnotations() {}
 
     const handleContextMenu = e => {
+      // Unwrap the menu value (handle both computed refs and direct arrays)
+      const menuValue = unref(menu.value)
+      if (!menuValue || !Array.isArray(menuValue) || menuValue.length === 0) {
+        return
+      }
       e.preventDefault()
-      const left = e.pageX
-      const top = e.pageY
-      bootstrap.setCurrentDropDownMenu({ left, top, items: menu.value!, targetElement: e.target })
+      e.stopPropagation()
+      // Use createContextMenu like other components do (e.g., DropDownButton, TabsPanel)
+      createContextMenu({
+        event: e,
+        items: menuValue
+      })
     }
 
     // NOTE:

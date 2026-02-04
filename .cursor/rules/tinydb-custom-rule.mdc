@@ -30,6 +30,7 @@ alwaysApply: true
 - 尽量不写注释
 - 只在复杂逻辑、Wails 调用边界、非显而易见的处理处加极简中文注释
 - 禁止生成无意义的 JSDoc 或每行注释
+- 注释都使用中文
 
 # 常用导入顺序（建议）
 1. vue / pinia / router
