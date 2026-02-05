@@ -356,9 +356,24 @@ async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiv
         }
       ]
     }))
+
+    await preloadConnectionStructures(conn._id, connectionNode.children as TreeNode[])
   } catch (e) {
     console.error('加载数据库列表失败', e)
     connectionNode.children = []
+  }
+}
+
+async function preloadConnectionStructures(conid: string, databaseNodes: TreeNode[]) {
+  for (const dbNode of databaseNodes) {
+    if (!dbNode.database) continue
+    const infoRef = ref<any>(null)
+    useDatabaseInfo({ conid, database: dbNode.database }, infoRef)
+    let retries = 0
+    while (retries < 25 && (!infoRef.value || Object.keys(infoRef.value).length === 0)) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      retries++
+    }
   }
 }
 

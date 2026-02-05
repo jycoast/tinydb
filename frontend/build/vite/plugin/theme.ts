@@ -46,11 +46,12 @@ export function configThemePlugin(isBuild: boolean): PluginOption[] {
       colorVariables: [...getThemeColors(), ...colors],
     }),
     antdDarkThemePlugin({
-      preloadFiles: [
-        path.resolve(process.cwd(), 'node_modules/ant-design-vue/dist/antd.less'),
-        //path.resolve(process.cwd(), 'node_modules/ant-design-vue/dist/antd.dark.less'),
-        path.resolve(process.cwd(), 'src/design/index.less'),
-      ],
+      preloadFiles: isBuild
+        ? [
+            path.resolve(process.cwd(), 'node_modules/ant-design-vue/dist/antd.less'),
+            path.resolve(process.cwd(), 'src/design/index.less'),
+          ]
+        : [path.resolve(process.cwd(), 'src/design/index.less')],
       filter: (id) => (isBuild ? !id.endsWith('antd.less') : true),
       // extractCss: false,
       // 开发模式下禁用 CSS 提取以加快启动速度

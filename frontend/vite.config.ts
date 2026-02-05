@@ -99,23 +99,20 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     plugins: createVitePlugins(viteEnv, isBuild),
 
     optimizeDeps: {
-      // @iconify/iconify: The dependency is dynamically and virtually loaded by @purge-icons/generated, so it needs to be specified explicitly
       include: [
         '@vue/runtime-core',
         '@vue/shared',
         '@iconify/iconify',
-        'ant-design-vue/es/locale/zh_CN',
-        'ant-design-vue/es/locale/en_US',
-        'ace-builds',
         'vue',
         'vue-router',
         'pinia',
         'ant-design-vue',
+        'ant-design-vue/es/locale/zh_CN',
+        'ant-design-vue/es/locale/en_US',
         'element-plus',
         'lodash-es',
         'dayjs',
       ],
-      // 排除一些不需要预构建的依赖
       exclude: ['@wailsapp/runtime'],
     },
   };

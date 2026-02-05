@@ -88,7 +88,7 @@ export default defineComponent({
   setup(props, {emit}) {
     const EDITOR_ID = `svelte-ace-editor-div:${Math.floor(Math.random() * 10000000000)}`
     const {value, mode, readOnly, splitterOptions, currentPart, options, menu} = toRefs(props)
-    const editor = ref<Nullable<ace.Editor>>()
+    const editor = ref<Nullable<AceEditorType>>()
     const containerRef = ref<HTMLElement | null>(null)
     const contentBackup = ref<string>('')
     const queryParts = ref<IPart[]>([])
@@ -102,7 +102,7 @@ export default defineComponent({
       showPrintMargin: false,
     }
 
-    function getEditor(): ace.Editor {
+    function getEditor(): AceEditorType {
       return editor.value
     }
 

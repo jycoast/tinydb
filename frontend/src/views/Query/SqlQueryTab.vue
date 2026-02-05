@@ -188,7 +188,7 @@ import type {ContextMenuItem} from '/@/second/modals/typing'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
 import AceEditor from '/@/second/query/AceEditor'
-import * as ace from 'ace-builds/src-noconflict/ace'
+import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/second/query/aceApi'
 import 'ace-builds/src-noconflict/ext-language_tools'
 import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/second/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
@@ -209,7 +209,7 @@ const {currentDatabase} = storeToRefs(bootstrap)
 const clusterApi = useClusterApiStore()
 const {connectionList} = storeToRefs(clusterApi)
 
-const editor = ref<Nullable<ace.Editor>>(null)
+const editor = ref<Nullable<AceEditorType>>(null)
 const sqlContent = ref('')
 const executing = ref(false)
 const showResults = ref(false)
@@ -879,7 +879,7 @@ watch(
   },
 )
 
-function handleEditorInit(editorInstance: ace.Editor) {
+function handleEditorInit(editorInstance: AceEditorType) {
   editor.value = editorInstance
 
   // 设置自动补全
@@ -900,9 +900,9 @@ function handleSqlInput(value: string) {
 }
 
 // 设置 SQL 自动补全
-function setupAutocomplete(_editorInstance: ace.Editor) {
+function setupAutocomplete(_editorInstance: AceEditorType) {
   // 获取 language_tools 扩展
-  const langTools = ace.require('ace/ext/language_tools')
+  const langTools = ace?.require?.('ace/ext/language_tools')
 
   if (!langTools) {
     console.warn('Ace language_tools not available')
@@ -914,7 +914,7 @@ function setupAutocomplete(_editorInstance: ace.Editor) {
 
   // 创建自定义补全器
   const sqlCompleter = {
-    getCompletions: (_editor: ace.Editor, _session: ace.IEditSession, _pos: ace.Position, _prefix: string, callback: (error: any, results: any[]) => void) => {
+    getCompletions: (_editor: AceEditorType, _session: IEditSession, _pos: Position, _prefix: string, callback: (error: any, results: any[]) => void) => {
       const completions: any[] = []
 
       // SQL 关键词
