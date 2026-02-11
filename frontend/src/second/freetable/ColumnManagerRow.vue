@@ -21,7 +21,7 @@
 <script lang="ts">
 import {defineComponent, toRef} from 'vue'
 import {DisplayColumn} from '/@/second/tinydb-datalib'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 
 export default defineComponent({
   name: 'ColumnManagerRow',

@@ -67,15 +67,15 @@
 
 <script lang="ts">
 import {computed, defineComponent, PropType, ref, toRefs, unref, watch, onBeforeUnmount} from 'vue';
-import AppObjectList from '/@/second/appobj/AppObjectList'
+import AppObjectList from '/@/components/AppObject/AppObjectList'
 import ErrorInfo from '/@/second/elements/ErrorInfo.vue'
 import LoadingInfo from '/@/second/elements/LoadingInfo.vue'
-import runCommand from '/@/second/commands/runCommand'
+import runCommand from '/@/commands/runCommand'
 import WidgetsInnerContainer from './WidgetsInnerContainer.vue'
-import DatabaseObjectAppObject from '/@/second/appobj/DatabaseObjectAppObject'
-import SubColumnParamList from '/@/second/appobj/SubColumnParamList'
+import DatabaseObjectAppObject from '/@/second/database-tree/DatabaseObjectAppObject'
+import SubColumnParamList from './SubColumnParamList'
 import {getObjectTypeFieldLabel} from '/@/second/utility/common'
-import {chevronExpandIcon} from '/@/second/icons/expandIcons'
+import {chevronExpandIcon} from '/@/components/Icon/src/expandIcons'
 import {storeToRefs} from 'pinia'
 import {flatten, sortBy} from 'lodash-es'
 import {useConnectionInfo, useDatabaseInfo, useDatabaseStatus} from "/@/api/bridge"

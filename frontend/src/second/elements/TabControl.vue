@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import {Component, defineComponent, PropType, toRefs, ref, computed, h, watch} from "vue"
-import DropDownButton from '/@/second/buttons/DropDownButton'
+import DropDownButton from '/@/components/Button/src/DropDownButton'
 import {compact} from "lodash-es";
 import {Tabs} from "ant-design-vue";
 

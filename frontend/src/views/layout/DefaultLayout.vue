@@ -55,11 +55,13 @@
 
     <!-- 通知容器 -->
     <div class="snackbar-container"></div>
+
+    <NewConnectionModal @register="registerNewConnectionModal" />
   </el-container>
 </template>
 
 <script lang="ts" setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, onMounted, onBeforeUnmount, ref, watch} from 'vue'
 import {storeToRefs} from 'pinia'
 import {debounce} from 'lodash-es'
 import {useLocaleStore} from '/@/store/modules/locale'
@@ -73,6 +75,10 @@ import { Warning } from '@element-plus/icons-vue'
 import ToolBar from './ToolBar.vue'
 import TitleBar from './TitleBar.vue'
 import bus from '/@/second/utility/bus'
+import { useModal } from '/@/components/Modal'
+import NewConnectionModal from '/@/views/Connections/NewConnectionModal.vue'
+
+const [registerNewConnectionModal, { openModal: openNewConnectionModal }] = useModal()
 
 const excludeFirst = ref(false)
 const localeStore = useLocaleStore()
@@ -90,11 +96,19 @@ onMounted(() => (excludeFirst.value = true))
 // Remove the left iconbar area: collapse its reserved width in CSS vars
 onMounted(() => {
   localeStore.setCssVariable(0, (x) => `${x}px`, '--dim-widget-icon-size')
-  // Default to database widget so WidgetContainer has content
   if (!selectedWidget.value) {
     localeStore.setSelectedWidget('database')
   }
+  window.addEventListener('open-new-connection-modal', handleOpenNewConnectionModal)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('open-new-connection-modal', handleOpenNewConnectionModal)
+})
+
+function handleOpenNewConnectionModal() {
+  openNewConnectionModal(true)
+}
 
 // 继续维护原有 CSS 变量，避免其它组件依赖它们时出问题
 watch(() => selectedWidget.value, () => {

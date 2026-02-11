@@ -33,8 +33,8 @@ import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
 import { Document, Link, Clock } from '@element-plus/icons-vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
-import runCommand from '/@/second/commands/runCommand'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
+import runCommand from '/@/commands/runCommand'
 
 const bootstrap = useBootstrapStore()
 const { commandsCustomized } = storeToRefs(bootstrap)

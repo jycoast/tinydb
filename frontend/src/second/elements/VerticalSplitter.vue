@@ -49,7 +49,7 @@
 
 <script lang="ts">
 import {defineComponent, onMounted, ref, toRef, toRefs, watch} from 'vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {computeSplitterSize} from '/@/second/elements/HorizontalSplitter.vue'
 import bus from "/@/second/utility/bus";
 

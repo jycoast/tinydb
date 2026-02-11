@@ -1,6 +1,6 @@
 import {computed, defineComponent, PropType, ref, toRefs, watch} from 'vue'
 import {TableFormViewDisplay} from '/@/second/tinydb-datalib'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
 import keycodes from '/@/second/utility/keycodes'
 import {ColumnReference} from '/@/second/tinydb-types'

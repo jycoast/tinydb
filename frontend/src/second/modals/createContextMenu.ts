@@ -2,7 +2,7 @@ import contextMenuVue from '/@/second/modals/ContextMenu.vue'
 import { isClient } from '/@/utils/is';
 import { CreateContextOptions, ContextMenuProps } from './typing';
 import { createVNode, render } from 'vue';
-import invalidateCommands from '/@/second/commands/invalidateCommands'
+import invalidateCommands from '/@/commands/invalidateCommands'
 const menuManager: {
   domList: Element[];
   resolve: Fn;

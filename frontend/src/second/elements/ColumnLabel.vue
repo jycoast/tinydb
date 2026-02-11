@@ -25,9 +25,9 @@
 
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs, unref,} from 'vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {Space, Tag, Typography, Tooltip} from 'ant-design-vue'
-import {openDatabaseObjectDetail} from '/@/second/appobj/DatabaseObjectAppObject'
+import {openDatabaseObjectDetail} from '/@/second/database-tree/DatabaseObjectAppObject'
 
 export function getColumnIcon(column, forceIcon = false) {
   if (unref(column).autoIncrement) return 'img autoincrement';

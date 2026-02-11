@@ -15,8 +15,8 @@
 
 <script lang="ts">
 import {defineComponent, inject, toRef} from 'vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
-import ToolbarButton from '/@/second/buttons/ToolbarButton.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
+import ToolbarButton from '/@/components/Button/src/ToolbarButton.vue'
 export default defineComponent({
   name: "MacroHeader",
   components: {

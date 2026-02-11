@@ -16,10 +16,10 @@
 
 <script lang="ts">
 import {computed, defineComponent, PropType, toRefs, unref} from 'vue'
-import DataFilterControl from '/@/second/datagrid/DataFilterControl.vue'
+import DataFilterControl from '/@/components/DataGrid/DataFilterControl.vue'
 import ColumnLabelComponent from '/@/second/elements/ColumnLabel.vue'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import InlineButton from '/@/components/Button/src/InlineButton.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {getFilterType} from '/@/second/tinydb-filterparser'
 import {GridDisplay} from '/@/second/tinydb-datalib'
 

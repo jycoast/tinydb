@@ -82,15 +82,15 @@
 import {computed, defineComponent, onBeforeUnmount, PropType, provide, ref, toRefs, unref, watch} from 'vue'
 import {getLocalStorage, setLocalStorage} from '/@/second/utility/storageCache'
 import {createChangeSet, createGridCache} from '/@/second/tinydb-datalib'
-import ToolStripContainer from '/@/second/buttons/ToolStripContainer.vue'
-import TableDataGrid from '/@/second/datagrid/TableDataGrid.vue'
-import ToolStripCommandSplitButton from '/@/second/buttons/ToolStripCommandSplitButton.vue'
-import ToolStripCommandButton from '/@/second/buttons/ToolStripCommandButton.vue'
+import ToolStripContainer from '/@/second/toolstrip/ToolStripContainer.vue'
+import TableDataGrid from '/@/components/DataGrid/TableDataGrid.vue'
+import ToolStripCommandSplitButton from '/@/second/toolstrip/ToolStripCommandSplitButton.vue'
+import ToolStripCommandButton from '/@/second/toolstrip/ToolStripCommandButton.vue'
 import createUndoReducer from '/@/second/utility/createUndoReducer'
 import useGridConfig from '/@/second/utility/useGridConfig'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import AceEditor from '/@/second/query/AceEditor'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 
 export const matchingProps = ['conid', 'database', 'schemaName', 'pureName']
 export const allowAddToFavorites = _ => true

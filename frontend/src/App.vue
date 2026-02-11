@@ -19,7 +19,7 @@ import initPluginsProvider from '/@/second/plugins/PluginsProvider'
 import {subscribeConnectionPingers} from '/@/api/connectionsPinger'
 import {setAppLoaded} from '/@/second/utility/appLoadManager'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
-import DataGridRowHeightMeter from '/@/second/datagrid/DataGridRowHeightMeter.vue'
+import DataGridRowHeightMeter from '/@/components/DataGrid/DataGridRowHeightMeter.vue'
 // import 'dayjs/locale/zh-cn';
 
 let loadedApi = ref(false)

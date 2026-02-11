@@ -42,7 +42,7 @@
 import {computed, defineComponent, ref, unref} from 'vue'
 import {findIndex, max, min} from 'lodash-es'
 import {storeToRefs} from 'pinia'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {getConnectionInfo} from '/@/api/bridge'

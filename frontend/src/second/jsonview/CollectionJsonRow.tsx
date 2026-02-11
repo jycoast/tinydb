@@ -1,7 +1,7 @@
 import {computed, defineComponent, PropType, toRefs} from 'vue'
 import {isNumber} from 'lodash-es'
 import JSONTree from '/@/second/jsontree/JSONTree.vue'
-import Grider from '/@/second/datagrid/Grider'
+import Grider from '/@/components/DataGrid/Grider'
 
 export default defineComponent({
   name: 'CollectionJsonRow',

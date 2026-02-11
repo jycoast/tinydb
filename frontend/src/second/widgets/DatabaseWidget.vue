@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import {defineComponent, PropType, toRef} from 'vue'
-import { DatabaseOverview } from '/@/views'
+import DatabaseOverview from '/@/views/Database/DatabaseOverview.vue'
 
 export default defineComponent({
   name: "DatabaseWidget",

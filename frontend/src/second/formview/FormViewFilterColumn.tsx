@@ -1,10 +1,10 @@
 import {defineComponent, PropType, toRefs} from 'vue'
 import {TableFormViewDisplay} from "/@/second/tinydb-datalib";
 import {ColumnReference, EngineDriver} from "/@/second/tinydb-types";
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
-import InlineButton from '/@/second/buttons/InlineButton.vue'
-import DataFilterControl from '/@/second/datagrid/DataFilterControl.vue'
+import InlineButton from '/@/components/Button/src/InlineButton.vue'
+import DataFilterControl from '/@/components/DataGrid/DataFilterControl.vue'
 import {getFilterType} from '/@/second/tinydb-filterparser'
 
 export default defineComponent({

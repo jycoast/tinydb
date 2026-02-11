@@ -17,7 +17,7 @@
 <script lang="ts">
 import {reactive, ref, nextTick} from 'vue';
 import {storeToRefs} from 'pinia'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 

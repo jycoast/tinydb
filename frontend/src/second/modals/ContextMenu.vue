@@ -29,7 +29,7 @@ import type {ContextMenuItem} from './typing';
 import {prepareMenuItems} from '/@/second/utility/contextMenu'
 import {formatKeyText} from '/@/second/utility/common'
 import Icon from '/@/components/Icon';
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useBootstrapStoreWithOut} from "/@/store/modules/bootstrap";
 
 const props = {

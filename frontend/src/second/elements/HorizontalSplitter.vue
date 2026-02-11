@@ -49,7 +49,7 @@
 <script lang="ts">
 import {defineComponent, onMounted, PropType, ref, toRef, toRefs, watch} from 'vue'
 import {isString} from 'lodash-es'
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import bus from '/@/second/utility/bus'
 
 export function computeSplitterSize(initialValue, clientSize) {

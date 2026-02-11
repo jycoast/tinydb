@@ -38,6 +38,9 @@ async function bootstrap() {
   // 配置 store
   setupStore(app);
 
+  // 注册内置命令（新建连接等）
+  await import('/@/commands/stdCommands');
+
   // Initialize internal system configuration
   // 初始化内部系统配置
   initAppConfigStore();

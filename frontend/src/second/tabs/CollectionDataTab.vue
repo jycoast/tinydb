@@ -42,10 +42,10 @@ import {
   watch
 } from 'vue'
 import {storeToRefs} from 'pinia'
-import ToolStripCommandButton from '/@/second/buttons/ToolStripCommandButton.vue'
-import ToolStripContainer from '/@/second/buttons/ToolStripContainer.vue'
-import DataGrid from '/@/second/datagrid/DataGrid.vue'
-import CollectionDataGridCore from '/@/second/datagrid/CollectionDataGridCore'
+import ToolStripCommandButton from '/@/second/toolstrip/ToolStripCommandButton.vue'
+import ToolStripContainer from '/@/second/toolstrip/ToolStripContainer.vue'
+import DataGrid from '/@/components/DataGrid/DataGrid.vue'
+import CollectionDataGridCore from '/@/components/DataGrid/CollectionDataGridCore'
 import CollectionJsonView from '/@/second/jsonview/CollectionJsonView.vue'
 import {
   CollectionGridDisplay,

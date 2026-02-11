@@ -19,8 +19,8 @@ import Pager from '/@/second/elements/Pager.vue'
 import CollectionJsonRow from './CollectionJsonRow'
 
 import {ChangeCacheFunc, GridDisplay} from "/@/second/tinydb-datalib";
-import {loadCollectionDataPage} from '/@/second/datagrid/CollectionDataGridCore'
-import ChangeSetGrider from "/@/second/datagrid/ChangeSetGrider";
+import {loadCollectionDataPage} from '/@/components/DataGrid/CollectionDataGridCore'
+import ChangeSetGrider from "/@/components/DataGrid/ChangeSetGrider";
 import {range} from 'lodash-es'
 
 export default defineComponent({

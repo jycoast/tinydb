@@ -80,7 +80,7 @@
 <script lang="ts">
 import {storeToRefs} from 'pinia'
 import {computed, defineComponent, onBeforeUnmount, onMounted, ref, unref, watch} from 'vue';
-import FontIcon from '/@/second/icons/FontIcon.vue'
+import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import getConnectionLabel from "/@/second/utility/getConnectionLabel"
 import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api/bridge"

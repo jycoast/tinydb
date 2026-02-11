@@ -20,8 +20,8 @@
 <script lang="ts">
 import {defineComponent, PropType, ref, toRefs, computed} from 'vue'
 import {sortBy} from 'lodash-es'
-import MacroAppObject from '/@/second/appobj/MacroAppObject'
-import AppObjectList from '/@/second/appobj/AppObjectList'
+import MacroAppObject from './MacroAppObject'
+import AppObjectList from '/@/components/AppObject/AppObjectList'
 import {GridDisplay} from '/@/second/tinydb-datalib'
 import macros from './macros'
 
