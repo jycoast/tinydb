@@ -59,31 +59,6 @@ export function isJsonLikeLongString(value) {
   return isString(value) && value.length > 100 && value.match(/^\s*\{.*\}\s*$|^\s*\[.*\]\s*$/);
 }
 
-export function getIconForRedisType(type) {
-  switch (type) {
-    case 'dir':
-      return 'img folder';
-    case 'string':
-      return 'img type-string';
-    case 'hash':
-      return 'img type-hash';
-    case 'set':
-      return 'img type-set';
-    case 'list':
-      return 'img type-list';
-    case 'zset':
-      return 'img type-zset';
-    case 'stream':
-      return 'img type-stream';
-    case 'binary':
-      return 'img type-binary';
-    case 'ReJSON-RL':
-      return 'img type-rejson';
-    default:
-      return null;
-  }
-}
-
 export function isWktGeometry(s) {
   if (!isString(s)) return false;
 
@@ -93,22 +68,4 @@ export function isWktGeometry(s) {
   );
 }
 
-export function arrayBufferToBase64(buffer) {
-  let binary = '';
-  const bytes = [].slice.call(new Uint8Array(buffer));
-  bytes.forEach(b => (binary += String.fromCharCode(b)));
-  return btoa(binary);
-}
-
-export function getAsImageSrc(obj) {
-  if (obj?.type == 'Buffer' && isArray(obj?.data)) {
-    return `data:image/png;base64, ${arrayBufferToBase64(obj?.data)}`;
-  }
-
-  if (isString(obj) && (obj.startsWith('http://') || obj.startsWith('https://'))) {
-    return obj;
-  }
-
-  return null;
-}
 

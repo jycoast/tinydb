@@ -180,7 +180,6 @@ export default defineComponent({
           handleServerSummary()
           return
         }
-        // Ask ConnectionList (owner of the singleton ConnectionModal) to open in edit mode
         const payload = toRaw(data.value as any)
         window.dispatchEvent(new CustomEvent('open-connection-modal', { detail: payload }))
       }

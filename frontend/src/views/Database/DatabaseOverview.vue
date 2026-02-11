@@ -146,6 +146,7 @@ import { useConnectionList, useDatabaseList, useDatabaseInfo, useServerStatus } 
 import { serverConnectionsRefreshApi, databaseConnectionsRefreshApi, connectionDeleteApi, databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
 import { disconnectServerConnection } from '/@/second/appobj/ConnectionAppObject'
 import { getDatabaseMenuItems } from '/@/second/appobj/DatabaseAppObject'
+import { createContextMenu } from '/@/second/modals/createContextMenu'
 import { useModal } from '/@/components/Modal'
 import CreateDatabaseModal from '/@/second/modals/CreateDatabaseModal.vue'
 import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
@@ -677,19 +678,18 @@ async function handleOpenTableData(data: TreeNode) {
 function handleContextMenu(event: MouseEvent, data: TreeNode) {
   event.preventDefault()
   event.stopPropagation()
-  
   contextMenuNode.value = data
-  contextMenuStyle.value = {
-    position: 'fixed',
-    left: `${event.clientX}px`,
-    top: `${event.clientY}px`
-  }
-  
-  contextMenuItems.value = getContextMenuItems(data)
-  
-  nextTick(() => {
-    contextMenuVisible.value = true
-  })
+  const menuItems = getContextMenuItems(data)
+  const items = menuItems.map((m) =>
+    m.divider
+      ? { divider: true, label: '' }
+      : {
+          label: m.label,
+          disabled: !!m.disabled,
+          onClick: () => m.command && handleMenuCommand(m.command),
+        }
+  )
+  createContextMenu({ event, items })
 }
 
 function getContextMenuItems(data: TreeNode): any[] {
@@ -699,46 +699,22 @@ function getContextMenuItems(data: TreeNode): any[] {
     const conn = connectionsWithStatus.value.find(c => c._id === data.conid)
     const isOpened = conn && openedConnections.value.includes(conn._id)
     
-    items.push(
-      {
-        label: isOpened ? '查看详情' : '编辑',
-        command: 'edit-connection'
-      },
-      {
-        label: '删除',
-        command: 'delete-connection'
-      },
-      {
-        label: '复制',
-        command: 'copy-connection',
-        disabled: true
-      }
-    )
-    
-    if (isOpened && (conn as any)?.status) {
-      items.push(
-        { divider: true },
-        {
-          label: '刷新',
-          command: 'refresh-connection'
-        },
-        {
-          label: '断开连接',
-          command: 'disconnect-connection'
-        }
-      )
+    if (isOpened) {
+      items.push({ label: '关闭连接', command: 'disconnect-connection' })
     }
-    
+    items.push(
+      { label: '编辑连接', command: 'edit-connection' },
+      { label: '复制连接', command: 'copy-connection' },
+      { label: '新建查询', command: 'new-query' }
+    )
+    if (isOpened) {
+      items.push({ label: '刷新', command: 'refresh-connection' })
+    }
     items.push(
       { divider: true },
-      {
-        label: '创建数据库',
-        command: 'create-database'
-      },
-      {
-        label: '服务器概览',
-        command: 'server-summary'
-      }
+      { label: '删除', command: 'delete-connection' },
+      { label: '创建数据库', command: 'create-database' },
+      { label: '服务器概览', command: 'server-summary' }
     )
   } else if (data.type === 'database') {
     const menuItems = getDatabaseMenuItems(data.conid, data.database, openCreateTableModal, bootstrap)
@@ -789,6 +765,12 @@ async function handleMenuCommand(command: string) {
         break
       case 'disconnect-connection':
         await handleDisconnectConnection(node)
+        break
+      case 'copy-connection':
+        await handleCopyConnection(node)
+        break
+      case 'new-query':
+        handleNewQuery(node)
         break
       case 'create-database':
         handleCreateDatabase(node)
@@ -881,6 +863,34 @@ async function handleDisconnectConnection(node: TreeNode) {
   if (conn) {
     disconnectServerConnection(conn, true)
   }
+}
+
+async function handleCopyConnection(node: TreeNode) {
+  const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
+  const text = conn ? getConnectionLabel(conn) : node.label
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('已复制到剪贴板')
+  } catch {
+    ElMessage.error('复制失败')
+  }
+}
+
+function handleNewQuery(node: TreeNode) {
+  const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
+  const title = conn ? `${getConnectionLabel(conn)} - 查询#` : '新建查询#'
+  openNewTab(
+    {
+      title,
+      icon: 'icon query',
+      tabComponent: 'SqlQueryTab',
+      props: { conid: node.conid },
+      selected: true,
+      busy: false
+    },
+    undefined,
+    { forceNewTab: true }
+  )
 }
 
 function handleCreateDatabase(node: TreeNode) {
@@ -1203,27 +1213,6 @@ onBeforeUnmount(() => {
 }
 
 /* 展开/折叠用加减号表示，方框包裹，完全隐藏默认三角图标 */
-:deep(.el-tree-node__expand-icon) {
-  font-size: 14px;
-  transform: none !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  padding: 0;
-  margin: 0;
-  flex-shrink: 0;
-  border: 1px solid var(--el-border-color);
-  border-radius: 2px;
-  color: var(--el-tree-expand-icon-color);
-  background: var(--el-fill-color-blank);
-}
-:deep(.el-tree-node__expand-icon .el-icon),
-:deep(.el-tree-node__expand-icon svg) {
-  display: none !important;
-}
 :deep(.el-tree-node__expand-icon::before) {
   content: "+";
   font-size: 13px;
@@ -1259,15 +1248,7 @@ onBeforeUnmount(() => {
   border-left: 1px dotted var(--el-border-color);
   pointer-events: none;
 }
-:deep(.el-tree-node > .el-tree-node__content::before) {
-  content: "";
-  position: absolute;
-  left: -9px;
-  top: 50%;
-  width: 9px;
-  border-top: 1px dotted var(--el-border-color);
-  pointer-events: none;
-}
+
 :deep(.el-tree-node:first-child > .el-tree-node__content::before) {
   display: none;
 }
