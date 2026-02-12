@@ -3,7 +3,7 @@ import {defineStore} from 'pinia'
 import {isNumber} from 'lodash-es'
 import type {LocaleSetting, LocaleType} from '/#/config'
 import {store} from '/@/store'
-import invalidateCommands from '/@/commands/invalidateCommands'
+import {invalidateCommands} from "/@/commands"
 import {LOCALE_KEY} from '/@/enums/cacheEnum'
 import {getWithStorageVariableCache, setWithStorageVariableCache} from '/@/utils/tinydb/storage'
 import {TabDefinition} from '/@/store/modules/bootstrap'

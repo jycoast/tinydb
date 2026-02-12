@@ -1,17 +1,5 @@
 <template>
-  <!-- Material Icons -->
-  <MaterialIcon
-    v-if="isMaterialIcon"
-    :icon="icon"
-    :size="materialIconSize"
-    :color="materialIconColor"
-    :title="title"
-    :custom-class="[padLeft && 'padLeft', padRight && 'padRight']"
-    @click="handleClick"
-  />
-  <!-- 其他图标 -->
   <span
-    v-else
     :class="[iconNames[icon] || icon, padLeft && 'padLeft', padRight && 'padRight']"
     :title="title"
     :style="style"
@@ -20,15 +8,10 @@
 </template>
 
 <script lang="ts">
-  import {defineComponent, PropType, toRefs, computed, onMounted} from 'vue'
-  import {isMaterialIcon, loadMaterialIcons, getMaterialIconName} from '/@/utils/materialIcons'
-  import MaterialIcon from '/@/components/MaterialIcon.vue'
+  import {defineComponent, PropType, toRefs} from 'vue'
 
   export default defineComponent({
     name: "FontIcon",
-    components: {
-      MaterialIcon
-    },
     props: {
       icon: {
         type: String as PropType<string>,
@@ -52,48 +35,9 @@
         emit('click')
       }
 
-      const isMaterialIconComputed = computed(() => {
-        return props.icon && isMaterialIcon(props.icon)
-      })
-
-      const materialIconSize = computed(() => {
-        // 从 style 中提取 size，如果有的话
-        if (props.style) {
-          const match = props.style.match(/font-size:\s*(\d+)px/)
-          if (match) {
-            return parseInt(match[1])
-          }
-        }
-        return 24
-      })
-
-      const materialIconColor = computed(() => {
-        // 从 style 中提取 color，如果有的话
-        if (props.style) {
-          const match = props.style.match(/color:\s*([^;]+)/)
-          if (match) {
-            return match[1].trim()
-          }
-        }
-        return undefined
-      })
-
-      onMounted(() => {
-        // 如果是 Material Icon，按需加载
-        if (isMaterialIconComputed.value && props.icon) {
-          const iconName = getMaterialIconName(props.icon)
-          if (iconName) {
-            loadMaterialIcons([iconName])
-          }
-        }
-      })
-
       return {
         handleClick,
         ...toRefs(props),
-        isMaterialIcon: isMaterialIconComputed,
-        materialIconSize,
-        materialIconColor,
         iconNames: {
           'icon minus-box': 'mdi mdi-minus-box-outline',
           'icon plus-box': 'mdi mdi-plus-box-outline',
@@ -238,7 +182,6 @@
           'img error-inv': 'mdi mdi-close-circle color-icon-inv-red',
           'img warn': 'mdi mdi-alert color-icon-gold',
           'img info': 'mdi mdi-information color-icon-blue',
-          // 'img statusbar-ok': 'mdi mdi-check-circle color-on-statusbar-green',
           'img circular': 'mdi mdi-circular-saw color-icon-red',
 
           'img archive': 'mdi mdi-table color-icon-gold',

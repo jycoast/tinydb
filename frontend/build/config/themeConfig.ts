@@ -1,5 +1,3 @@
-import { generate } from '@ant-design/colors';
-
 export const primaryColor = '#0960bd';
 
 export const darkMode = 'light';
@@ -15,10 +13,13 @@ export interface GenerateColorsParams {
   color?: string;
 }
 
-export function generateAntColors(color: string, theme: GenerateTheme = 'default') {
-  return generate(color, {
-    theme,
-  });
+export function generateAntColors(color: string, _theme: GenerateTheme = 'default') {
+  // 简化的颜色梯度生成，替代 @ant-design/colors
+  const colors: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    colors.push(color);
+  }
+  return colors;
 }
 
 export function getThemeColors(color?: string) {

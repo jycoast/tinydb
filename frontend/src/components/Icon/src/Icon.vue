@@ -99,23 +99,20 @@
     },
   });
 </script>
-<style lang="less">
-  .app-iconify {
-    display: inline-block;
-    // vertical-align: middle;
+<style scoped>
+.app-iconify {
+  display: inline-block;
+}
 
-    &-spin {
-      svg {
-        animation: loadingCircle 1s infinite linear;
-      }
-    }
-  }
+.app-iconify-spin svg {
+  animation: loadingCircle 1s infinite linear;
+}
 
-  span.iconify {
-    display: block;
-    min-width: 1em;
-    min-height: 1em;
-    background-color: @iconify-bg-color;
-    border-radius: 100%;
-  }
+span.iconify {
+  display: block;
+  min-width: 1em;
+  min-height: 1em;
+  background-color: #5551;
+  border-radius: 100%;
+}
 </style>

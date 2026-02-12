@@ -1,5 +1,4 @@
 import getAsArray from './getAsArray';
-import {EventsOn} from '/@/wailsjs/runtime/runtime'
 const cachedByKey = {};
 const cachedPromisesByKey = {};
 const cachedKeysByReloadTrigger = {};
@@ -119,8 +118,13 @@ function dispatchCacheChange(reloadTrigger) {
   }
 }
 
-try {
-  EventsOn('changed-cache',reloadTrigger => dispatchCacheChange(reloadTrigger))
-} catch (e) {
-  console.log(e)
+export function initCacheListener() {
+  try {
+    const { EventsOn } = (window as any).runtime || {}
+    if (EventsOn) {
+      EventsOn('changed-cache', reloadTrigger => dispatchCacheChange(reloadTrigger))
+    }
+  } catch (e) {
+    console.log(e)
+  }
 }

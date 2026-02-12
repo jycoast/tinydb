@@ -33,19 +33,14 @@
     "gen:icon": "esno ./build/generate/icon/index.ts"
   },
   "dependencies": {
-    "@ant-design/colors": "^6.0.0",
-    "@ant-design/icons-vue": "^6.1.0",
     "@element-plus/icons-vue": "^2.3.2",
     "@iconify/iconify": "^2.2.1",
-    "@logicflow/core": "^1.1.13",
-    "@logicflow/extension": "^1.1.13",
     "@vue/runtime-core": "^3.2.33",
     "@vue/shared": "^3.2.33",
     "@vueuse/core": "^8.3.0",
     "@vueuse/shared": "^8.3.0",
     "@zxcvbn-ts/core": "^2.0.1",
     "ace-builds": "^1.43.5",
-    "ant-design-vue": "^3.2.0",
     "any-touch": "^2.2.0",
     "axios": "^0.26.1",
     "codemirror": "^5.65.3",
@@ -69,14 +64,12 @@
     "showdown": "^2.1.0",
     "sortablejs": "^1.15.0",
     "sql-formatter": "^15.4.2",
-    "tinymce": "^5.10.7",
     "vditor": "^3.8.13",
     "vue": "^3.2.45",
     "vue-i18n": "^9.1.9",
     "vue-json-pretty": "^2.0.6",
     "vue-router": "^4.0.14",
-    "vue-types": "^4.1.1",
-    "xlsx": "^0.18.5"
+    "vue-types": "^4.1.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^16.2.3",

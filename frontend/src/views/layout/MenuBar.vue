@@ -51,7 +51,7 @@
 
 <script lang="ts" setup>
 import { reactive, ref, onMounted, onUnmounted } from 'vue'
-import runCommand from '/@/commands/runCommand'
+import {runCommand} from "/@/commands"
 
 type MenuChildItem = {
   key: string

@@ -8,15 +8,9 @@ import tabs from '/@/views/Tabs'
 import {setSelectedTabFunc} from './common'
 import {buildUUID} from '/@/utils/uuid'
 
-const locale = useLocaleStore()
-const {openedTabs: oldTabs} = storeToRefs(locale)
-
 function findFreeNumber(numbers: number[]) {
   if (numbers.length == 0) return 1;
   return max(numbers)! + 1;
-  // let res = 1;
-  // while (numbers.includes(res)) res += 1;
-  // return res;
 }
 
 export function getTabDbKey(tab) {
@@ -57,6 +51,9 @@ export function groupTabs(tabs: any[]) {
 }
 
 export default async function openNewTab(newTab, initialData: any = undefined, options: unknown = undefined) {
+  const locale = useLocaleStore()
+  const {openedTabs: oldTabs} = storeToRefs(locale)
+
   let existing: unknown = null;
 
   const {savedFile, savedFolder, savedFilePath} = newTab.props || {}
@@ -75,7 +72,7 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
   // @ts-ignore
   const {forceNewTab} = options || {};
 
-  const component = tabs[newTab.tabComponent] //newTab.tabComponent TableDataTab
+  const component = tabs[newTab.tabComponent]
   if (!existing && !forceNewTab && component && component.matchingProps) {
     const testString = stableStringify(pick(newTab.props || {}, component.matchingProps))
     existing = unref(oldTabs).find(
@@ -93,7 +90,6 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
     return
   }
 
-  // new tab will be created
   if (newTab.title.endsWith('#')) {
     const numbers = unref(oldTabs)
       .filter(x => x.closedTime == null && x.title && x.title.startsWith(newTab.title))
@@ -120,7 +116,6 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
     const newItem = {
       ...newTab,
       tabid,
-      // 确保 props 被正确保存
       props: newTab.props || {},
     }
     if (dbKey != null) {
@@ -137,7 +132,6 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
     return [
       ...(files || []).map(x => ({
         ...x,
-        // 确保保留原有的 props
         props: x.props || {},
         selected: false,
         tabOrder: findIndex(items, y => y.tabid == x.tabid)
@@ -145,7 +139,6 @@ export default async function openNewTab(newTab, initialData: any = undefined, o
       {
         ...newTab,
         tabid,
-        // 确保 props 被正确保存，特别是 pureName 等关键属性
         props: newTab.props || {},
         selected: true,
         tabOrder: findIndex(items, y => y.tabid == tabid),

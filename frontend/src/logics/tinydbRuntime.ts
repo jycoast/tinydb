@@ -1,5 +1,17 @@
 import {storeToRefs} from "pinia"
-import {EventsOn, EventsEmit} from "/@/wailsjs/runtime/runtime"
+function safeEventsOn(eventName: string, callback: (...data: any) => void) {
+  const runtime = (window as any).runtime
+  if (runtime?.EventsOnMultiple) {
+    runtime.EventsOnMultiple(eventName, callback, -1)
+  }
+}
+
+function safeEventsEmit(eventName: string, ...data: any) {
+  const runtime = (window as any).runtime
+  if (runtime?.EventsEmit) {
+    runtime.EventsEmit(eventName, ...data)
+  }
+}
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {findEngineDriver} from "/@/lib/tinydb-tools"
 import {useClusterApiStore} from "/@/store/modules/clusterApi"
@@ -34,27 +46,27 @@ export default function dispatchRuntimeEvent() {
   const clusterApi = useClusterApiStore()
   const {connection} = storeToRefs(clusterApi)
 
-  EventsOn("pullEventPluginsScript", (adapter: "mongo" | "mysql") => {
+  safeEventsOn("pullEventPluginsScript", (adapter: "mongo" | "mysql") => {
     switch (adapter) {
       case "mysql":
-        EventsEmit("loadPlugins", Mysql)
+        safeEventsEmit("loadPlugins", Mysql)
         break
       case "mongo":
-        EventsEmit("loadPlugins", Mongo)
+        safeEventsEmit("loadPlugins", Mongo)
         break
       default:
-        EventsEmit("loadPlugins")
+        safeEventsEmit("loadPlugins")
     }
   })
 
-  EventsOn("handleSqlSelect", (selectParams: any) => {
+  safeEventsOn("handleSqlSelect", (selectParams: any) => {
     try {
       if (typeof selectParams === "string") {
-        EventsEmit("handleSqlSelectReturn", selectParams)
+        safeEventsEmit("handleSqlSelectReturn", selectParams)
         return
       }
       if (selectParams?.sql && typeof selectParams.sql === "string") {
-        EventsEmit("handleSqlSelectReturn", selectParams.sql)
+        safeEventsEmit("handleSqlSelectReturn", selectParams.sql)
         return
       }
 
@@ -81,19 +93,19 @@ export default function dispatchRuntimeEvent() {
               warnedInvalidSqlOnce = true
               console.warn("[tinydb] Generated invalid SQL, using fallback", {out, fallbackSql})
             }
-            EventsEmit("handleSqlSelectReturn", fallbackSql)
+            safeEventsEmit("handleSqlSelectReturn", fallbackSql)
             return
           }
         }
 
-        EventsEmit("handleSqlSelectReturn", out)
+        safeEventsEmit("handleSqlSelectReturn", out)
         return
       }
 
-      EventsEmit("handleSqlSelectReturn", "")
+      safeEventsEmit("handleSqlSelectReturn", "")
     } catch (e) {
       console.warn("handleSqlSelect failed", e)
-      EventsEmit("handleSqlSelectReturn", "")
+      safeEventsEmit("handleSqlSelectReturn", "")
     }
   })
 }

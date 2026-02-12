@@ -2,7 +2,7 @@ import {inject, provide, Ref, unref} from 'vue'
 import {compact, intersection, isArray, isFunction, isPlainObject} from 'lodash-es'
 import getAsArray from './getAsArray'
 import {ContextMenuItem} from "/@/components/Modals/typing";
-import invalidateCommands from '/@/commands/invalidateCommands'
+import {invalidateCommands} from "/@/commands"
 
 export function registerMenu(originMenu, ...items) {
   const parentMenu = inject('componentContextMenu') as any

@@ -2,10 +2,10 @@ import {Component, PropType} from 'vue'
 import {defineStore} from "pinia"
 import {mapValues, uniq} from 'lodash-es'
 import {store} from "/@/store"
-import invalidateCommands from '/@/commands/invalidateCommands'
+import {invalidateCommands} from "/@/commands"
 import {IPinnedDatabasesItem} from '/@/types/standard'
 import {ExtensionsDirectory} from '/@/types/extensions'
-import {ContextMenuItem} from "/@/components/ContextMenu";
+import {ContextMenuItem} from "/@/components/Modals";
 
 interface IVariableBasic {
   openedConnections: string[]
@@ -110,7 +110,6 @@ export const useBootstrapStore = defineStore({
     },
     setCommandPalette(value) {
       visibleCommandPaletteValue = value
-      console.log(visibleCommandPaletteValue)
       void invalidateCommands()
     },
     setVisibleCommandPalette(value: Nullable<unknown>) {

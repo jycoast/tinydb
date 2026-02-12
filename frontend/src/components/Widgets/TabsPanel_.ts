@@ -2,26 +2,19 @@ import {findLastIndex, get} from 'lodash-es'
 import {useLocaleStore} from "/@/store/modules/locale"
 import getConnectionLabel from '/@/utils/tinydb/getConnectionLabel'
 import {getOpenedTabs} from '/@/store/modules/locale'
-import {Modal} from 'ant-design-vue'
+import {ElMessageBox} from 'element-plus'
 
 function allowCloseTabs(tabs) {
   if (!tabs || tabs.length == 0) return Promise.resolve(true)
-
-  return new Promise<boolean>((resolve) => {
-    Modal.confirm({
-      title: '关闭未保存的标签页？',
-      content: `当前有 ${tabs.length} 个未保存的标签页，关闭后未保存内容将丢失。是否继续？`,
-      okText: '关闭',
-      cancelText: '取消',
-      onOk: () => resolve(true),
-      onCancel: () => resolve(false),
-    })
-  })
+  return ElMessageBox.confirm(
+    `当前有 ${tabs.length} 个未保存的标签页，关闭后未保存内容将丢失。是否继续？`,
+    '关闭未保存的标签页？',
+    {confirmButtonText: '关闭', cancelButtonText: '取消'}
+  ).then(() => true).catch(() => false)
 }
 
-const locale = useLocaleStore()
-
 const closeTabFunc = closeCondition => tabid => {
+  const locale = useLocaleStore()
   locale.updateOpenedTabs(files => {
     const active = files.find(x => x.tabid == tabid);
     if (!active) return files;
@@ -44,6 +37,7 @@ const closeTabFunc = closeCondition => tabid => {
 }
 
 export const closeMultipleTabs = (closeCondition, deleteFromHistory = false) => {
+  const locale = useLocaleStore()
   locale.updateOpenedTabs(files => {
     const newFiles = deleteFromHistory
       ? files.filter(x => !closeCondition(x))
@@ -71,6 +65,7 @@ export const closeAll = async () => {
   const closeCandidates = getOpenedTabs()!.filter(x => x.unsaved && x.closedTime == null)
   if (!(await allowCloseTabs(closeCandidates))) return;
 
+  const locale = useLocaleStore()
   const closedTime = new Date().getTime()
   locale.updateOpenedTabs(tabs => {
     const newTabs = (tabs || []).map(tab => ({

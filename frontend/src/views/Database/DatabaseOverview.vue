@@ -152,10 +152,9 @@ import {
   connectionDeleteApi,
   databaseConnectionsSqlSelectApi,
 } from "/@/api"
-import { disconnectServerConnection } from '/@/components/DatabaseTree/ConnectionAppObject'
-import { getDatabaseMenuItems } from '/@/components/DatabaseTree/DatabaseAppObject'
+import { runCommand } from '/@/commands'
 import { createContextMenu } from '/@/components/Modals/createContextMenu'
-import { useModal } from '/@/components/Modal'
+import { useModal } from "/@/components/Modals"
 import CreateDatabaseModal from '/@/components/Modals/CreateDatabaseModal.vue'
 import CreateTableModal from '/@/components/Modals/CreateTableModal.vue'
 import type { IActiveConnection, IConnectionStatus } from '/@/types/connections'
@@ -576,7 +575,6 @@ async function handleNodeClick(data: TreeNode, node: any) {
   }
   
   if (data.type === 'object') {
-    await handleOpenTableData(data)
   }
 }
 
@@ -652,36 +650,6 @@ async function loadTableColumns(tableNode: TreeNode) {
   }
 }
 
-async function handleOpenTableData(data: TreeNode) {
-  if (!data.conid || !data.database || !data.pureName) {
-    ElMessage.warning('缺少必要的信息，无法打开表数据')
-    return
-  }
-
-  try {
-    const connection = await getConnectionInfo({ conid: data.conid })
-    const tooltip = `${getConnectionLabel(connection)}\n${data.database}\n${data.pureName}`
-
-    await openNewTab({
-      title: data.pureName,
-      tooltip,
-      icon: 'img table',
-      tabComponent: 'TableDataTab',
-      props: {
-        schemaName: data.schemaName,
-        pureName: data.pureName,
-        conid: data.conid,
-        database: data.database,
-        objectTypeField: data.objectType || 'tables',
-      },
-      selected: true,
-      busy: false
-    })
-  } catch (e) {
-    console.error('打开表数据失败', e)
-    ElMessage.error('打开表数据失败，请重试')
-  }
-}
 
 function handleContextMenu(event: MouseEvent, data: TreeNode) {
   event.preventDefault()
@@ -787,7 +755,6 @@ async function handleMenuCommand(command: string) {
         await handleServerSummary(node)
         break
       case 'open-table':
-        await handleOpenTableData(node)
         break
       case 'create-table':
         handleCreateTable(node)
@@ -1053,6 +1020,102 @@ function handleCreateTable(node: TreeNode) {
   if (node.conid && node.database) {
     openCreateTableModal(true, { conid: node.conid, database: node.database })
   }
+}
+
+function disconnectServerConnection(conid: any, showConfirmation = true) {
+  const doDisconnect = async () => {
+    const id = conid?._id
+    if (!id) return
+
+    try {
+      await serverConnectionsRefreshApi({ conid: id, keepOpen: false })
+    } catch (e) {
+      console.warn('serverConnectionsRefreshApi(close) failed', e)
+    }
+
+    try {
+      const current = bootstrap.currentDatabase as any
+      const dbName = current?.connection?._id === id ? current?.name : conid?.defaultDatabase
+      if (dbName) {
+        await databaseConnectionsRefreshApi({ conid: id, database: dbName, keepOpen: false })
+      }
+    } catch (e) {
+      console.warn('databaseConnectionsRefreshApi(close) failed', e)
+    }
+
+    const { removeLocalStorage } = await import('/@/utils/tinydb/storageCache')
+    removeLocalStorage(`database_list_${id}`)
+
+    bootstrap.updateExpandedConnections((list) => list.filter((x) => x !== id))
+    bootstrap.updateOpenedConnections((list) => list.filter((x) => x !== id))
+    bootstrap.updateOpenedSingleDatabaseConnections((list) => list.filter((x) => x !== id))
+
+    if ((bootstrap.currentDatabase as any)?.connection?._id === id) {
+      bootstrap.setCurrentDatabase(null)
+    }
+  }
+
+  if (!conid?._id) return
+
+  if (!showConfirmation) {
+    void doDisconnect()
+    return
+  }
+
+  ElMessageBox.confirm(`Disconnect ${getConnectionLabel(conid)}?`, 'Confirm', {
+    confirmButtonText: 'Ok',
+    cancelButtonText: 'Cancel',
+    type: 'warning',
+  }).then(() => doDisconnect()).catch(() => {})
+}
+
+function getDatabaseMenuItems(
+  conid?: string,
+  database?: string,
+  openCreateTableModalFn?: (visible: boolean, data?: any) => void,
+  bootstrapStore?: ReturnType<typeof useBootstrapStore>
+) {
+  const handleNewTable = () => {
+    if (openCreateTableModalFn && conid && database) {
+      openCreateTableModalFn(true, { conid, database })
+    } else {
+      runCommand("new.table")
+    }
+  }
+
+  const handleCloseDatabase = () => {
+    if (!conid || !database) return
+
+    ElMessageBox.confirm(`确定要关闭数据库 "${database}" 吗？`, '关闭数据库', {
+      confirmButtonText: '关闭',
+      cancelButtonText: '取消',
+    }).then(async () => {
+      try {
+        await databaseConnectionsRefreshApi({ conid, database, keepOpen: false })
+        if (bootstrapStore) {
+          const current = bootstrapStore.currentDatabase as any
+          if (current?.connection?._id === conid && current?.name === database) {
+            bootstrapStore.setCurrentDatabase(null)
+          }
+        }
+        ElMessage.success('数据库已关闭')
+      } catch (e: any) {
+        ElMessage.error(`关闭数据库失败：${e?.message || String(e)}`)
+      }
+    }).catch(() => {})
+  }
+
+  return [
+    { onClick: () => {}, text: '新建查询', isNewQuery: true },
+    { onClick: handleNewTable, text: '新建表' },
+    { onClick: () => {}, text: '新建集合' },
+    { onClick: () => {}, text: '导入向导' },
+    { onClick: () => {}, text: '导出向导' },
+    { onClick: () => {}, text: '恢复/导入 SQL 转储' },
+    { onClick: () => {}, text: '备份/导出 SQL 转储' },
+    { divider: true },
+    { onClick: handleCloseDatabase, text: '关闭数据库' },
+  ]
 }
 
 onMounted(() => {

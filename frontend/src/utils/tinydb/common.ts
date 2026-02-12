@@ -1,8 +1,6 @@
 import {startCase} from 'lodash-es'
 import {useLocaleStore} from '/@/store/modules/locale'
 
-const locale = useLocaleStore()
-
 export function getObjectTypeFieldLabel(objectTypeField) {
   if (objectTypeField == 'matviews') return 'Materialized Views';
   return startCase(objectTypeField)
@@ -49,5 +47,6 @@ export function setSelectedTabFunc(files, tabid) {
 }
 
 export function setSelectedTab(tabid) {
+  const locale = useLocaleStore()
   locale.updateOpenedTabs(tabs => setSelectedTabFunc(tabs, tabid))
 }

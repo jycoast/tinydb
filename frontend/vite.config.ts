@@ -3,7 +3,6 @@ import pkg from './package.json';
 import dayjs from 'dayjs';
 import { loadEnv } from 'vite';
 import { resolve } from 'path';
-import { generateModifyVars } from './build/generate/generateModifyVars';
 import { createProxy } from './build/vite/proxy';
 import { wrapperEnv } from './build/utils';
 import { createVitePlugins } from './build/vite/plugin';
@@ -89,7 +88,6 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     css: {
       preprocessorOptions: {
         less: {
-          modifyVars: generateModifyVars(),
           javascriptEnabled: true,
         },
       },
@@ -106,9 +104,6 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         'vue',
         'vue-router',
         'pinia',
-        'ant-design-vue',
-        'ant-design-vue/es/locale/zh_CN',
-        'ant-design-vue/es/locale/en_US',
         'element-plus',
         'lodash-es',
         'dayjs',

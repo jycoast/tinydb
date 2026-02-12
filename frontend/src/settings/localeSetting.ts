@@ -1,4 +1,3 @@
-import type { DropMenu } from '../components/Dropdown';
 import type { LocaleSetting, LocaleType } from '/#/config';
 
 export const LOCALE: { [key: string]: LocaleType } = {
@@ -8,15 +7,21 @@ export const LOCALE: { [key: string]: LocaleType } = {
 
 export const localeSetting: LocaleSetting = {
   showPicker: true,
-  // Locale
   locale: LOCALE.ZH_CN,
-  // Default locale
   fallback: LOCALE.ZH_CN,
-  // available Locales
   availableLocales: [LOCALE.ZH_CN, LOCALE.EN_US],
 };
 
-// locale list
+export interface DropMenu {
+  onClick?: Fn
+  to?: string
+  icon?: string
+  event: string | number
+  text: string
+  disabled?: boolean
+  divider?: boolean
+}
+
 export const localeList: DropMenu[] = [
   {
     text: '简体中文',

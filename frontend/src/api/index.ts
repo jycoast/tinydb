@@ -3,7 +3,16 @@ import {isArray} from "lodash-es"
 import {isFunction} from "/@/utils/is"
 import stableStringify from "json-stable-stringify"
 import {extendDatabaseInfo} from "/@/lib/tinydb-tools"
-import {EventsOn} from "/@/wailsjs/runtime/runtime"
+function safeEventsOn(eventName: string, callback: (...data: any) => void) {
+  try {
+    const runtime = (window as any).runtime
+    if (runtime?.EventsOnMultiple) {
+      runtime.EventsOnMultiple(eventName, callback, -1)
+    }
+  } catch (e) {
+    console.warn(`Failed to register event listener for "${eventName}"`, e)
+  }
+}
 import {apiCall} from "/@/utils/tinydb/api"
 import {loadCachedValue} from "/@/utils/tinydb/cache"
 
@@ -98,11 +107,7 @@ function useCore<T>(loader, args, dbStore: Ref<T | null | undefined> | Function)
   }
 
   if (!!reloadTrigger) {
-    try {
-      EventsOn(reloadTrigger, () => void handleReload())
-    } catch (e) {
-      console.error(`listener event ${reloadTrigger} failed`, e)
-    }
+    safeEventsOn(reloadTrigger, () => void handleReload())
   }
 
   openedCount.value += 1

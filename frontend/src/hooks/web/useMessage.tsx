@@ -1,123 +1,99 @@
-import type { ModalFunc, ModalFuncProps } from 'ant-design-vue/lib/modal/Modal';
-
-import { Modal, message as Message, notification } from 'ant-design-vue';
-import { InfoCircleFilled, CheckCircleFilled, CloseCircleFilled } from '@ant-design/icons-vue';
-
-import { NotificationArgsProps, ConfigProps } from 'ant-design-vue/lib/notification';
-import { useI18n } from './useI18n';
-import { isString } from '/@/utils/is';
+import {ElMessage, ElMessageBox, ElNotification} from "element-plus"
+import type {MessageOptions, NotificationOptions} from "element-plus"
+import {useI18n} from "./useI18n"
+import {isString} from "/@/utils/is"
 
 export interface NotifyApi {
-  info(config: NotificationArgsProps): void;
-  success(config: NotificationArgsProps): void;
-  error(config: NotificationArgsProps): void;
-  warn(config: NotificationArgsProps): void;
-  warning(config: NotificationArgsProps): void;
-  open(args: NotificationArgsProps): void;
-  close(key: String): void;
-  config(options: ConfigProps): void;
-  destroy(): void;
+  info(config: NotificationOptions): void
+  success(config: NotificationOptions): void
+  error(config: NotificationOptions): void
+  warn(config: NotificationOptions): void
+  warning(config: NotificationOptions): void
+  open(args: NotificationOptions): void
+  close(key: string): void
 }
 
-export declare type NotificationPlacement = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-export declare type IconType = 'success' | 'info' | 'error' | 'warning';
-export interface ModalOptionsEx extends Omit<ModalFuncProps, 'iconType'> {
-  iconType: 'warning' | 'success' | 'error' | 'info';
-}
-export type ModalOptionsPartial = Partial<ModalOptionsEx> & Pick<ModalOptionsEx, 'content'>;
-
-interface ConfirmOptions {
-  info: ModalFunc;
-  success: ModalFunc;
-  error: ModalFunc;
-  warn: ModalFunc;
-  warning: ModalFunc;
+export interface ModalOptionsPartial {
+  content: string | (() => any)
+  title?: string
+  okText?: string
+  cancelText?: string
 }
 
-function getIcon(iconType: string) {
-  if (iconType === 'warning') {
-    return <InfoCircleFilled class="modal-icon-warning" />;
-  } else if (iconType === 'success') {
-    return <CheckCircleFilled class="modal-icon-success" />;
-  } else if (iconType === 'info') {
-    return <InfoCircleFilled class="modal-icon-info" />;
-  } else {
-    return <CloseCircleFilled class="modal-icon-error" />;
-  }
-}
-
-function renderContent({ content }: Pick<ModalOptionsEx, 'content'>) {
+function renderContent(content: string | (() => any)) {
   if (isString(content)) {
-    return <div innerHTML={`<div>${content as string}</div>`}></div>;
-  } else {
-    return content;
+    return content
   }
+  return typeof content === "function" ? content() : content
 }
 
-/**
- * @description: Create confirmation box
- */
-function createConfirm(options: ModalOptionsEx): ConfirmOptions {
-  const iconType = options.iconType || 'warning';
-  Reflect.deleteProperty(options, 'iconType');
-  const opt: ModalFuncProps = {
-    centered: true,
-    icon: getIcon(iconType),
-    ...options,
-    content: renderContent(options),
-  };
-  return Modal.confirm(opt) as unknown as ConfirmOptions;
-}
-
-const getBaseOptions = () => {
-  const { t } = useI18n();
-  return {
-    okText: t('common.okText'),
-    centered: true,
-  };
-};
-
-function createModalOptions(options: ModalOptionsPartial, icon: string): ModalOptionsPartial {
-  return {
-    ...getBaseOptions(),
-    ...options,
-    content: renderContent(options),
-    icon: getIcon(icon),
-  };
+function createConfirm(options: ModalOptionsPartial & {iconType?: string}) {
+  const {content, title, okText, cancelText} = options
+  return ElMessageBox.confirm(renderContent(content), title || "提示", {
+    confirmButtonText: okText || "确定",
+    cancelButtonText: cancelText || "取消",
+    type: "warning",
+  })
 }
 
 function createSuccessModal(options: ModalOptionsPartial) {
-  return Modal.success(createModalOptions(options, 'success'));
+  return ElMessageBox.alert(renderContent(options.content), options.title || "成功", {
+    type: "success",
+    confirmButtonText: options.okText || "确定",
+  })
 }
 
 function createErrorModal(options: ModalOptionsPartial) {
-  return Modal.error(createModalOptions(options, 'close'));
+  return ElMessageBox.alert(renderContent(options.content), options.title || "错误", {
+    type: "error",
+    confirmButtonText: options.okText || "确定",
+  })
 }
 
 function createInfoModal(options: ModalOptionsPartial) {
-  return Modal.info(createModalOptions(options, 'info'));
+  return ElMessageBox.alert(renderContent(options.content), options.title || "信息", {
+    type: "info",
+    confirmButtonText: options.okText || "确定",
+  })
 }
 
 function createWarningModal(options: ModalOptionsPartial) {
-  return Modal.warning(createModalOptions(options, 'warning'));
+  return ElMessageBox.alert(renderContent(options.content), options.title || "警告", {
+    type: "warning",
+    confirmButtonText: options.okText || "确定",
+  })
 }
 
-notification.config({
-  placement: 'topRight',
-  duration: 3,
-});
-
-/**
- * @description: message
- */
-export function useMessage() {
+function toElNotificationOpt(opt: any, type?: string) {
+  const {message: msg, description, duration, ...rest} = opt
   return {
-    createMessage: Message,
-    notification: notification as NotifyApi,
-    createConfirm: createConfirm,
+    ...rest,
+    title: msg,
+    message: description || msg,
+    duration: duration ?? 3000,
+    type,
+  }
+}
+
+const notificationAdapter: NotifyApi = {
+  info: (opt) => ElNotification(toElNotificationOpt(opt, "info")),
+  success: (opt) => ElNotification(toElNotificationOpt(opt, "success")),
+  error: (opt) => ElNotification(toElNotificationOpt(opt, "error")),
+  warn: (opt) => ElNotification(toElNotificationOpt(opt, "warning")),
+  warning: (opt) => ElNotification(toElNotificationOpt(opt, "warning")),
+  open: (opt) => ElNotification(toElNotificationOpt(opt)),
+  close: () => {},
+}
+
+export function useMessage() {
+  const {t} = useI18n()
+  return {
+    createMessage: ElMessage,
+    notification: notificationAdapter,
+    createConfirm,
     createSuccessModal,
     createErrorModal,
     createInfoModal,
     createWarningModal,
-  };
+  }
 }

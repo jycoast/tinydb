@@ -24,7 +24,7 @@ alwaysApply: true
 - 字符串优先双引号
 - 尽量不用 any，定义清晰的 interface / type
 - Wails 调用统一走 async/await，不要用 .then
-- 只编写
+- 生成的代码需要遵守项目eslint的规范
 
 # 注释要求
 - 尽量不写注释

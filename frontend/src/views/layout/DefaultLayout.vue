@@ -74,7 +74,7 @@ import { Warning } from '@element-plus/icons-vue'
 import ToolBar from './ToolBar.vue'
 import TitleBar from './TitleBar.vue'
 import bus from '/@/utils/tinydb/bus'
-import { useModal } from '/@/components/Modal'
+import { useModal } from "/@/components/Modals"
 import NewConnectionModal from '/@/views/Connections/NewConnectionModal.vue'
 
 const [registerNewConnectionModal, { openModal: openNewConnectionModal }] = useModal()
