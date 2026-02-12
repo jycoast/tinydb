@@ -3,59 +3,59 @@
     <div class="container">
       <template v-if="databaseName">
         <div class="item item-primary">
-          <FontIcon icon="icon lock" padRight v-if="connection && connection.isReadOnly"/>
-          <FontIcon icon="icon database" padRight v-else/>
+          <AppIcon icon="icon lock" padRight v-if="connection && connection.isReadOnly"/>
+          <AppIcon icon="icon database" padRight v-else/>
           {{ databaseName }}
         </div>
         <div v-if="dbid" class="item clickable" title="Database color">
           <div class="colorbox">
-            <FontIcon icon="icon palette"/>
+            <AppIcon icon="icon palette"/>
           </div>
         </div>
       </template>
       <template v-if="connectionLabel">
         <div class="item item-primary">
-          <FontIcon icon="icon server" padRight/>
+          <AppIcon icon="icon server" padRight/>
           {{ connectionLabel }}
         </div>
         <div class="item clickable" title="Connection color">
           <div class="colorbox">
-            <FontIcon icon="icon palette"/>
+            <AppIcon icon="icon palette"/>
           </div>
         </div>
       </template>
       <div class="item" v-if="connection?.user">
-        <FontIcon icon="icon account" padRight/>
+        <AppIcon icon="icon account" padRight/>
         {{ connection.user }}
       </div>
       <div class="item item-primary clickable" v-if="connection && status">
         <template v-if="status.name == 'pending'">
-          <FontIcon icon="icon loading" padRight/>
+          <AppIcon icon="icon loading" padRight/>
           Loading
         </template>
         <template v-else-if="status.name == 'checkStructure'">
-          <FontIcon icon="icon loading" padRight/>
+          <AppIcon icon="icon loading" padRight/>
           Checking model
         </template>
         <template v-else-if="status.name == 'loadStructure'">
-          <FontIcon icon="icon loading" padRight/>
+          <AppIcon icon="icon loading" padRight/>
           Loading model
         </template>
         <template v-else-if="status.name == 'ok'">
-          <FontIcon icon="img ok-inv" padRight/>
+          <AppIcon icon="img ok-inv" padRight/>
           Connected
         </template>
         <template v-else-if="status.name == 'error'">
-          <FontIcon icon="img error-inv" padRight/>
+          <AppIcon icon="img error-inv" padRight/>
           Error
         </template>
       </div>
       <div class="item" v-if="!connection">
-        <FontIcon icon="icon disconnected" padRight/>
+        <AppIcon icon="icon disconnected" padRight/>
         Not connected
       </div>
       <div class="item flex" :title="serverVersion.version" v-if="serverVersion">
-        <FontIcon icon="icon version" padRight/>
+        <AppIcon icon="icon version" padRight/>
         <div class="version">
           {{ serverVersion.versionText || serverVersion.version }}
         </div>
@@ -63,7 +63,7 @@
       <div class="item flex clickable" v-if="status?.analysedTime"
            :title="`Last ${databaseName} model refresh: ${analysedTimeFormat}\nClick for refresh DB model`"
            @click="handleSyncModel">
-        <FontIcon icon="icon history" padRight/>
+        <AppIcon icon="icon history" padRight/>
         <div class="version ml-1">
           {{ analysedTimeFromNow + (timerValue ? '' : '') }}
         </div>
@@ -71,7 +71,7 @@
     </div>
     <div class="container" v-for="item in contextItems">
       <div class="item">
-        <FontIcon :icon="item.icon" padRight/>
+        <AppIcon :icon="item.icon" padRight/>
         {{ item.text }}
       </div>
     </div>
@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import {storeToRefs} from "pinia"
 import {computed, onBeforeUnmount, onMounted, ref, unref, watch} from "vue"
-import FontIcon from "/@/components/Icon/src/FontIcon.vue"
+import AppIcon from "/@/components/Icon/src/AppIcon.vue"
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import getConnectionLabel from "/@/utils/tinydb/getConnectionLabel"
 import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api"

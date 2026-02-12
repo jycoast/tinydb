@@ -8,7 +8,7 @@
           {{ item.text || item.label }}
           <span v-if="item.keyText" class="keyText">{{ formatKeyText(item.keyText) }}</span>
           <div v-if="item.submenu" class="menu-right">
-            <FontIcon icon="icon menu-right"/>
+            <AppIcon icon="icon menu-right"/>
           </div>
         </a>
       </li>
@@ -28,8 +28,7 @@ import {throttle} from "lodash-es";
 import type {ContextMenuItem} from './typing';
 import {prepareMenuItems} from '/@/utils/tinydb/contextMenu'
 import {formatKeyText} from '/@/utils/tinydb/common'
-import Icon from '/@/components/Icon';
-import FontIcon from '/@/components/Icon/src/FontIcon.vue'
+import AppIcon from '/@/components/Icon/src/AppIcon.vue'
 import {useBootstrapStoreWithOut} from "/@/store/modules/bootstrap";
 
 const props = {
@@ -94,8 +93,7 @@ function fixPopupPlacement(element) {
 export default defineComponent({
   name: 'ContextMenu',
   components: {
-    Icon,
-    FontIcon
+    AppIcon
   },
   props,
   emits: ['close'],

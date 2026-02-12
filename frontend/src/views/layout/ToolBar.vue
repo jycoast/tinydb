@@ -16,7 +16,7 @@
             >
               <template #icon>
                 <component v-if="getToolbarElIcon(item)" :is="getToolbarElIcon(item)" />
-                <FontIcon v-else-if="item.icon" :icon="item.icon" />
+                <AppIcon v-else-if="item.icon" :icon="item.icon" />
               </template>
               <span class="toolbar-label">{{ item.toolbarName || item.name }}</span>
             </el-button>
@@ -33,14 +33,14 @@ import { computed } from 'vue'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
 import { Document, Link, Clock } from '@element-plus/icons-vue'
-import FontIcon from '/@/components/Icon/src/FontIcon.vue'
+import AppIcon from '/@/components/Icon/src/AppIcon.vue'
 import {runCommand} from "/@/commands"
 
 const bootstrap = useBootstrapStore()
 const { commandsCustomized } = storeToRefs(bootstrap)
 
 function getToolbarElIcon(item: any) {
-  // Ensure core actions always have a visible icon even if FontIcon mapping is missing
+  // Ensure core actions always have a visible icon even if AppIcon mapping is missing
   switch (item?.id) {
     case 'new.query':
       return Document

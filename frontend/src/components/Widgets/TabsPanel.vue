@@ -20,10 +20,10 @@
                }"
                @dragend="() => { draggingTab = null; draggingTabTarget = null }"
           >
-            <FontIcon :icon="tab.busy ? 'icon loading' : tab.icon"/>
+            <AppIcon :icon="tab.busy ? 'icon loading' : tab.icon"/>
             <span class="file-name">{{ tab.title }}</span>
             <span class="close-button tabCloseButton" @click="handleCloseTab(tab.tabid)">
-              <FontIcon icon="icon close"/>
+              <AppIcon icon="icon close"/>
             </span>
           </div>
         </div>
@@ -36,7 +36,7 @@
 import {computed, ref, unref} from "vue"
 import {findIndex, max, min} from "lodash-es"
 import {storeToRefs} from "pinia"
-import FontIcon from "/@/components/Icon/src/FontIcon.vue"
+import AppIcon from "/@/components/Icon/src/AppIcon.vue"
 import {useLocaleStore} from "/@/store/modules/locale"
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {getConnectionInfo} from "/@/api"

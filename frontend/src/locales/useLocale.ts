@@ -31,12 +31,9 @@ export function useLocale() {
   const getLocale = computed(() => localeStore.getLocale);
   const getShowLocalePicker = computed(() => localeStore.getShowPicker);
 
-  const getAntdLocale = computed((): any => {
-    // 防御性检查：确保 i18n 已初始化
-    if (!i18n || !i18n.global) {
-      return {};
-    }
-    return i18n.global.getLocaleMessage(unref(getLocale))?.antdLocale ?? {};
+  const getElementPlusLocale = computed((): any => {
+    if (!i18n || !i18n.global) return {};
+    return i18n.global.getLocaleMessage(unref(getLocale))?.elementPlusLocale ?? {};
   });
 
   // Switching the language will change the locale of useI18n
@@ -68,6 +65,6 @@ export function useLocale() {
     getLocale,
     getShowLocalePicker,
     changeLocale,
-    getAntdLocale,
+    getElementPlusLocale,
   };
 }
