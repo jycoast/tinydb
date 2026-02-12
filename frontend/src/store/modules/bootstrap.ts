@@ -3,8 +3,8 @@ import {defineStore} from "pinia"
 import {mapValues, uniq} from 'lodash-es'
 import {store} from "/@/store"
 import invalidateCommands from '/@/commands/invalidateCommands'
-import {IPinnedDatabasesItem} from '/@/second/typings/types/standard.d'
-import {ExtensionsDirectory} from '/@/second/typings/types/extensions.d'
+import {IPinnedDatabasesItem} from '/@/types/standard'
+import {ExtensionsDirectory} from '/@/types/extensions'
 import {ContextMenuItem} from "/@/components/ContextMenu";
 
 interface IVariableBasic {

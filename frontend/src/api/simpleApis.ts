@@ -1,4 +1,4 @@
-import {apiCall} from '/@/second/utility/api'
+import {apiCall} from '/@/utils/tinydb/api'
 
 /**
  * @description connection

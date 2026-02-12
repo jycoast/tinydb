@@ -51,10 +51,10 @@
 import {computed, defineComponent, PropType, ref, toRefs, unref} from 'vue'
 import {findIndex, range} from 'lodash-es'
 import ColumnManagerRow from '/@/components/DataGrid/ColumnManagerRow.vue'
-import keycodes from '/@/second/utility/keycodes'
-import {GridDisplay} from '/@/second/tinydb-datalib'
-import {filterName} from '/@/second/tinydb-tools'
-import {copyTextToClipboard} from '/@/second/utility/clipboard'
+import keycodes from '/@/utils/tinydb/keycodes'
+import {GridDisplay} from '/@/lib/tinydb-datalib'
+import {filterName} from '/@/lib/tinydb-tools'
+import {copyTextToClipboard} from '/@/utils/tinydb/clipboard'
 
 import {Button, Input, Space, Tooltip} from 'ant-design-vue'
 

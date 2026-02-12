@@ -1,12 +1,11 @@
 import {storeToRefs} from 'pinia'
 import {EventsOn, EventsEmit}from '/@/wailsjs/runtime/runtime'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
-import {findEngineDriver} from '/@/second/tinydb-tools'
+import {findEngineDriver} from '/@/lib/tinydb-tools'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
-import {dumpSqlSelect} from '/@/second/tinydb-sqltree'
-import {Select} from '/@/second/tinydb-sqltree/types'
-import Mongo from '/@/second/plugins/tinydb-plugin-mongo'
-import Mysql from '/@/second/plugins/tinydb-plugin-mysql'
+import {dumpSqlSelect, Select} from '/@/lib/tinydb-sqltree'
+import Mongo from '/@/plugins/tinydb-plugin-mongo'
+import Mysql from '/@/plugins/tinydb-plugin-mysql'
 
 let runtimeEventsInitialized = false
 let warnedInvalidSqlOnce = false

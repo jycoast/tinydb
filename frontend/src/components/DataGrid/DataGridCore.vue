@@ -204,8 +204,8 @@ import {
   keys
 } from 'lodash-es'
 import {storeToRefs} from 'pinia'
-import ErrorInfo from '/@/second/elements/ErrorInfo.vue'
-import LoadingInfo from '/@/second/elements/LoadingInfo.vue'
+import ErrorInfo from '/@/components/Elements/ErrorInfo.vue'
+import LoadingInfo from '/@/components/Elements/LoadingInfo.vue'
 import CollapseButton from '/@/components/DataGrid/CollapseButton.vue'
 import HorizontalScrollBar from '/@/components/DataGrid/HorizontalScrollBar.vue'
 import VerticalScrollBar from '/@/components/DataGrid/VerticalScrollBar.vue'
@@ -222,10 +222,10 @@ import {
   filterCellForRow,
   filterCellsForRow
 } from '/@/components/DataGrid/gridutil'
-import {useStatusBarTabItem} from '/@/second/widgets/useStatusBarTabItem'
+import {useStatusBarTabItem} from '/@/components/Widgets/useStatusBarTabItem'
 import {dataGridRowHeight} from './DataGridRowHeightMeter.vue'
 import registerCommand from '/@/commands/registerCommand'
-import {GridDisplay} from '/@/second/tinydb-datalib'
+import {GridDisplay} from '/@/lib/tinydb-datalib'
 import Grider from '/@/components/DataGrid/Grider'
 import {SeriesSizes} from '/@/components/DataGrid/SeriesSizes'
 import {
@@ -237,21 +237,21 @@ import {
   nullCell,
   topLeftCell
 } from './selection'
-import {registerMenu} from '/@/second/utility/contextMenu'
+import {registerMenu} from '/@/utils/tinydb/contextMenu'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {copyRowsFormatDefs, copyRowsToClipboard} from '/@/second/utility/clipboard'
-import {getFilterType} from '/@/second/tinydb-filterparser'
-import createRef from '/@/second/utility/createRef'
-import {isCtrlOrCommandKey} from '/@/second/utility/common'
-import openReferenceForm, {openPrimaryKeyForm} from '/@/second/formview/openReferenceForm'
-import createReducer from '/@/second/utility/createReducer'
+import {copyRowsFormatDefs, copyRowsToClipboard} from '/@/utils/tinydb/clipboard'
+import {getFilterType} from '/@/lib/tinydb-filterparser'
+import createRef from '/@/utils/tinydb/createRef'
+import {isCtrlOrCommandKey} from '/@/utils/tinydb/common'
+import openReferenceForm, {openPrimaryKeyForm} from '/@/components/FormView/openReferenceForm'
+import createReducer from '/@/utils/tinydb/createReducer'
 import stableStringify from 'json-stable-stringify'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
-import keycodes from '/@/second/utility/keycodes'
-import bus from '/@/second/utility/bus'
+import keycodes from '/@/utils/tinydb/keycodes'
+import bus from '/@/utils/tinydb/bus'
 import {useContextMenu} from "/@/hooks/web/useContextMenu";
 import {useLocaleStore} from "/@/store/modules/locale";
-import {ContextMenuItem} from "/@/second/modals/typing"
+import {ContextMenuItem} from "/@/components/Modals/typing"
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 registerCommand({
   id: 'dataGrid.refresh',

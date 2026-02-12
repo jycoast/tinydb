@@ -5,10 +5,10 @@ import type {LocaleSetting, LocaleType} from '/#/config'
 import {store} from '/@/store'
 import invalidateCommands from '/@/commands/invalidateCommands'
 import {LOCALE_KEY} from '/@/enums/cacheEnum'
-import {getWithStorageVariableCache, setWithStorageVariableCache} from '/@/second/utility/storage'
+import {getWithStorageVariableCache, setWithStorageVariableCache} from '/@/utils/tinydb/storage'
 import {TabDefinition} from '/@/store/modules/bootstrap'
 import {localeSetting} from '/@/settings/localeSetting'
-import {IPinnedDatabasesItem} from '/@/second/typings/types/standard.d'
+import {IPinnedDatabasesItem} from '/@/types/standard'
 import {createLocalStorage} from '/@/utils/cache'
 
 

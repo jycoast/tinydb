@@ -44,16 +44,16 @@ import {computed, defineComponent, PropType, ref, toRefs, unref, watch} from 'vu
 import {storeToRefs} from 'pinia'
 import {fromPairs, isFunction} from 'lodash-es'
 import stableStringify from 'json-stable-stringify'
-import VerticalSplitter from '/@/second/elements/VerticalSplitter.vue'
+import VerticalSplitter from '/@/components/Elements/VerticalSplitter.vue'
 import DataGrid from '/@/components/DataGrid/DataGrid.vue'
 import ReferenceHeader from '/@/components/DataGrid/ReferenceHeader.vue'
 import AntdSqlDataGridCore from '/@/components/DataGrid/AntdSqlDataGridCore'
-import SqlFormView from '/@/second/formview/SqlFormView'
+import SqlFormView from '/@/components/FormView/SqlFormView'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {useConnectionInfo, useDatabaseInfo, useDatabaseServerVersion} from '/@/api/bridge'
-import {getBoolSettingsValue} from '/@/second/settings/settingsTools'
-import {getDictionaryDescription} from '/@/second/utility/dictionaryDescriptionTools'
-import {ChangeCacheFunc, ChangeConfigFunc} from '/@/second/tinydb-datalib/GridDisplay'
+import {getBoolSettingsValue} from '/@/utils/settingsTools'
+import {getDictionaryDescription} from '/@/utils/tinydb/dictionaryDescriptionTools'
+import {ChangeCacheFunc, ChangeConfigFunc} from '/@/lib/tinydb-datalib/GridDisplay'
 import {
   createGridCache,
   createGridConfig,
@@ -63,10 +63,10 @@ import {
   runMacroOnChangeSet,
   TableFormViewDisplay,
   TableGridDisplay
-} from '/@/second/tinydb-datalib'
-import {extendDatabaseInfoFromApps, findEngineDriver} from '/@/second/tinydb-tools'
-import {getFilterValueExpression} from '/@/second/tinydb-filterparser'
-import {DatabaseInfo, ExtensionsDirectory} from '/@/second/tinydb-types'
+} from '/@/lib/tinydb-datalib'
+import {extendDatabaseInfoFromApps, findEngineDriver} from '/@/lib/tinydb-tools'
+import {getFilterValueExpression} from '/@/lib/tinydb-filterparser'
+import {DatabaseInfo, ExtensionsDirectory} from '/@/lib/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
 
 export default defineComponent({

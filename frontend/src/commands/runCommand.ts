@@ -1,4 +1,4 @@
-import openNewTab from '/@/second/utility/openNewTab'
+import openNewTab from '/@/utils/tinydb/openNewTab'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 import { storeToRefs } from 'pinia'
 

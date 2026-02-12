@@ -2,10 +2,10 @@ import {isReactive, isRef, ref, Ref} from 'vue'
 import {isArray} from 'lodash-es'
 import {isFunction} from '/@/utils/is'
 import stableStringify from 'json-stable-stringify'
-import {extendDatabaseInfo} from '/@/second/tinydb-tools'
+import {extendDatabaseInfo} from '/@/lib/tinydb-tools'
 import {EventsOn} from '/@/wailsjs/runtime/runtime'
-import {apiCall} from '/@/second/utility/api'
-import {loadCachedValue} from '/@/second/utility/cache'
+import {apiCall} from '/@/utils/tinydb/api'
+import {loadCachedValue} from '/@/utils/tinydb/cache'
 
 const connectionListLoader = () => ({
   url: 'bridge.Connections.List',

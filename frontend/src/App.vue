@@ -15,9 +15,9 @@ import {onMounted, ref, watchEffect} from 'vue'
 import {storeToRefs} from 'pinia'
 import {connectionListApi} from '/@/api/simpleApis'
 import dispatchRuntimeEvent from "/@/api/event";
-import initPluginsProvider from '/@/second/plugins/PluginsProvider'
+import initPluginsProvider from '/@/plugins/PluginsProvider'
 import {subscribeConnectionPingers} from '/@/api/connectionsPinger'
-import {setAppLoaded} from '/@/second/utility/appLoadManager'
+import {setAppLoaded} from '/@/utils/tinydb/appLoadManager'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import DataGridRowHeightMeter from '/@/components/DataGrid/DataGridRowHeightMeter.vue'
 // import 'dayjs/locale/zh-cn';

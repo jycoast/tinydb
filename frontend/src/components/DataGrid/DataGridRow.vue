@@ -55,7 +55,7 @@ import RowHeaderCell from '/@/components/DataGrid/RowHeaderCell.vue'
 import DataGridCell from '/@/components/DataGrid/DataGridCell.vue'
 import Grider from '/@/components/DataGrid/Grider'
 import InplaceEditor from '/@/components/DataGrid/InplaceEditor.vue'
-import {MacroSelectedCell} from '/@/second/tinydb-datalib'
+import {MacroSelectedCell} from '/@/lib/tinydb-datalib'
 import {CellAddress} from './selection'
 import {cellIsSelected} from './gridutil'
 

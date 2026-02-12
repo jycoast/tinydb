@@ -1,4 +1,4 @@
-import {ChangeSet} from '/@/second/tinydb-datalib/ChangeSet'
+import {ChangeSet} from '/@/lib/tinydb-datalib/ChangeSet'
 import {
   changeSetContainsChanges,
   changeSetInsertDocuments,
@@ -15,7 +15,7 @@ import {
   runMacroOnValue,
   setChangeSetRowData,
   setChangeSetValue
-} from '/@/second/tinydb-datalib'
+} from '/@/lib/tinydb-datalib'
 
 import Grider, {GriderRowStatus} from './Grider'
 

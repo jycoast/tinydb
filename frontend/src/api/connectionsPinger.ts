@@ -1,7 +1,7 @@
 import {watch} from 'vue'
 import {get} from 'lodash-es'
 import {storeToRefs} from 'pinia'
-import {apiCall} from '/@/second/utility/api'
+import {apiCall} from '/@/utils/tinydb/api'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 
 let openedConnectionsHandle: null | number = null

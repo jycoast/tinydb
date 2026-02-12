@@ -1,10 +1,10 @@
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {useLocaleStore} from '/@/store/modules/locale'
-import {callWhenAppLoaded} from '/@/second/utility/appLoadManager'
+import {callWhenAppLoaded} from '/@/utils/tinydb/appLoadManager'
 import {storeToRefs} from 'pinia'
 import {watch} from 'vue'
 import {getConnectionInfo} from './bridge'
-import {IPinnedDatabasesItem} from "/@/second/typings/types/standard";
+import {IPinnedDatabasesItem} from "/@/types/standard";
 
 let lastCurrentTab: Nullable<any> = null;
 

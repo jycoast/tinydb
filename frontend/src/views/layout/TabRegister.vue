@@ -14,7 +14,7 @@ import {computed, defineComponent, ref, watchEffect} from 'vue'
 import {storeToRefs} from "pinia"
 import {difference, keys, pickBy} from 'lodash-es'
 import {useLocaleStore} from '/@/store/modules/locale'
-import tabs from '/@/second/tabs'
+import tabs from '/@/views/Tabs'
 import TabContent from './TabContent.vue'
 import {TabDefinition} from "/@/store/modules/bootstrap"
 

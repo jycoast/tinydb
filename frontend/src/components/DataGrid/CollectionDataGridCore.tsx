@@ -1,9 +1,9 @@
 import {Component, defineComponent, PropType, ref, toRefs, unref, watch} from 'vue'
 import {cloneDeepWith, zipObject} from 'lodash-es'
 import LoadingDataGridCore from './LoadingDataGridCore'
-import {GridConfig, GridDisplay, MacroDefinition} from '/@/second/tinydb-datalib'
+import {GridConfig, GridDisplay, MacroDefinition} from '/@/lib/tinydb-datalib'
 import {databaseConnectionsCollectionDataApi} from '/@/api/simpleApis'
-import {parseFilter} from '/@/second/tinydb-filterparser'
+import {parseFilter} from '/@/lib/tinydb-filterparser'
 import ChangeSetGrider from './ChangeSetGrider'
 
 function buildGridMongoCondition(props) {

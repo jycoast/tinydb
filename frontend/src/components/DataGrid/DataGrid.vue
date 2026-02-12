@@ -38,23 +38,23 @@ import {
   watch
 } from 'vue'
 import {fromPairs, isNumber, mapKeys} from 'lodash-es'
-import HorizontalSplitter from '/@/second/elements/HorizontalSplitter.vue'
-import VerticalSplitter from '/@/second/elements/VerticalSplitter.vue'
-import MacroDetail from '/@/second/freetable/MacroDetail.vue'
+import HorizontalSplitter from '/@/components/Elements/HorizontalSplitter.vue'
+import VerticalSplitter from '/@/components/Elements/VerticalSplitter.vue'
+import MacroDetail from '/@/components/FreeTable/MacroDetail.vue'
 import ColumnManager from '/@/components/DataGrid/ColumnManager.vue'
-import JsonViewFilters from '/@/second/jsonview/JsonViewFilters'
-import FormViewFilters from '/@/second/formview/FormViewFilters.vue'
+import JsonViewFilters from '/@/components/JsonView/JsonViewFilters'
+import FormViewFilters from '/@/components/FormView/FormViewFilters.vue'
 import ReferenceManager from '/@/components/DataGrid/ReferenceManager.vue'
-import MacroManager from '/@/second/freetable/MacroManager.vue'
-import FreeTableColumnEditor from '/@/second/formview/FreeTableColumnEditor.vue'
-import {getLocalStorage, setLocalStorage} from '/@/second/utility/storageCache'
+import MacroManager from '/@/components/FreeTable/MacroManager.vue'
+import FreeTableColumnEditor from '/@/components/FormView/FreeTableColumnEditor.vue'
+import {getLocalStorage, setLocalStorage} from '/@/utils/tinydb/storageCache'
 import {
   GridConfig,
   GridDisplay,
   MacroDefinition,
   MacroSelectedCell,
   TableFormViewDisplay
-} from '/@/second/tinydb-datalib'
+} from '/@/lib/tinydb-datalib'
 import {Nullable} from '/@/utils/types'
 
 import {Collapse} from 'ant-design-vue'

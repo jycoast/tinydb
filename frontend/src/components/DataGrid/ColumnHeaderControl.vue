@@ -36,13 +36,13 @@
 import {computed, defineComponent, PropType, toRefs} from 'vue'
 import {isString} from 'lodash-es'
 import {message, Tooltip} from 'ant-design-vue'
-import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
+import ColumnLabel from '/@/components/Elements/ColumnLabel.vue'
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import DropDownButton from '/@/components/Button/src/DropDownButton'
-import {GroupFunc} from '/@/second/tinydb-datalib'
-import {openDatabaseObjectDetail} from '/@/second/database-tree/DatabaseObjectAppObject'
-import {copyTextToClipboard} from '/@/second/utility/clipboard'
-import {isTypeDateTime} from '/@/second/tinydb-tools'
+import {GroupFunc} from '/@/lib/tinydb-datalib'
+import {openDatabaseObjectDetail} from '/@/components/DatabaseTree/DatabaseObjectAppObject'
+import {copyTextToClipboard} from '/@/utils/tinydb/clipboard'
+import {isTypeDateTime} from '/@/lib/tinydb-tools'
 
 export default defineComponent({
   name: "ColumnHeaderControl",

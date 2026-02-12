@@ -5,6 +5,8 @@ export * from './src/types/formItem';
 
 export { useComponentRegister } from './src/hooks/useComponentRegister';
 export { useForm } from './src/hooks/useForm';
+export { default as FormProviderCore, getFormContext } from './src/FormProviderCore';
+export { default as TextField } from './src/components/TextField';
 
 export { default as ApiSelect } from './src/components/ApiSelect.vue';
 export { default as RadioButtonGroup } from './src/components/RadioButtonGroup.vue';

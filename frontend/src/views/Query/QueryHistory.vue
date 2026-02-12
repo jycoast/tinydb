@@ -86,8 +86,8 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, Delete, Search, DocumentCopy } from '@element-plus/icons-vue'
 import { getQueryHistory, clearQueryHistory, deleteQueryHistoryItem, type QueryHistoryItem } from '/@/utils/queryHistory'
-import openNewTab from '/@/second/utility/openNewTab'
-import { copyTextToClipboard } from '/@/second/utility/clipboard'
+import openNewTab from '/@/utils/tinydb/openNewTab'
+import { copyTextToClipboard } from '/@/utils/tinydb/clipboard'
 import { debounce } from 'lodash-es'
 
 const searchText = ref('')

@@ -76,7 +76,7 @@ import {computed, ref, toRefs, watch, watchEffect} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Check, Close, Minus, Plus } from '@element-plus/icons-vue'
 import type Grider from '/@/components/DataGrid/Grider'
-import type {GridDisplay} from '/@/second/tinydb-datalib'
+import type {GridDisplay} from '/@/lib/tinydb-datalib'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 
 const props = defineProps<{

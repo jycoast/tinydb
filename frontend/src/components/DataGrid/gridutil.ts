@@ -1,9 +1,9 @@
 import {isArray, isString} from 'lodash-es'
 import {SeriesSizes} from './SeriesSizes'
 import { CellAddress } from './selection'
-import {GridDisplay} from '/@/second/tinydb-datalib'
+import {GridDisplay} from '/@/lib/tinydb-datalib'
 import Grider from './Grider'
-import {isJsonLikeLongString, safeJsonParse} from '/@/second/tinydb-tools'
+import {isJsonLikeLongString, safeJsonParse} from '/@/lib/tinydb-tools'
 
 export function countColumnSizes(grider: Grider, columns, containerWidth, display: GridDisplay): SeriesSizes {
   // console.log('COUNT SIZES');

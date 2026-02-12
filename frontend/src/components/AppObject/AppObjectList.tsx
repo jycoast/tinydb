@@ -2,7 +2,7 @@ import {Component, computed, defineComponent, PropType, toRaw, toRefs, unref} fr
 import {compact, groupBy, keys} from 'lodash-es'
 import AppObjectListItem from './AppObjectListItem.vue'
 import AppObjectGroup from './AppObjectGroup.vue'
-import {IIsExpandable} from '/@/second/typings/types/standard.d'
+import {IIsExpandable} from '/@/types/standard'
 
 export default defineComponent({
   name: "AppObjectList",

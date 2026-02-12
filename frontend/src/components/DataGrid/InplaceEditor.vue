@@ -15,11 +15,11 @@
 <script lang="ts">
 import {computed, defineComponent, onBeforeUnmount, onMounted, PropType, ref, toRefs} from 'vue'
 import {Input} from 'ant-design-vue'
-import ShowFormButton from '/@/second/formview/ShowFormButton.vue'
-import keycodes from '/@/second/utility/keycodes'
-import {parseCellValue, stringifyCellValue} from '/@/second/tinydb-tools'
-import {isCtrlOrCommandKey} from '/@/second/utility/common';
-import createRef from '/@/second/utility/createRef'
+import ShowFormButton from '/@/components/FormView/ShowFormButton.vue'
+import keycodes from '/@/utils/tinydb/keycodes'
+import {parseCellValue, stringifyCellValue} from '/@/lib/tinydb-tools'
+import {isCtrlOrCommandKey} from '/@/utils/tinydb/common';
+import createRef from '/@/utils/tinydb/createRef'
 
 export default defineComponent({
   name: "InplaceEditor",

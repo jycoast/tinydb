@@ -11,7 +11,7 @@
 
 <script lang="ts">
 import {defineComponent, PropType, ref, toRefs} from 'vue'
-import ShowFormButton from '/@/second/formview/ShowFormButton.vue'
+import ShowFormButton from '/@/components/FormView/ShowFormButton.vue'
 
 export default defineComponent({
   name: "RowHeaderCell",

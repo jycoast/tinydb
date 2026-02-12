@@ -31,9 +31,9 @@
 <script lang="ts">
 import {computed, defineComponent, PropType, ref, toRefs, unref} from 'vue'
 import {get} from 'lodash-es'
-import ShowFormButton from '/@/second/formview/ShowFormButton.vue'
+import ShowFormButton from '/@/components/FormView/ShowFormButton.vue'
 import CellValue from '/@/components/DataGrid/CellValue.vue'
-import {isJsonLikeLongString, safeJsonParse} from '/@/second/tinydb-tools'
+import {isJsonLikeLongString, safeJsonParse} from '/@/lib/tinydb-tools'
 
 export default defineComponent({
   name: "DataGridCell",

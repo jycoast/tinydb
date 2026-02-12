@@ -9,7 +9,7 @@ import {
   watchEffect,
 } from 'vue'
 import LoadingDataGridCore from '/@/components/DataGrid/LoadingDataGridCore'
-import {GridConfig, GridDisplay, MacroDefinition} from '/@/second/tinydb-datalib'
+import {GridConfig, GridDisplay, MacroDefinition} from '/@/lib/tinydb-datalib'
 import ChangeSetGrider from './ChangeSetGrider'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import AntdDataGridCore from '/@/components/DataGrid/AntdDataGridCore.vue'

@@ -28,10 +28,10 @@
 <script lang="ts">
 import {defineComponent, PropType, ref, toRefs, unref, watch} from 'vue'
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
-import ColumnLabel from '/@/second/elements/ColumnLabel.vue'
+import ColumnLabel from '/@/components/Elements/ColumnLabel.vue'
 import {isBoolean} from 'lodash-es'
 import {plusExpandIcon} from '/@/components/Icon/src/expandIcons'
-import {GridDisplay} from '/@/second/tinydb-datalib'
+import {GridDisplay} from '/@/lib/tinydb-datalib'
 
 import {Checkbox} from 'ant-design-vue'
 

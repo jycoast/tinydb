@@ -36,13 +36,13 @@
 
 <script lang="ts">
 import {computed, defineComponent, PropType, ref, toRefs} from 'vue'
-import {GridDisplay} from '/@/second/tinydb-datalib'
-import SearchBoxWrapper from '/@/second/widgets/SearchBoxWrapper.vue'
-import SearchInput from '/@/second/elements/SearchInput.vue'
+import {GridDisplay} from '/@/lib/tinydb-datalib'
+import SearchBoxWrapper from '/@/components/Widgets/SearchBoxWrapper.vue'
+import SearchInput from '/@/components/Elements/SearchInput.vue'
 import CloseSearchButton from '/@/components/Button/src/CloseSearchButton'
-import ManagerInnerContainer from '/@/second/elements/ManagerInnerContainer.vue'
+import ManagerInnerContainer from '/@/components/Elements/ManagerInnerContainer.vue'
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
-import {filterName} from '/@/second/tinydb-tools'
+import {filterName} from '/@/lib/tinydb-tools'
 
 export default defineComponent({
   name: 'ReferenceManager',

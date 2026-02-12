@@ -34,7 +34,7 @@
 <script lang="ts">
 import {defineComponent, PropType, toRefs} from 'vue'
 import {isArray, isDate, isNumber, isPlainObject, isString, pad} from 'lodash-es'
-import {arrayToHexString} from '/@/second/tinydb-tools'
+import {arrayToHexString} from '/@/lib/tinydb-tools'
 
 function makeBulletString(value) {
   return pad('', value.length, '•');

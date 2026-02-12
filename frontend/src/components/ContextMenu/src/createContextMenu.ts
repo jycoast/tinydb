@@ -1,5 +1,5 @@
 // import contextMenuVue from './ContextMenu.vue';
-import contextMenuVue from '/@/second/modals/ContextMenu.vue'
+import contextMenuVue from '/@/components/Modals/ContextMenu.vue'
 import { isClient } from '/@/utils/is';
 import { CreateContextOptions, ContextMenuProps } from './typing';
 import { createVNode, render } from 'vue';

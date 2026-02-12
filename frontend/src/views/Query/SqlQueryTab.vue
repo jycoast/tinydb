@@ -184,15 +184,15 @@ import {
   VideoPlay,
   DocumentCopy
 } from '@element-plus/icons-vue'
-import type {ContextMenuItem} from '/@/second/modals/typing'
+import type {ContextMenuItem} from '/@/components/Modals/typing'
 import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
 import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
-import AceEditor from '/@/second/query/AceEditor'
-import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/second/query/aceApi'
+import AceEditor from '/@/components/Query/AceEditor'
+import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/components/Query/aceApi'
 import 'ace-builds/src-noconflict/ext-language_tools'
-import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/second/tinydb-types'
+import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/lib/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
-import {copyRowsToClipboard} from '/@/second/utility/clipboard'
+import {copyRowsToClipboard} from '/@/utils/tinydb/clipboard'
 import {saveQueryHistory} from '/@/utils/queryHistory'
 
 const props = defineProps({

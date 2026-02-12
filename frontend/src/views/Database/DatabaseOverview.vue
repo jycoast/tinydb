@@ -134,9 +134,9 @@ import databaseIcon from '/src/assets/svg/database.svg'
 import connectionIcon from '/@/assets/svg/connection.svg'
 import tableIcon from '/@/assets/svg/table.svg'
 import columnsIcon from '/@/assets/svg/columns.svg'
-import openNewTab from '/@/second/utility/openNewTab'
+import openNewTab from '/@/utils/tinydb/openNewTab'
 import { getConnectionInfo } from '/@/api/bridge'
-import getConnectionLabel from '/@/second/utility/getConnectionLabel'
+import getConnectionLabel from '/@/utils/tinydb/getConnectionLabel'
 import { storeToRefs } from 'pinia'
 import { sortBy } from 'lodash-es'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
@@ -144,14 +144,14 @@ import { useClusterApiStore } from '/@/store/modules/clusterApi'
 import { useLocaleStore } from '/@/store/modules/locale'
 import { useConnectionList, useDatabaseList, useDatabaseInfo, useServerStatus } from '/@/api/bridge'
 import { serverConnectionsRefreshApi, databaseConnectionsRefreshApi, connectionDeleteApi, databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
-import { disconnectServerConnection } from '/@/second/database-tree/ConnectionAppObject'
-import { getDatabaseMenuItems } from '/@/second/database-tree/DatabaseAppObject'
-import { createContextMenu } from '/@/second/modals/createContextMenu'
+import { disconnectServerConnection } from '/@/components/DatabaseTree/ConnectionAppObject'
+import { getDatabaseMenuItems } from '/@/components/DatabaseTree/DatabaseAppObject'
+import { createContextMenu } from '/@/components/Modals/createContextMenu'
 import { useModal } from '/@/components/Modal'
-import CreateDatabaseModal from '/@/second/modals/CreateDatabaseModal.vue'
-import CreateTableModal from '/@/second/modals/CreateTableModal.vue'
-import type { IActiveConnection, IConnectionStatus } from '/@/second/typings/types/connections.d'
-import type { TablesNameSort } from '/@/second/typings/mysql'
+import CreateDatabaseModal from '/@/components/Modals/CreateDatabaseModal.vue'
+import CreateTableModal from '/@/components/Modals/CreateTableModal.vue'
+import type { IActiveConnection, IConnectionStatus } from '/@/types/connections'
+import type { TablesNameSort } from '/@/types/mysql'
 import type { ElTree } from 'element-plus'
 
 interface TreeNode {
@@ -929,7 +929,7 @@ async function handleDropTable(node: TreeNode) {
   )
   
   try {
-    const { findEngineDriver } = await import('/@/second/tinydb-tools')
+    const { findEngineDriver } = await import('/@/lib/tinydb-tools')
     const { extensions } = storeToRefs(bootstrap)
     const connection = await getConnectionInfo({ conid: node.conid })
     
@@ -1003,7 +1003,7 @@ async function handleTruncateTable(node: TreeNode) {
   )
   
   try {
-    const { findEngineDriver } = await import('/@/second/tinydb-tools')
+    const { findEngineDriver } = await import('/@/lib/tinydb-tools')
     const { extensions } = storeToRefs(bootstrap)
     const connection = await getConnectionInfo({ conid: node.conid })
     
