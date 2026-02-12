@@ -1,28 +1,15 @@
 <template>
   <div v-show="!hidden" class="dbw-root">
-    <DatabaseOverview />
+    <DatabaseOverview/>
   </div>
 </template>
 
-<script lang="ts">
-import {defineComponent, PropType, toRef} from 'vue'
-import DatabaseOverview from '/@/views/Database/DatabaseOverview.vue'
+<script setup lang="ts">
+import DatabaseOverview from "/@/views/Database/DatabaseOverview.vue"
 
-export default defineComponent({
-  name: "DatabaseWidget",
-  props: {
-    hidden: {
-      type: Boolean as PropType<boolean>,
-      default: false,
-    }
-  },
-  components: { DatabaseOverview },
-  setup(props) {
-    return {
-      hidden: toRef(props, 'hidden'),
-    }
-  }
-})
+defineProps<{
+  hidden?: boolean
+}>()
 </script>
 
 <style scoped>

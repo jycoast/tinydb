@@ -1,12 +1,10 @@
-import { EngineDriver } from './engines';
-
-export interface PluginDefinition {
-  packageName: string;
-  manifest: any;
-  content: any;
-}
+import type { EngineDriver } from "./engines"
 
 export interface ExtensionsDirectory {
-  plugins: PluginDefinition[];
-  drivers: EngineDriver[];
+  plugins: {
+    packageName: string
+    manifest: any
+    content: any
+  }[]
+  drivers: EngineDriver[]
 }

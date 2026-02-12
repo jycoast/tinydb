@@ -7,8 +7,8 @@
           <FontIcon icon="icon database" padRight v-else/>
           {{ databaseName }}
         </div>
-        <div v-if="dbid" class="item clickable 2" title="Database color. Overrides connection color">
-          <div class="colorbox" :style="{databaseButtonBackground}">
+        <div v-if="dbid" class="item clickable" title="Database color">
+          <div class="colorbox">
             <FontIcon icon="icon palette"/>
           </div>
         </div>
@@ -18,8 +18,8 @@
           <FontIcon icon="icon server" padRight/>
           {{ connectionLabel }}
         </div>
-        <div class="item clickable 1" title="Connection color. Can be overriden by database color">
-          <div :style="connectionButtonBackground" class="colorbox">
+        <div class="item clickable" title="Connection color">
+          <div class="colorbox">
             <FontIcon icon="icon palette"/>
           </div>
         </div>
@@ -29,23 +29,23 @@
         {{ connection.user }}
       </div>
       <div class="item item-primary clickable" v-if="connection && status">
-        <template v-if="status && status.name == 'pending'">
+        <template v-if="status.name == 'pending'">
           <FontIcon icon="icon loading" padRight/>
           Loading
         </template>
-        <template v-else-if="status && status.name == 'checkStructure'">
+        <template v-else-if="status.name == 'checkStructure'">
           <FontIcon icon="icon loading" padRight/>
           Checking model
         </template>
-        <template v-else-if="status && status.name == 'loadStructure'">
+        <template v-else-if="status.name == 'loadStructure'">
           <FontIcon icon="icon loading" padRight/>
           Loading model
         </template>
-        <template v-else-if="status && status.name == 'ok'">
+        <template v-else-if="status.name == 'ok'">
           <FontIcon icon="img ok-inv" padRight/>
           Connected
         </template>
-        <template v-else-if="status && status.name == 'error'">
+        <template v-else-if="status.name == 'error'">
           <FontIcon icon="img error-inv" padRight/>
           Error
         </template>
@@ -60,7 +60,7 @@
           {{ serverVersion.versionText || serverVersion.version }}
         </div>
       </div>
-      <div class="item flex clickable" v-if="status && status?.analysedTime"
+      <div class="item flex clickable" v-if="status?.analysedTime"
            :title="`Last ${databaseName} model refresh: ${analysedTimeFormat}\nClick for refresh DB model`"
            @click="handleSyncModel">
         <FontIcon icon="icon history" padRight/>
@@ -77,85 +77,49 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import {storeToRefs} from 'pinia'
-import {computed, defineComponent, onBeforeUnmount, onMounted, ref, unref, watch} from 'vue';
-import FontIcon from '/@/components/Icon/src/FontIcon.vue'
+
+<script setup lang="ts">
+import {storeToRefs} from "pinia"
+import {computed, onBeforeUnmount, onMounted, ref, unref, watch} from "vue"
+import FontIcon from "/@/components/Icon/src/FontIcon.vue"
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import getConnectionLabel from "/@/utils/tinydb/getConnectionLabel"
 import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api"
-import { formatToDateTime, fromNow } from '/@/utils/dateUtil';
-export default defineComponent({
-  name: 'StatusBar',
-  components: {
-    FontIcon
-  },
-  setup() {
-    const bootstrap = useBootstrapStore()
-    const {currentDatabase} = storeToRefs(bootstrap)
+import {formatToDateTime, fromNow} from "/@/utils/dateUtil"
 
-    const databaseName = computed(() => currentDatabase.value && currentDatabase.value.name)
-    const connection = computed(() => currentDatabase.value && currentDatabase.value.connection)
-    const dbid = computed(() => connection.value ? {
-      conid: connection.value._id,
-      database: databaseName.value
-    } : null)
+const bootstrap = useBootstrapStore()
+const {currentDatabase} = storeToRefs(bootstrap)
 
+const databaseName = computed(() => currentDatabase.value?.name)
+const connection = computed(() => currentDatabase.value?.connection)
+const dbid = computed(() => connection.value ? {conid: connection.value._id, database: databaseName.value} : null)
+const connectionLabel = computed(() => getConnectionLabel(unref(connection), {allowExplicitDatabase: false}))
+const contextItems: any[] = []
 
-    const connectionLabel = computed(() => getConnectionLabel(unref(connection), {allowExplicitDatabase: false}))
-    const contextItems = []
-    const databaseButtonBackground = '------'
-    const connectionButtonBackground = '------'
+let timerId: ReturnType<typeof setInterval> | null = null
+const status = ref<{ name: string; counter?: number; analysedTime?: number }>()
+const serverVersion = ref<{ version: string; versionText: string } | null>()
+const timerValue = ref(1)
 
-    let timerId: ReturnType<typeof setInterval> | null
-    let status = ref()
-    let serverVersion = ref()
-    const timerValue = ref(1)
+const analysedTimeFromNow = computed(() => fromNow(status.value?.analysedTime))
+const analysedTimeFormat = computed(() => formatToDateTime(status.value?.analysedTime, "HH:mm:ss"))
 
-    watch(() => [dbid.value, connection.value], () => {
-      useDatabaseStatus<{
-        name: 'pending' | 'error' | 'loadStructure' | 'ok';
-        counter?: number;
-        analysedTime?: number;
-      }>(dbid.value || {}, status)
-
-      useDatabaseServerVersion<Nullable<{ version: string; versionText: string }>>(dbid.value || {}, serverVersion)
-    })
-
-    onMounted(() => {
-      timerId = setInterval(() => {
-        timerValue.value++
-      }, 10000)
-    })
-
-    onBeforeUnmount(() => {
-      timerId && clearInterval(timerId)
-    })
-
-    async function handleSyncModel() {
-
-    }
-
-    return {
-      databaseName,
-      connection,
-      dbid,
-      databaseButtonBackground,
-      connectionButtonBackground,
-      connectionLabel,
-      status,
-      serverVersion,
-      handleSyncModel,
-      contextItems,
-      timerValue,
-      analysedTimeFromNow: fromNow(status.value?.analysedTime),
-      analysedTimeFormat: formatToDateTime(status.value?.analysedTime, 'HH:mm:ss')
-    }
-  }
-
-
+watch(() => [dbid.value, connection.value], () => {
+  useDatabaseStatus(dbid.value || {}, status)
+  useDatabaseServerVersion(dbid.value || {}, serverVersion)
 })
 
+onMounted(() => {
+  timerId = setInterval(() => { timerValue.value++ }, 10000)
+})
+
+onBeforeUnmount(() => {
+  timerId && clearInterval(timerId)
+})
+
+function handleSyncModel() {
+  // TODO: 实现同步模型
+}
 </script>
 
 <style scoped>
@@ -173,11 +137,13 @@ export default defineComponent({
   width: 100%;
   height: 100%;
 }
+
 .container {
   display: flex;
   align-items: stretch;
   gap: 2px;
 }
+
 .item {
   padding: 0 10px;
   display: flex;
@@ -202,6 +168,7 @@ export default defineComponent({
   cursor: pointer;
   border-radius: 6px;
 }
+
 .clickable:hover {
   background-color: var(--theme-bg-hover);
 }

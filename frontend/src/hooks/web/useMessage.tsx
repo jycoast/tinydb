@@ -1,7 +1,6 @@
-import {ElMessage, ElMessageBox, ElNotification} from "element-plus"
-import type {MessageOptions, NotificationOptions} from "element-plus"
-import {useI18n} from "./useI18n"
-import {isString} from "/@/utils/is"
+import { ElMessage, ElMessageBox, ElNotification } from "element-plus"
+import type { NotificationOptions } from "element-plus"
+import { isString } from "/@/utils/is"
 
 export interface NotifyApi {
   info(config: NotificationOptions): void
@@ -27,8 +26,8 @@ function renderContent(content: string | (() => any)) {
   return typeof content === "function" ? content() : content
 }
 
-function createConfirm(options: ModalOptionsPartial & {iconType?: string}) {
-  const {content, title, okText, cancelText} = options
+function createConfirm(options: ModalOptionsPartial & { iconType?: string }) {
+  const { content, title, okText, cancelText } = options
   return ElMessageBox.confirm(renderContent(content), title || "提示", {
     confirmButtonText: okText || "确定",
     cancelButtonText: cancelText || "取消",
@@ -65,7 +64,7 @@ function createWarningModal(options: ModalOptionsPartial) {
 }
 
 function toElNotificationOpt(opt: any, type?: string) {
-  const {message: msg, description, duration, ...rest} = opt
+  const { message: msg, description, duration, ...rest } = opt
   return {
     ...rest,
     title: msg,
@@ -86,7 +85,6 @@ const notificationAdapter: NotifyApi = {
 }
 
 export function useMessage() {
-  const {t} = useI18n()
   return {
     createMessage: ElMessage,
     notification: notificationAdapter,

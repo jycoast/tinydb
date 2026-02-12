@@ -1,14 +1,13 @@
-import {defineStore} from 'pinia'
+import { defineStore } from "pinia"
 
-interface ClusterApiStore extends Variable {
+interface ClusterApiStore {
   connectionList: Nullable<any>
   connection: Nullable<any>
+  [key: string]: Nullable<any>
 }
 
-type Variable = { [key in string]: Nullable<any> }
-
 export const useClusterApiStore = defineStore({
-  id: 'app-reuse',
+  id: "app-reuse",
   state: (): ClusterApiStore => ({
     connectionList: null,
     connection: null,
@@ -20,5 +19,5 @@ export const useClusterApiStore = defineStore({
     setConnection(value) {
       this.connection = value
     },
-  }
+  },
 })

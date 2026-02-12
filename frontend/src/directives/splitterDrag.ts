@@ -1,11 +1,11 @@
-import type {App, Directive} from "vue"
+import type { App, Directive } from "vue"
 
 const splitterDrag: Directive = {
   mounted(node, bindings, ...arg) {
     node.resizeStart = null
-    const {value} = bindings
+    const { value } = bindings
     const axes = value
-    const {props} = arg[0]
+    const { props } = arg[0]
 
     node.handleResizeDown = (e: MouseEvent) => {
       node.resizeStart = e[axes]
@@ -17,7 +17,7 @@ const splitterDrag: Directive = {
       e.preventDefault()
       const diff = e[axes] - node.resizeStart!
       node.resizeStart = e[axes]
-      props!.resizeSplitter?.({detail: diff})
+      props!.resizeSplitter?.({ detail: diff })
     }
 
     node.handleResizeEnd = (e: MouseEvent) => {
@@ -41,4 +41,3 @@ const splitterDrag: Directive = {
 export function setupSplitterDrag(app: App) {
   app.directive("splitterDrag", splitterDrag)
 }
-

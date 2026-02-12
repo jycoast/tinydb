@@ -1,3 +1,5 @@
+type ConnectionStatus = "pending" | "ok" | "error"
+
 interface IConnection {
   server: string
   engine: string
@@ -8,11 +10,8 @@ interface IConnection {
 }
 
 export interface IConnectionStatus {
-  name: connectionStatus
+  name: ConnectionStatus
   message: string
 }
 
-export interface IActiveConnection extends IConnection, IConnectionStatus {
-}
-
-type connectionStatus = 'pending' | 'ok' | 'error'
+export interface IActiveConnection extends IConnection, IConnectionStatus {}

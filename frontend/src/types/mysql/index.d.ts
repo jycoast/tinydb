@@ -1,2 +1,1 @@
-export * from './conn';
-export * from './table';
+export * from "./table"

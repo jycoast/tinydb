@@ -1,22 +1,18 @@
-let appIsLoaded = false;
-let onLoad: Function[] = [];
+let appIsLoaded = false
+let onLoad: Function[] = []
 
 export function setAppLoaded() {
-  appIsLoaded = true;
+  appIsLoaded = true
   for (const func of onLoad) {
-    func();
+    func()
   }
-  onLoad = [];
-}
-
-export function getAppLoaded() {
-  return appIsLoaded;
+  onLoad = []
 }
 
 export function callWhenAppLoaded(callback: Function) {
   if (appIsLoaded) {
-    callback();
+    callback()
   } else {
-    onLoad.push(callback);
+    onLoad.push(callback)
   }
 }

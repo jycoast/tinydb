@@ -1,13 +1,4 @@
-type TableName = { name: string }
-
-export interface TablesNameSort extends TableName {
+export interface TablesNameSort {
+  name: string
   sortOrder?: string
 }
-
-interface PureName {
-  pureName: string
-  tableRowCount: string
-  modifyDate: Date.string
-}
-
-type Column = Record<>

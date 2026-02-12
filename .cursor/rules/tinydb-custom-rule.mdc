@@ -25,6 +25,7 @@ alwaysApply: true
 - 尽量不用 any，定义清晰的 interface / type
 - Wails 调用统一走 async/await，不要用 .then
 - 生成的代码需要遵守项目eslint的规范
+- 优先使用 TypeScript
 
 # 注释要求
 - 尽量不写注释

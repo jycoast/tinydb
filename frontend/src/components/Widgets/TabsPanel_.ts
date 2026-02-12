@@ -1,4 +1,4 @@
-import {findLastIndex, get} from 'lodash-es'
+import {findLastIndex} from 'lodash-es'
 import {useLocaleStore} from "/@/store/modules/locale"
 import getConnectionLabel from '/@/utils/tinydb/getConnectionLabel'
 import {getOpenedTabs} from '/@/store/modules/locale'
@@ -77,18 +77,6 @@ export const closeAll = async () => {
   })
 }
 
-export const closeWithSameDb = closeTabFunc(
-  (x, active) =>
-    get(x, 'props.conid') == get(active, 'props.conid') &&
-    get(x, 'props.database') == get(active, 'props.database')
-)
-
-export const closeWithOtherDb = closeTabFunc(
-  (x, active) =>
-    get(x, 'props.conid') != get(active, 'props.conid') ||
-    get(x, 'props.database') != get(active, 'props.database')
-)
-
 export const closeOthers = closeTabFunc((x, active) => x.tabid != active.tabid)
 
 export function getTabDbName(tab, connectionList) {
@@ -103,19 +91,3 @@ export function getTabDbName(tab, connectionList) {
   return '(no DB)';
 }
 
-export async function scrollInViewTab(tabid) {
-  const element = document.getElementById(`file-tab-item-${tabid}`);
-  if (element) {
-    element.scrollIntoView({block: 'nearest', inline: 'nearest'});
-  }
-}
-
-export function getDbIcon(key) {
-  if (key) {
-    if (key.startsWith('database://')) return 'icon database';
-    if (key.startsWith('archive://')) return 'icon archive';
-    if (key.startsWith('server://')) return 'icon server';
-    if (key.startsWith('connections.')) return 'icon connection';
-  }
-  return 'icon file';
-}

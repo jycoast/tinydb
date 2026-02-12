@@ -1,39 +1,38 @@
-import {Component, PropType} from 'vue'
-import {defineStore} from "pinia"
-import {mapValues, uniq} from 'lodash-es'
-import {store} from "/@/store"
-import {invalidateCommands} from "/@/commands"
-import {IPinnedDatabasesItem} from '/@/types/standard'
-import {ExtensionsDirectory} from '/@/types/extensions'
-import {ContextMenuItem} from "/@/components/Modals";
+import { Component, PropType } from "vue"
+import { defineStore } from "pinia"
+import { mapValues, uniq } from "lodash-es"
+import { store } from "/@/store"
+import { invalidateCommands } from "/@/commands"
+import { IPinnedDatabasesItem } from "/@/types/standard"
+import { ExtensionsDirectory } from "/@/types/extensions"
+import { ContextMenuItem } from "/@/components/Modals"
 
 interface IVariableBasic {
   openedConnections: string[]
-  currentDatabase: Nullable<IPinnedDatabasesItem>,
+  currentDatabase: Nullable<IPinnedDatabasesItem>
   extensions: Nullable<ExtensionsDirectory>
   currentDropDownMenu: Nullable<ICurrentDropDownMenu>
-  commands: {[key in string]: any}
+  commands: { [key in string]: any }
   commandsSettings: object
   visibleCommandPalette: Nullable<unknown>
   commandsCustomized: object
-  loadingPluginStore: { loaded: boolean, loadingPackageName: Nullable<string> }
+  loadingPluginStore: { loaded: boolean; loadingPackageName: Nullable<string> }
   connections: []
   databases: []
-  selectedCellsCallback: Nullable<() => any>
   openedSingleDatabaseConnections: string[]
   expandedConnections: string[]
 }
 
 export interface TabDefinition {
-  title: string;
-  closedTime?: number;
-  icon: string;
-  props: any;
-  selected: boolean;
-  busy: boolean;
-  tabid: string;
-  tabComponent: PropType<string | Component>;
-  tabOrder?: number;
+  title: string
+  closedTime?: number
+  icon: string
+  props: any
+  selected: boolean
+  busy: boolean
+  tabid: string
+  tabComponent: PropType<string | Component>
+  tabOrder?: number
   unsaved?: string
 }
 
@@ -44,9 +43,6 @@ export interface ICurrentDropDownMenu {
   targetElement?: HTMLElement
 }
 
-let visibleCommandPaletteValue = null
-let openedConnectionsValue: Nullable<any> = null
-export const getOpenedConnections = () => openedConnectionsValue;
 export const useBootstrapStore = defineStore({
   id: "app-bootstrap",
   state: (): IVariableBasic => ({
@@ -62,11 +58,10 @@ export const useBootstrapStore = defineStore({
     commandsCustomized: {},
     loadingPluginStore: {
       loaded: false,
-      loadingPackageName: null
+      loadingPackageName: null,
     },
     connections: [],
     databases: [],
-    selectedCellsCallback: null,
   }),
   getters: {
     getOpenedConnections(): string[] {
@@ -75,16 +70,13 @@ export const useBootstrapStore = defineStore({
     getCurrentDatabase(): Nullable<IPinnedDatabasesItem> {
       return this.currentDatabase
     },
-    getPinnedExtensions(): Nullable<ExtensionsDirectory> {
-      return this.extensions
-    },
     getCommandsCustomized(): any[] {
       return mapValues([this.commands, this.commandsSettings], (v, k) => ({
         // @ts-ignore
         ...v,
-        ...this.commandsSettings[k]
+        ...this.commandsSettings[k],
       }))
-    }
+    },
   },
   actions: {
     updateOpenedConnections(updater: (list: string[]) => string[]) {
@@ -98,7 +90,6 @@ export const useBootstrapStore = defineStore({
         } else {
           this.openedConnections = uniq([...this.openedConnections, value?.connection?._id])
           this.expandedConnections = uniq([...this.expandedConnections, value?.connection?._id])
-          openedConnectionsValue = this.openedConnections
         }
       }
     },
@@ -107,10 +98,6 @@ export const useBootstrapStore = defineStore({
     },
     setCurrentDropDownMenu(value: null | ICurrentDropDownMenu) {
       this.currentDropDownMenu = value
-    },
-    setCommandPalette(value) {
-      visibleCommandPaletteValue = value
-      void invalidateCommands()
     },
     setVisibleCommandPalette(value: Nullable<unknown>) {
       this.visibleCommandPalette = value
@@ -122,35 +109,25 @@ export const useBootstrapStore = defineStore({
     updateCommands(updater) {
       this.commands = updater(this.commands)
     },
-    setCommandsSettings(value: object) {
-      this.commandsSettings = value
-      this.commandsCustomized = derived(this.commands, this.commandsSettings)
-    },
-    setLoadingPluginStore(value: { loaded: boolean, loadingPackageName: Nullable<string> }) {
+    setLoadingPluginStore(value: { loaded: boolean; loadingPackageName: Nullable<string> }) {
       this.loadingPluginStore = value
-    },
-    setConnections(payload): void {
-      this.connections = payload
-    },
-    setSelectedCellsCallback(value: () => any) {
-      this.selectedCellsCallback = value
     },
     updateExpandedConnections(updater) {
       this.expandedConnections = updater(this.expandedConnections)
     },
     updateOpenedSingleDatabaseConnections(updater) {
       this.openedSingleDatabaseConnections = updater(this.openedSingleDatabaseConnections)
-    }
-  }
-});
+    },
+  },
+})
 
 export function useBootstrapStoreWithOut() {
-  return useBootstrapStore(store);
+  return useBootstrapStore(store)
 }
 
 const derived = (commands, commandsSettings): object => {
   return mapValues(commands, (v, k) => ({
     ...v,
-    ...commandsSettings[k]
+    ...commandsSettings[k],
   }))
 }
