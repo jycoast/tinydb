@@ -83,7 +83,7 @@ import {computed, defineComponent, onBeforeUnmount, onMounted, ref, unref, watch
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import getConnectionLabel from "/@/utils/tinydb/getConnectionLabel"
-import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api/bridge"
+import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api"
 import { formatToDateTime, fromNow } from '/@/utils/dateUtil';
 export default defineComponent({
   name: 'StatusBar',

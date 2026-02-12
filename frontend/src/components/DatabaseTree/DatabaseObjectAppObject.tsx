@@ -4,12 +4,12 @@ import {filterName, findEngineDriver} from '/@/lib/tinydb-tools'
 import AppObjectCore from '/@/components/AppObject/AppObjectCore.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
 import {storeToRefs} from "pinia"
-import {getConnectionInfo} from '/@/api/bridge'
+import {getConnectionInfo} from "/@/api"
 import fullDisplayName from '/@/utils/tinydb/fullDisplayName'
 import getConnectionLabel from '/@/utils/tinydb/getConnectionLabel'
 import openNewTab from '/@/utils/tinydb/openNewTab'
 import {message, Modal} from 'ant-design-vue'
-import {databaseConnectionsSqlSelectApi, databaseConnectionsRefreshApi} from '/@/api/simpleApis'
+import {databaseConnectionsSqlSelectApi, databaseConnectionsRefreshApi} from "/@/api"
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {useModal} from '/@/components/Modal'
 import CreateTableModal from '/@/components/Modals/CreateTableModal.vue'

@@ -78,8 +78,12 @@ import {getObjectTypeFieldLabel} from '/@/utils/tinydb/common'
 import {chevronExpandIcon} from '/@/components/Icon/src/expandIcons'
 import {storeToRefs} from 'pinia'
 import {flatten, sortBy} from 'lodash-es'
-import {useConnectionInfo, useDatabaseInfo, useDatabaseStatus} from "/@/api/bridge"
-import {databaseConnectionsRefreshApi} from '/@/api/simpleApis'
+import {
+  useConnectionInfo,
+  useDatabaseInfo,
+  useDatabaseStatus,
+  databaseConnectionsRefreshApi,
+} from "/@/api"
 import {ApplicationDefinition, DatabaseInfo} from '/@/lib/tinydb-types'
 import {findEngineDriver} from '/@/lib/tinydb-tools'
 import {filterAppsForDatabase} from '/@/utils/tinydb/appTools'

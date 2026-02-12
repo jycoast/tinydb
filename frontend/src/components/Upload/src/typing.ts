@@ -1,4 +1,4 @@
-import { UploadApiResult } from '/@/api/sys/model/uploadModel';
+import type {UploadApiResult} from "/@/types/standard"
 
 export enum UploadResultStatus {
   SUCCESS = 'success',

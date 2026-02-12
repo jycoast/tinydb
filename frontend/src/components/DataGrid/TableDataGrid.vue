@@ -50,7 +50,11 @@ import ReferenceHeader from '/@/components/DataGrid/ReferenceHeader.vue'
 import AntdSqlDataGridCore from '/@/components/DataGrid/AntdSqlDataGridCore'
 import SqlFormView from '/@/components/FormView/SqlFormView'
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
-import {useConnectionInfo, useDatabaseInfo, useDatabaseServerVersion} from '/@/api/bridge'
+import {
+  useConnectionInfo,
+  useDatabaseInfo,
+  useDatabaseServerVersion,
+} from "/@/api"
 import {getBoolSettingsValue} from '/@/utils/settingsTools'
 import {getDictionaryDescription} from '/@/utils/tinydb/dictionaryDescriptionTools'
 import {ChangeCacheFunc, ChangeConfigFunc} from '/@/lib/tinydb-datalib/GridDisplay'

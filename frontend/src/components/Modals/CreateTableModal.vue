@@ -138,7 +138,7 @@ import { ref, reactive, h } from 'vue'
 import { BasicModal, useModalInner } from '/@/components/Modal'
 import { Alert, Form as AForm, FormItem as AFormItem, Input as AInput, InputNumber as AInputNumber, Select as ASelect, Table as ATable, Button as AButton, Checkbox as ACheckbox, Empty as AEmpty } from 'ant-design-vue'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
-import { databaseConnectionsCreateTableApi } from '/@/api/simpleApis'
+import {databaseConnectionsCreateTableApi} from "/@/api"
 import { useMessage } from '/@/hooks/web/useMessage'
 
 const ASelectOption = ASelect.Option

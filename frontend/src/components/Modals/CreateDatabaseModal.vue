@@ -38,7 +38,7 @@ import { ref, reactive } from 'vue'
 import { BasicModal, useModalInner } from '/@/components/Modal'
 import { Alert } from 'ant-design-vue'
 import { Form as AForm, FormItem as AFormItem, Input as AInput } from 'ant-design-vue'
-import { serverConnectionsCreateDatabaseApi } from '/@/api/simpleApis'
+import {serverConnectionsCreateDatabaseApi} from "/@/api"
 import { useMessage } from '/@/hooks/web/useMessage'
 import { useBootstrapStore } from '/@/store/modules/bootstrap'
 

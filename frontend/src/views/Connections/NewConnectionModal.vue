@@ -48,7 +48,7 @@ import { ref, reactive } from 'vue'
 import { BasicModal, useModalInner } from '/@/components/Modal'
 import { Alert } from 'ant-design-vue'
 import { Form as AForm, FormItem as AFormItem, Input as AInput, Select as ASelect, SelectOption as ASelectOption } from 'ant-design-vue'
-import { connectionSaveApi } from '/@/api/simpleApis'
+import {connectionSaveApi} from "/@/api"
 import { useMessage } from '/@/hooks/web/useMessage'
 import { useClusterApiStore } from '/@/store/modules/clusterApi'
 

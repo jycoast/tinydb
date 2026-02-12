@@ -88,7 +88,7 @@ import ToolStripCommandSplitButton from '/@/components/ToolStrip/ToolStripComman
 import ToolStripCommandButton from '/@/components/ToolStrip/ToolStripCommandButton.vue'
 import createUndoReducer from '/@/utils/tinydb/createUndoReducer'
 import useGridConfig from '/@/utils/tinydb/useGridConfig'
-import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
+import {databaseConnectionsSqlSelectApi} from "/@/api"
 import AceEditor from '/@/components/Query/AceEditor'
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 

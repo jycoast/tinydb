@@ -2,7 +2,7 @@ import {Component, defineComponent, PropType, ref, toRefs, unref, watch} from 'v
 import {cloneDeepWith, zipObject} from 'lodash-es'
 import LoadingDataGridCore from './LoadingDataGridCore'
 import {GridConfig, GridDisplay, MacroDefinition} from '/@/lib/tinydb-datalib'
-import {databaseConnectionsCollectionDataApi} from '/@/api/simpleApis'
+import {databaseConnectionsCollectionDataApi} from "/@/api"
 import {parseFilter} from '/@/lib/tinydb-filterparser'
 import ChangeSetGrider from './ChangeSetGrider'
 

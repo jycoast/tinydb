@@ -135,15 +135,23 @@ import connectionIcon from '/@/assets/svg/connection.svg'
 import tableIcon from '/@/assets/svg/table.svg'
 import columnsIcon from '/@/assets/svg/columns.svg'
 import openNewTab from '/@/utils/tinydb/openNewTab'
-import { getConnectionInfo } from '/@/api/bridge'
-import getConnectionLabel from '/@/utils/tinydb/getConnectionLabel'
-import { storeToRefs } from 'pinia'
-import { sortBy } from 'lodash-es'
-import { useBootstrapStore } from '/@/store/modules/bootstrap'
-import { useClusterApiStore } from '/@/store/modules/clusterApi'
-import { useLocaleStore } from '/@/store/modules/locale'
-import { useConnectionList, useDatabaseList, useDatabaseInfo, useServerStatus } from '/@/api/bridge'
-import { serverConnectionsRefreshApi, databaseConnectionsRefreshApi, connectionDeleteApi, databaseConnectionsSqlSelectApi } from '/@/api/simpleApis'
+import getConnectionLabel from "/@/utils/tinydb/getConnectionLabel"
+import {storeToRefs} from "pinia"
+import {sortBy} from "lodash-es"
+import {useBootstrapStore} from "/@/store/modules/bootstrap"
+import {useClusterApiStore} from "/@/store/modules/clusterApi"
+import {useLocaleStore} from "/@/store/modules/locale"
+import {
+  getConnectionInfo,
+  useConnectionList,
+  useDatabaseList,
+  useDatabaseInfo,
+  useServerStatus,
+  serverConnectionsRefreshApi,
+  databaseConnectionsRefreshApi,
+  connectionDeleteApi,
+  databaseConnectionsSqlSelectApi,
+} from "/@/api"
 import { disconnectServerConnection } from '/@/components/DatabaseTree/ConnectionAppObject'
 import { getDatabaseMenuItems } from '/@/components/DatabaseTree/DatabaseAppObject'
 import { createContextMenu } from '/@/components/Modals/createContextMenu'

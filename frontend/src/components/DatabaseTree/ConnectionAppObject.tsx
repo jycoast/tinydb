@@ -14,7 +14,7 @@ import {
   connectionDeleteApi,
   databaseConnectionsRefreshApi,
   serverConnectionsRefreshApi
-} from '/@/api/simpleApis'
+} from "/@/api"
 import openNewTab from '/@/utils/tinydb/openNewTab'
 import CreateDatabaseModal from '/@/components/Modals/CreateDatabaseModal.vue'
 import { useModal } from '/@/components/Modal'

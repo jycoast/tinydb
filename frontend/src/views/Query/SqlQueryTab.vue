@@ -185,8 +185,11 @@ import {
   DocumentCopy
 } from '@element-plus/icons-vue'
 import type {ContextMenuItem} from '/@/components/Modals/typing'
-import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
-import {getConnectionInfo, useDatabaseInfo} from '/@/api/bridge'
+import {
+  databaseConnectionsSqlSelectApi,
+  getConnectionInfo,
+  useDatabaseInfo,
+} from "/@/api"
 import AceEditor from '/@/components/Query/AceEditor'
 import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/components/Query/aceApi'
 import 'ace-builds/src-noconflict/ext-language_tools'

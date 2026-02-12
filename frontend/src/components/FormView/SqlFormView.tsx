@@ -1,5 +1,5 @@
 import {computed, defineComponent, PropType, ref, toRefs, watch, watchEffect} from 'vue'
-import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
+import {databaseConnectionsSqlSelectApi} from "/@/api"
 import FormView from './FormView.vue'
 import ChangeSetFormer from './ChangeSetFormer'
 import {TableFormViewDisplay} from '/@/lib/tinydb-datalib'

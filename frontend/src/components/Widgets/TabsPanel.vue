@@ -45,7 +45,7 @@ import {storeToRefs} from 'pinia'
 import FontIcon from '/@/components/Icon/src/FontIcon.vue'
 import {useLocaleStore} from '/@/store/modules/locale'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
-import {getConnectionInfo} from '/@/api/bridge'
+import {getConnectionInfo} from "/@/api"
 import {getTabDbKey, groupTabs, sortTabs} from '/@/utils/tinydb/openNewTab'
 import {setSelectedTab} from '/@/utils/tinydb/common'
 import {useContextMenu} from '/@/hooks/web/useContextMenu'

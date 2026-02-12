@@ -11,7 +11,7 @@ import {
 import LoadingDataGridCore from '/@/components/DataGrid/LoadingDataGridCore'
 import {GridConfig, GridDisplay, MacroDefinition} from '/@/lib/tinydb-datalib'
 import ChangeSetGrider from './ChangeSetGrider'
-import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
+import {databaseConnectionsSqlSelectApi} from "/@/api"
 import AntdDataGridCore from '/@/components/DataGrid/AntdDataGridCore.vue'
 
 async function loadDataPage(props: any, offset: number, limit: number) {

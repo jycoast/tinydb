@@ -6,7 +6,7 @@ import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {IPinnedDatabasesItem} from "/@/types/standard"
 import CreateTableModal from '/@/components/Modals/CreateTableModal.vue'
 import { useModal } from '/@/components/Modal'
-import {databaseConnectionsRefreshApi} from '/@/api/simpleApis'
+import {databaseConnectionsRefreshApi} from "/@/api"
 import {Modal, message} from 'ant-design-vue'
 
 export default defineComponent({

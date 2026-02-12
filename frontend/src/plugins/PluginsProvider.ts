@@ -1,5 +1,5 @@
 import {isEmpty, keys, pick} from 'lodash-es'
-import {useInstalledPlugins} from '/@/api/bridge'
+import {useInstalledPlugins} from "/@/api"
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import {ref, watch} from 'vue'
 import {ExtensionsDirectory} from "/@/types/extensions";

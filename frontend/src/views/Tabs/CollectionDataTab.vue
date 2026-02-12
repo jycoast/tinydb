@@ -54,7 +54,7 @@ import {
   runMacroOnChangeSet
 } from '/@/lib/tinydb-datalib'
 import useGridConfig from '/@/utils/tinydb/useGridConfig'
-import {useCollectionInfo, useConnectionInfo} from '/@/api/bridge'
+import {useCollectionInfo, useConnectionInfo} from "/@/api"
 import {findEngineDriver} from '/@/lib/tinydb-tools'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import createUndoReducer from '/@/utils/tinydb/createUndoReducer'

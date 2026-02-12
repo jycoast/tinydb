@@ -252,7 +252,7 @@ import bus from '/@/utils/tinydb/bus'
 import {useContextMenu} from "/@/hooks/web/useContextMenu";
 import {useLocaleStore} from "/@/store/modules/locale";
 import {ContextMenuItem} from "/@/components/Modals/typing"
-import {databaseConnectionsSqlSelectApi} from '/@/api/simpleApis'
+import {databaseConnectionsSqlSelectApi} from "/@/api"
 registerCommand({
   id: 'dataGrid.refresh',
   category: 'Data grid',
