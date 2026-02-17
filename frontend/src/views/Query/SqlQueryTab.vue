@@ -203,8 +203,8 @@ const props = defineProps({
   conid: {type: String as PropType<string>},
   database: {type: String as PropType<string>},
   tabVisible: {type: Boolean as PropType<boolean>, default: true},
-  // If true, don't auto-select currentDatabase; user must pick connection/db manually
   noPrefill: {type: Boolean as PropType<boolean>, default: false},
+  _tempTabId: {type: String as PropType<string>, required: false},
 })
 
 const bootstrap = useBootstrapStore()
@@ -776,8 +776,7 @@ onMounted(async () => {
 
   // 安全地读取 localStorage，处理可能的错误
   try {
-    // 首先尝试从临时存储读取（从查询历史打开时）
-    const tempTabId = (props as any)._tempTabId
+    const tempTabId = props._tempTabId
     if (tempTabId) {
       const tempSql = localStorage.getItem(`sql_query_${tempTabId}`)
       if (tempSql) {
@@ -1184,6 +1183,8 @@ async function handleExecute() {
   showResults.value = true
   executing.value = true
 
+  saveQueryHistory(sql, effectiveConid.value, effectiveDatabaseName.value)
+
   try {
     const result = await databaseConnectionsSqlSelectApi({
       conid: effectiveConid.value,
@@ -1213,9 +1214,6 @@ async function handleExecute() {
       queryResult.value = {rows: payload.rows, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload.rows, derivedCols)
       clearResultSelection()
-      
-      // 保存查询历史（仅在查询成功时保存）
-      saveQueryHistory(sql, effectiveConid.value, effectiveDatabaseName.value)
       return
     }
 
@@ -1225,9 +1223,6 @@ async function handleExecute() {
       queryResult.value = {rows: payload, columns: derivedCols}
       resultTableData.value = normalizeRowsToTableData(payload, derivedCols)
       clearResultSelection()
-      
-      // 保存查询历史（仅在查询成功时保存）
-      saveQueryHistory(sql, effectiveConid.value, effectiveDatabaseName.value)
       return
     }
 

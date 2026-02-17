@@ -99,14 +99,20 @@ onMounted(() => {
     localeStore.setSelectedWidget('database')
   }
   window.addEventListener('open-new-connection-modal', handleOpenNewConnectionModal)
+  window.addEventListener('open-connection-modal', handleOpenConnectionModal)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('open-new-connection-modal', handleOpenNewConnectionModal)
+  window.removeEventListener('open-connection-modal', handleOpenConnectionModal)
 })
 
 function handleOpenNewConnectionModal() {
   openNewConnectionModal(true)
+}
+
+function handleOpenConnectionModal(e: CustomEvent) {
+  openNewConnectionModal(true, e.detail)
 }
 
 // 继续维护原有 CSS 变量，避免其它组件依赖它们时出问题

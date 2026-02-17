@@ -176,7 +176,7 @@ async function handleOpenInNewTab(row: QueryHistoryItem) {
     },
     selected: true,
     busy: false
-  })
+  }, undefined, { forceNewTab: true })
   
   ElMessage.success('已在新标签页打开')
 }

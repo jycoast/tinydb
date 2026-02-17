@@ -45,7 +45,7 @@
           @node-contextmenu="handleContextMenu"
         >
           <template #default="{ node, data }">
-            <div class="tree-node">
+            <div class="tree-node" :class="{ 'tree-node--disconnected': data.type === 'connection' && !data.statusIcon }">
               <img
                 v-if="data.type === 'connection'"
                 :src="connectionIcon"
@@ -152,6 +152,7 @@ import {
   connectionDeleteApi,
   databaseConnectionsSqlSelectApi,
 } from "/@/api"
+import { saveQueryHistory } from '/@/utils/queryHistory'
 import { runCommand } from '/@/commands'
 import { createContextMenu } from '/@/components/Modals/createContextMenu'
 import { useModal } from "/@/components/Modals"
@@ -788,16 +789,10 @@ function handleMenuVisibleChange(visible: boolean) {
   }
 }
 
-async function handleEditConnection(node: TreeNode) {
+function handleEditConnection(node: TreeNode) {
   const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
-  const isOpened = conn && openedConnections.value.includes(conn._id)
-  
-  if (isOpened) {
-    await handleServerSummary(node)
-  } else {
-    const payload = conn ? { ...conn } : { _id: node.conid }
-    window.dispatchEvent(new CustomEvent('open-connection-modal', { detail: payload }))
-  }
+  const payload = conn ? { ...conn } : { _id: node.conid }
+  window.dispatchEvent(new CustomEvent('open-connection-modal', { detail: payload }))
 }
 
 async function handleDeleteConnection(node: TreeNode) {
@@ -929,6 +924,7 @@ async function handleDropTable(node: TreeNode) {
       indexes: []
     } as any)
     const sql = dumper.s
+    saveQueryHistory(sql, node.conid!, node.database!)
 
     const response = await databaseConnectionsSqlSelectApi({
       conid: node.conid!,
@@ -999,6 +995,7 @@ async function handleTruncateTable(node: TreeNode) {
       pureName: node.pureName
     })
     const sql = dumper.s
+    saveQueryHistory(sql, node.conid!, node.database!)
 
     const response = await databaseConnectionsSqlSelectApi({
       conid: node.conid!,
@@ -1192,6 +1189,10 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
+.database-tree :deep(.el-tree-node__content > .tree-node.tree-node--disconnected) {
+  margin-left: -24px;
+}
+
 .node-icon {
   font-size: 20px;
   flex-shrink: 0;
@@ -1266,7 +1267,7 @@ onBeforeUnmount(() => {
   }
 }
 
-:deep(.el-tree-node__content) {
+/* :deep(.el-tree-node__content) {
   height: 28px;
   cursor: pointer;
   position: relative;
@@ -1281,15 +1282,16 @@ onBeforeUnmount(() => {
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: var(--theme-bg-selected);
-}
+} */
 
 /* 展开/折叠用加减号表示，方框包裹，完全隐藏默认三角图标 */
-:deep(.el-tree-node__expand-icon::before) {
+/* :deep(.el-tree-node__expand-icon::before) {
   content: "+";
   font-size: 13px;
   line-height: 0;
   font-weight: normal;
 }
+
 :deep(.el-tree-node__expand-icon.expanded::before) {
   content: "−";
 }
@@ -1301,10 +1303,10 @@ onBeforeUnmount(() => {
 }
 :deep(.el-tree-node__expand-icon.is-leaf::before) {
   content: none;
-}
+} */
 
 /* 虚线连接线：所有层级的父子节点展开后都显示，竖线在子节点容器左侧，横线从竖线连到当前节点 */
-:deep(.el-tree-node.is-expanded > .el-tree-node__children) {
+/* :deep(.el-tree-node.is-expanded > .el-tree-node__children) {
   overflow: visible;
 }
 :deep(.el-tree-node__children) {
@@ -1322,5 +1324,5 @@ onBeforeUnmount(() => {
 
 :deep(.el-tree-node:first-child > .el-tree-node__content::before) {
   display: none;
-}
+} */
 </style>
