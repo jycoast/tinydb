@@ -1,12 +1,14 @@
 <template>
-  <TabContent
-    :key="`${tabid}-${getTabKey(tabid)}`"
-    v-for="tabid in tabids"
-    :tabComponent="mountedTabs[tabid].tabComponent"
-    v-bind="tabPropsMap[tabid] || {}"
-    :tabid="tabid"
-    :tabVisible="tabid == (selectedTab && selectedTab.tabid)"
-  />
+  <div class="tab-register-wrap">
+    <TabContent
+      :key="`${tabid}-${getTabKey(tabid)}`"
+      v-for="tabid in tabids"
+      :tabComponent="mountedTabs[tabid].tabComponent"
+      v-bind="tabPropsMap[tabid] || {}"
+      :tabid="tabid"
+      :tabVisible="tabid == (selectedTab && selectedTab.tabid)"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -119,3 +121,14 @@ export default defineComponent({
   }
 })
 </script>
+
+<style scoped>
+.tab-register-wrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+</style>

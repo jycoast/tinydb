@@ -6,7 +6,6 @@
 // 布局组件
 export { default as DefaultLayout } from './layout/DefaultLayout.vue'
 export { default as TitleBar } from './layout/TitleBar.vue'
-export { default as ToolBar } from './layout/ToolBar.vue'
 export { default as MenuBar } from './layout/MenuBar.vue'
 export { default as TabRegister } from './layout/TabRegister.vue'
 export { default as TabContent } from './layout/TabContent.vue'

@@ -1,6 +1,16 @@
 <template>
   <div class="database-tree-page" :class="{ collapsed: isCollapsed }">
     <div class="page-content">
+      <div v-show="!isCollapsed" class="left-panel-actions">
+        <el-button size="small" class="panel-action-btn" @click="runCommand('new.query')">
+          <el-icon><Document /></el-icon>
+          <span>新建查询</span>
+        </el-button>
+        <el-button size="small" class="panel-action-btn" @click="runCommand('query.history')">
+          <el-icon><Clock /></el-icon>
+          <span>查询历史</span>
+        </el-button>
+      </div>
       <div class="search-row">
         <el-input
           v-show="!isCollapsed"
@@ -45,7 +55,13 @@
           @node-contextmenu="handleContextMenu"
         >
           <template #default="{ node, data }">
-            <div class="tree-node" :class="{ 'tree-node--disconnected': data.type === 'connection' && !data.statusIcon }">
+            <div
+              class="tree-node"
+              :class="{
+                'tree-node--leaf': node.isLeaf,
+                'tree-node--parent': !node.isLeaf
+              }"
+            >
               <img
                 v-if="data.type === 'connection'"
                 :src="connectionIcon"
@@ -129,7 +145,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, CircleCheck, CircleClose, Loading, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { Search, CircleCheck, CircleClose, Loading, DArrowLeft, DArrowRight, Document, Clock } from '@element-plus/icons-vue'
 import databaseIcon from '/src/assets/svg/database.svg'
 import connectionIcon from '/@/assets/svg/connection.svg'
 import tableIcon from '/@/assets/svg/table.svg'
@@ -143,6 +159,7 @@ import {useClusterApiStore} from "/@/store/modules/clusterApi"
 import {useLocaleStore} from "/@/store/modules/locale"
 import {
   getConnectionInfo,
+  getDatabaseInfo,
   useConnectionList,
   useDatabaseList,
   useDatabaseInfo,
@@ -188,6 +205,8 @@ const contextMenuVisible = ref(false)
 const contextMenuStyle = ref<{ position: string; left: string; top: string }>({ position: 'fixed', left: '0px', top: '0px' })
 const contextMenuItems = ref<any[]>([])
 const contextMenuNode = ref<TreeNode | null>(null)
+
+const structureCache = ref<Record<string, any>>({})
 
 const COLLAPSED_WIDTH = 24
 const EXPANDED_DEFAULT_WIDTH = 280
@@ -313,6 +332,7 @@ async function buildTreeData() {
 }
 
 async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiveConnection) {
+  clearStructureCacheForConnection(conn._id)
   try {
     let databases: TablesNameSort[] = []
     
@@ -366,90 +386,97 @@ async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiv
       ]
     }))
 
-    await preloadConnectionStructures(conn._id, connectionNode.children as TreeNode[])
+    for (const dbNode of connectionNode.children as TreeNode[]) {
+      if (!dbNode.database) continue
+      const cacheKey = `${conn._id}::${dbNode.database}`
+      try {
+        const info = await getDatabaseInfo({ conid: conn._id, database: dbNode.database })
+        if (info && typeof info === 'object') structureCache.value[cacheKey] = info
+      } catch {
+        // 单库预加载失败不影响其他库
+      }
+    }
   } catch (e) {
     console.error('加载数据库列表失败', e)
     connectionNode.children = []
   }
 }
 
-async function preloadConnectionStructures(conid: string, databaseNodes: TreeNode[]) {
-  for (const dbNode of databaseNodes) {
-    if (!dbNode.database) continue
-    const infoRef = ref<any>(null)
-    useDatabaseInfo({ conid, database: dbNode.database }, infoRef)
-    let retries = 0
-    while (retries < 25 && (!infoRef.value || Object.keys(infoRef.value).length === 0)) {
-      await new Promise(resolve => setTimeout(resolve, 200))
-      retries++
+function clearStructureCacheForConnection(conid: string) {
+  const keys = Object.keys(structureCache.value).filter((k) => k.startsWith(`${conid}::`))
+  keys.forEach((k) => delete structureCache.value[k])
+}
+
+function clearStructureCacheForDatabase(conid: string, database: string) {
+  delete structureCache.value[`${conid}::${database}`]
+}
+
+function buildCategoryChildrenFromObjects(node: TreeNode, objects: any): void {
+  if (!node.category) return
+  const objectTypeFields = getObjectTypeFields(node.category)
+  const objectList: any[] = []
+  for (const field of objectTypeFields) {
+    const items = objects[field] || []
+    for (const obj of items) {
+      objectList.push({ ...obj, objectTypeField: field })
     }
+  }
+  const sortedList = sortBy(objectList, ['schemaName', 'pureName'])
+  node.children = sortedList.map((obj) => {
+    const tableNode: TreeNode = {
+      id: `object_${node.conid}_${node.database}_${node.category}_${obj.pureName}`,
+      label: obj.pureName || obj.name,
+      type: 'object',
+      conid: node.conid,
+      database: node.database,
+      category: node.category,
+      objectType: obj.objectTypeField,
+      schemaName: obj.schemaName,
+      pureName: obj.pureName,
+      rawData: obj,
+      children: []
+    }
+    if (node.category === 'tables' && obj.objectTypeField === 'tables') {
+      tableNode.children = [{
+        id: `columns_placeholder_${tableNode.id}`,
+        label: '加载中...',
+        type: 'column',
+        children: []
+      }]
+    }
+    return tableNode
+  })
+  if (node.children.length === 0) {
+    node.children = [{
+      id: `empty_${node.id}`,
+      label: '暂无数据',
+      type: 'object',
+      children: []
+    }]
   }
 }
 
 async function loadCategoryObjects(node: TreeNode) {
   if (!node.conid || !node.database || !node.category) return
-
+  const cacheKey = `${node.conid}::${node.database}`
+  const cached = structureCache.value[cacheKey]
+  if (cached && typeof cached === 'object' && Object.keys(cached).length > 0) {
+    buildCategoryChildrenFromObjects(node, cached)
+    return
+  }
   try {
     const objectsRef = ref<any>(null)
     useDatabaseInfo({ conid: node.conid, database: node.database }, objectsRef)
-    
     let retries = 0
     while (retries < 15 && (!objectsRef.value || Object.keys(objectsRef.value).length === 0)) {
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 200))
       retries++
     }
-    
     const objects = objectsRef.value || {}
-    const objectTypeFields = getObjectTypeFields(node.category)
-    const objectList: any[] = []
-    
-    for (const field of objectTypeFields) {
-      const items = objects[field] || []
-      for (const obj of items) {
-        objectList.push({
-          ...obj,
-          objectTypeField: field
-        })
-      }
+    if (objects && typeof objects === 'object' && Object.keys(objects).length > 0) {
+      structureCache.value[cacheKey] = objects
     }
-
-    const sortedList = sortBy(objectList, ['schemaName', 'pureName'])
-    
-    node.children = sortedList.map(obj => {
-      const tableNode: TreeNode = {
-        id: `object_${node.conid}_${node.database}_${node.category}_${obj.pureName}`,
-        label: obj.pureName || obj.name,
-        type: 'object',
-        conid: node.conid,
-        database: node.database,
-        category: node.category,
-        objectType: obj.objectTypeField,
-        schemaName: obj.schemaName,
-        pureName: obj.pureName,
-        rawData: obj,
-        children: []
-      }
-      
-      if (node.category === 'tables' && obj.objectTypeField === 'tables') {
-        tableNode.children = [{ 
-          id: `columns_placeholder_${tableNode.id}`,
-          label: '加载中...',
-          type: 'column',
-          children: []
-        }]
-      }
-      
-      return tableNode
-    })
-    
-    if (node.children.length === 0 && retries >= 15) {
-      node.children = [{
-        id: `empty_${node.id}`,
-        label: '暂无数据，请稍后重试',
-        type: 'object',
-        children: []
-      }]
-    }
+    buildCategoryChildrenFromObjects(node, objects)
   } catch (e) {
     console.error('加载对象列表失败', e)
     node.children = [{
@@ -575,7 +602,8 @@ async function handleNodeClick(data: TreeNode, node: any) {
     }
   }
   
-  if (data.type === 'object') {
+  if (data.type === 'object' && data.category === 'tables' && data.objectType === 'tables') {
+    openTableData(data)
   }
 }
 
@@ -619,16 +647,12 @@ async function loadTableColumns(tableNode: TreeNode) {
       )
       
       tableNode.children = columns.map((col: any) => {
-        const typeInfo = col.dataType || col.columnType || ''
-        const lengthInfo = col.charMaxLength ? `(${col.charMaxLength})` : 
-                          (col.numericPrecision ? `(${col.numericPrecision}${col.numericScale ? ',' + col.numericScale : ''})` : '')
-        const nullableInfo = col.isNullable === 'YES' ? ' NULL' : ' NOT NULL'
-        
+        const remarkInfo = col.columnComment ? `${col.columnComment}` : ''
         return {
           id: `column_${tableNode.conid}_${tableNode.database}_${tableNode.pureName}_${col.columnName}`,
           label: col.columnName,
           type: 'column',
-          extInfo: `${typeInfo}${lengthInfo}${nullableInfo}`,
+          extInfo: `${remarkInfo}`,
           rawData: col
         }
       })
@@ -756,6 +780,7 @@ async function handleMenuCommand(command: string) {
         await handleServerSummary(node)
         break
       case 'open-table':
+        openTableData(node)
         break
       case 'create-table':
         handleCreateTable(node)
@@ -863,6 +888,24 @@ function handleNewQuery(node: TreeNode) {
   )
 }
 
+function openTableData(node: TreeNode) {
+  if (!node.conid || !node.database || !node.pureName) return
+  const tableDisplayName = node.schemaName ? `${node.schemaName}.${node.pureName}` : node.pureName
+  openNewTab({
+    title: `${tableDisplayName} - 数据`,
+    icon: 'icon table',
+    tabComponent: 'TableDataTab',
+    props: {
+      conid: node.conid,
+      database: node.database,
+      schemaName: node.schemaName ?? '',
+      pureName: node.pureName
+    },
+    selected: true,
+    busy: false
+  })
+}
+
 function handleCreateDatabase(node: TreeNode) {
   openCreateDatabaseModal(true, { conid: node.conid })
 }
@@ -942,6 +985,7 @@ async function handleDropTable(node: TreeNode) {
           database: node.database!,
           keepOpen: true
         })
+        clearStructureCacheForDatabase(node.conid!, node.database!)
         const categoryNode = treeData.value
           .flatMap(c => c.children || [])
           .flatMap(db => db.children || [])
@@ -1059,9 +1103,9 @@ function disconnectServerConnection(conid: any, showConfirmation = true) {
     return
   }
 
-  ElMessageBox.confirm(`Disconnect ${getConnectionLabel(conid)}?`, 'Confirm', {
-    confirmButtonText: 'Ok',
-    cancelButtonText: 'Cancel',
+  ElMessageBox.confirm(`确定要断开 ${getConnectionLabel(conid)}?`, '断开确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
     type: 'warning',
   }).then(() => doDisconnect()).catch(() => {})
 }
@@ -1151,6 +1195,19 @@ onBeforeUnmount(() => {
   padding: 8px;
 }
 
+.left-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.panel-action-btn {
+  flex: 1;
+  justify-content: center;
+}
+
 .search-row {
   display: flex;
   align-items: center;
@@ -1189,8 +1246,12 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.database-tree :deep(.el-tree-node__content > .tree-node.tree-node--disconnected) {
+.database-tree :deep(.el-tree-node__content .tree-node.tree-node--leaf) {
   margin-left: -24px;
+}
+
+.database-tree :deep(.el-tree-node__content .tree-node.tree-node--parent) {
+  margin-left: 0;
 }
 
 .node-icon {

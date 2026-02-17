@@ -12,10 +12,8 @@
     <!-- 自定义标题栏（Frameless window）：集成 MenuBar -->
     <TitleBar/>
 
-    <!-- 工具栏 -->
-    <el-header class="toolbar-header" style="height: var(--dim-toolbar-height); line-height: var(--dim-toolbar-height); padding: 0; position: relative; z-index: 200; background: #ffffff; border-bottom: 1px solid #d9d9d9;">
-      <ToolBar/>
-    </el-header>
+    <!-- 原 ToolBar 占位，保持布局结构避免多余滚动条 -->
+    <el-header class="toolbar-placeholder" />
 
     <!-- 主体内容 -->
     <el-container style="flex: 1; min-height: 0;">
@@ -36,13 +34,13 @@
       />
 
       <!-- 主内容区 -->
-      <el-container style="flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;">
+      <el-container class="main-content-wrap">
         <!-- 标签页栏 -->
         <div style="flex: 0 0 var(--dim-tabs-panel-height); height: var(--dim-tabs-panel-height); overflow: hidden;">
           <TabsPanel/>
         </div>
         <!-- 标签页内容 -->
-        <el-main style="flex: 1; min-height: 0; position: relative; overflow: hidden; padding: 0;">
+        <el-main class="main-content-area">
           <TabRegister/>
         </el-main>
       </el-container>
@@ -71,7 +69,6 @@ import TabsPanel from '/@/components/Widgets/TabsPanel.vue'
 import TabRegister from './TabRegister.vue'
 import StatusBar from '/@/components/Widgets/StatusBar.vue'
 import { Warning } from '@element-plus/icons-vue'
-import ToolBar from './ToolBar.vue'
 import TitleBar from './TitleBar.vue'
 import bus from '/@/utils/tinydb/bus'
 import { useModal } from "/@/components/Modals"
@@ -169,6 +166,34 @@ subscribeRecentDatabaseSwitch()
   overflow: hidden;
 }
 
+.main-content-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main-content-area {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  display: block;
+}
+
+.toolbar-placeholder {
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden;
+  flex: 0 0 0 !important;
+  border: none;
+}
+
 /* 分割条样式 */
 .splitter {
   flex: 0 0 var(--dim-splitter-thickness);
@@ -229,14 +254,6 @@ subscribeRecentDatabaseSwitch()
 
 .big-icon {
   font-size: 20pt;
-}
-
-/* 工具栏区域可拖动窗口 */
-.toolbar-header {
-  /* Make the toolbar draggable in frameless mode */
-  -webkit-app-region: drag;
-  /* Wails CSSDragProperty hook (main.go sets CSSDragProperty/Value) */
-  --wails-draggable: drag;
 }
 
 @media only screen and (max-width: 600px) {

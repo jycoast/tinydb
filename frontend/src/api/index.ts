@@ -138,6 +138,10 @@ export function useDatabaseInfo<T>(args, dbStore: Ref<T> | Function) {
   return useCore(databaseInfoLoader, args, dbStore)
 }
 
+export function getDatabaseInfo(args: { conid: string; database: string }) {
+  return getCore(databaseInfoLoader, args)
+}
+
 export function getConnectionInfo(args) {
   return getCore(connectionInfoLoader, args)
 }
