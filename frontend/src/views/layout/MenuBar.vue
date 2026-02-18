@@ -47,6 +47,29 @@
       <el-button type="primary" @click="aboutDialogVisible = false">确定</el-button>
     </template>
   </el-dialog>
+  
+  <el-dialog
+    v-model="settingsDialogVisible"
+    title="设置"
+    width="400px"
+    :show-close="true"
+  >
+    <div class="settings-content">
+      <div class="setting-item">
+        <div class="setting-label">外观主题</div>
+        <el-switch
+          v-model="isDarkMode"
+          active-text="暗黑模式"
+          inactive-text="明亮模式"
+          @change="toggleDarkMode"
+        />
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="settingsDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="saveSettings">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -70,6 +93,8 @@ type MenuBarMenu = {
 }
 
 const aboutDialogVisible = ref(false)
+const settingsDialogVisible = ref(false)
+const isDarkMode = ref(false)
 
 const appInfo = {
   name: 'TinyDB',
@@ -78,6 +103,14 @@ const appInfo = {
   email: 'jycoast@163.com',
   url: 'https://github.com/jycoast/tinydb',
   description: '轻量级数据库管理工具'
+}
+
+function openAbout() {
+  aboutDialogVisible.value = true
+}
+
+function openSettings() {
+  settingsDialogVisible.value = true
 }
 
 const menus = reactive<MenuBarMenu[]>([
@@ -92,6 +125,8 @@ const menus = reactive<MenuBarMenu[]>([
       { key: 'save', label: '保存', keyText: 'Ctrl+S' },
       { key: 'save.as', label: '另存为' },
       { key: 'file.divider.2', divider: true },
+      { key: 'settings', label: '设置', onClick: openSettings },
+      { key: 'file.divider.3', divider: true },
       { key: 'exit', label: '退出' }
     ]
   },
@@ -129,13 +164,7 @@ const menus = reactive<MenuBarMenu[]>([
     label: '帮助',
     showDropdown: false,
     children: [
-      { 
-        key: 'about', 
-        label: '关于',
-        onClick: () => {
-          aboutDialogVisible.value = true
-        }
-      }
+      { key: 'about', label: '关于', onClick: openAbout }
     ]
   }
 ])
@@ -163,6 +192,22 @@ function handleItemClick(item: MenuChildItem, menu: MenuBarMenu) {
   }
 }
 
+function toggleDarkMode(value: boolean) {
+  isDarkMode.value = value
+  // 切换CSS类
+  if (value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
+function saveSettings() {
+  // 保存设置到本地存储
+  localStorage.setItem('tinydb-dark-mode', isDarkMode.value.toString())
+  settingsDialogVisible.value = false
+}
+
 // 点击外部关闭菜单
 let clickOutsideHandler: ((event: MouseEvent) => void) | null = null
 
@@ -176,6 +221,15 @@ onMounted(() => {
     }
   }
   document.addEventListener('click', clickOutsideHandler)
+  
+  // 从本地存储加载设置
+  const savedDarkMode = localStorage.getItem('tinydb-dark-mode')
+  if (savedDarkMode !== null) {
+    isDarkMode.value = savedDarkMode === 'true'
+    if (isDarkMode.value) {
+      document.documentElement.classList.add('dark')
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -332,5 +386,91 @@ onUnmounted(() => {
   color: #999;
   font-size: 12px;
   text-align: center;
+}
+
+/* 设置对话框样式 */
+.settings-content {
+  padding: 20px 0;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.setting-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+/* 暗黑模式样式 */
+.dark .menu-bar-container {
+  background: #1f1f1f;
+  border-bottom: 1px solid #303030;
+}
+
+.dark .menu-label {
+  color: #ffffff;
+}
+
+.dark .menu-item:hover .menu-label {
+  background: #303030;
+}
+
+.dark .menu-item:active .menu-label {
+  background: #404040;
+}
+
+.dark .menu-dropdown {
+  background: #2d2d2d;
+  border: 1px solid #404040;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .menu-dropdown-item {
+  color: #ffffff;
+}
+
+.dark .menu-dropdown-item:hover:not(.disabled):not(.divider) {
+  background: #3a3a3a;
+}
+
+.dark .menu-dropdown-item.disabled {
+  color: #666;
+}
+
+.dark .menu-dropdown-item.divider {
+  background: #404040;
+}
+
+.dark .menu-item-shortcut {
+  color: #aaa;
+}
+
+.dark .setting-label {
+  color: #ffffff;
+}
+</style>
+
+<style>
+/* 全局暗黑模式样式 */
+.dark {
+  --el-bg-color: #1f1f1f;
+  --el-bg-color-page: #121212;
+  --el-text-color-primary: #ffffff;
+  --el-text-color-regular: #e0e0e0;
+  --el-border-color: #404040;
+  --el-border-color-light: #303030;
+  --el-fill-color: #2d2d2d;
+  --el-fill-color-light: #252525;
+  --el-fill-color-blank: #1f1f1f;
+}
+
+.dark body {
+  background-color: #121212;
+  color: #ffffff;
 }
 </style>

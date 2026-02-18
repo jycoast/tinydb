@@ -932,7 +932,7 @@ function setupAutocomplete(_editorInstance: AceEditorType) {
         'CONCAT', 'SUBSTRING', 'LENGTH', 'UPPER', 'LOWER', 'TRIM', 'LTRIM', 'RTRIM',
         'INT', 'VARCHAR', 'TEXT', 'DECIMAL', 'FLOAT', 'DOUBLE', 'BOOLEAN', 'DATE', 'DATETIME',
         'PRIMARY', 'KEY', 'FOREIGN', 'REFERENCES', 'CONSTRAINT', 'UNIQUE', 'CHECK', 'DEFAULT',
-        'AUTO_INCREMENT', 'NOT', 'NULL', 'TRUE', 'FALSE'
+        'AUTO_INCREMENT', 'NOT', 'NULL', 'TRUE', 'FALSE', 'EXPLAIN'
       ]
 
       sqlKeywords.forEach(keyword => {

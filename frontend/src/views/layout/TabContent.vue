@@ -53,26 +53,22 @@ export default defineComponent({
   display: flex;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  isolation: isolate;
 }
 
 .tabVisible {
   visibility: visible;
   pointer-events: auto;
   z-index: 1;
+  opacity: 1;
 }
 
 .tab-content-host:not(.tabVisible) {
   visibility: hidden;
   pointer-events: none;
   z-index: 0;
-}
-
-/* 确保标签页内容不会遮挡顶部和底部 */
-.tab-content-host {
-  pointer-events: none;
-}
-
-.tab-content-host.tabVisible {
-  pointer-events: auto;
+  opacity: 0;
+  left: -9999px;
 }
 </style>

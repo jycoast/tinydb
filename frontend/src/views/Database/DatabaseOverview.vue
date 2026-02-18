@@ -139,6 +139,7 @@
 
     <CreateDatabaseModal @register="registerCreateDatabaseModal" />
     <CreateTableModal @register="registerCreateTableModal" />
+    <TableDesignModal ref="tableDesignModalRef" @register="registerTableDesignModal" />
   </div>
 </template>
 
@@ -175,6 +176,7 @@ import { createContextMenu } from '/@/components/Modals/createContextMenu'
 import { useModal } from "/@/components/Modals"
 import CreateDatabaseModal from '/@/components/Modals/CreateDatabaseModal.vue'
 import CreateTableModal from '/@/components/Modals/CreateTableModal.vue'
+import TableDesignModal from './Table/TableDesignModal.vue'
 import type { IActiveConnection, IConnectionStatus } from '/@/types/connections'
 import type { TablesNameSort } from '/@/types/mysql'
 import type { ElTree } from 'element-plus'
@@ -219,6 +221,9 @@ function handleToggleCollapse() {
 
 const [registerCreateDatabaseModal, { openModal: openCreateDatabaseModal }] = useModal()
 const [registerCreateTableModal, { openModal: openCreateTableModal }] = useModal()
+const [registerTableDesignModal, { openModal: openTableDesignModal }] = useModal()
+
+const tableDesignModalRef = ref()
 
 const bootstrap = useBootstrapStore()
 const clusterApi = useClusterApiStore()
@@ -742,6 +747,10 @@ function getContextMenuItems(data: TreeNode): any[] {
       {
         label: '清空表',
         command: 'truncate-table'
+      },
+      {
+        label: '设计表',
+        command: 'design-table'
       }
     )
   }
@@ -790,6 +799,9 @@ async function handleMenuCommand(command: string) {
         break
       case 'truncate-table':
         await handleTruncateTable(node)
+        break
+      case 'design-table':
+        await handleDesignTable(node)
         break
       default:
         if (command.startsWith('db-')) {
@@ -1054,6 +1066,48 @@ async function handleTruncateTable(node: TreeNode) {
     }
   } catch (e: any) {
     ElMessage.error(`清空表失败：${e?.message || String(e)}`)
+  }
+}
+
+async function handleDesignTable(node: TreeNode) {
+  if (!node.conid || !node.database || !node.pureName) {
+    ElMessage.error('缺少必要的表信息')
+    return
+  }
+  
+  try {
+    // 获取表结构信息
+    const objectsRef = ref<any>(null)
+    useDatabaseInfo({ conid: node.conid, database: node.database }, objectsRef)
+    
+    let retries = 0
+    while (retries < 10 && (!objectsRef.value || !objectsRef.value.tables)) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      retries++
+    }
+    
+    const objects = objectsRef.value || {}
+    const tables = objects.tables || []
+    const table = tables.find((t: any) => 
+      (t.pureName === node.pureName) || 
+      (t.schemaName === node.schemaName && t.pureName === node.pureName)
+    )
+    
+    if (!table) {
+      ElMessage.error('无法获取表结构信息')
+      return
+    }
+    
+    // 打开设计表模态框
+    openTableDesignModal(true, {
+      conid: node.conid,
+      database: node.database,
+      schemaName: node.schemaName,
+      pureName: node.pureName,
+      tableStructure: table
+    })
+  } catch (e: any) {
+    ElMessage.error(`打开表设计失败：${e?.message || String(e)}`)
   }
 }
 

@@ -8,6 +8,9 @@
             size="small"
             placeholder="选择字段"
             class="filter-field"
+            filterable
+            default-first-option
+            allow-create
           >
             <el-option
               v-for="col in columnNames"
