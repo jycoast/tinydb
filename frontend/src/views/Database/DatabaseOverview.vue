@@ -250,6 +250,14 @@ watch(() => [clusterConnections.value, serverStatus.value], () => {
   buildTreeData()
 }, { deep: true, immediate: true })
 
+// Watch for connection list changes specifically
+watch(() => clusterConnections.value, (newConnections) => {
+  if (newConnections) {
+    console.log('Connection list updated, rebuilding tree...', newConnections.length)
+    buildTreeData()
+  }
+}, { deep: true })
+
 watch(searchText, (val) => {
   treeRef.value?.filter(val)
 })
@@ -301,6 +309,9 @@ async function loadConnections() {
     }
     useConnectionList<IActiveConnection[]>(clusterApi.setConnectionList)
     useServerStatus<{ [key: string]: IConnectionStatus }>(serverStatus)
+    
+    // Rebuild tree data after loading connections
+    await buildTreeData()
   } finally {
     loading.value = false
   }
@@ -314,9 +325,31 @@ async function buildTreeData() {
   )
 
   for (const conn of sortedConnections) {
+    // More robust connection label generation with debugging
+    const connectionLabel = getConnectionLabel(conn) || 
+                           conn.name || 
+                           conn.displayName || 
+                           conn.label || 
+                           conn.host || 
+                           conn.server || 
+                           'Unknown Connection'
+    
+    // Debug logging
+    if (!getConnectionLabel(conn) && !(conn.name || conn.displayName || conn.label)) {
+      console.warn('Connection missing name fields:', {
+        _id: conn._id,
+        name: conn.name,
+        displayName: conn.displayName,
+        label: conn.label,
+        host: conn.host,
+        server: conn.server,
+        allKeys: Object.keys(conn)
+      })
+    }
+    
     const connectionNode: TreeNode = {
       id: `connection_${conn._id}`,
-      label: getConnectionLabel(conn) || conn.server || 'Unknown',
+      label: connectionLabel,
       type: 'connection',
       conid: conn._id,
       extInfo: conn.engine,
@@ -923,19 +956,36 @@ function handleCreateDatabase(node: TreeNode) {
 }
 
 async function handleServerSummary(node: TreeNode) {
-  const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
-  if (!conn) return
+  if (!node.conid) {
+    ElMessage.error('缺少连接信息')
+    return
+  }
   
-  await openNewTab({
-    title: getConnectionLabel(conn),
-    icon: 'img server',
-    tabComponent: 'ServerSummaryTab',
-    props: {
-      conid: node.conid,
-    },
-    selected: true,
-    busy: false
-  })
+  const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
+  if (!conn) {
+    ElMessage.error('找不到连接信息')
+    return
+  }
+  
+  try {
+    // Ensure connection is open
+    if (!openedConnections.value.includes(node.conid)) {
+      await serverConnectionsRefreshApi({ conid: node.conid, keepOpen: true })
+    }
+    
+    await openNewTab({
+      title: `${getConnectionLabel(conn)} - 服务器概览`,
+      icon: 'img server',
+      tabComponent: 'ServerSummaryTab',
+      props: {
+        conid: node.conid,
+      },
+      selected: true,
+      busy: false
+    })
+  } catch (e: any) {
+    ElMessage.error(`打开服务器概览失败: ${e?.message || String(e)}`)
+  }
 }
 
 async function handleDropTable(node: TreeNode) {
@@ -1298,15 +1348,16 @@ onBeforeUnmount(() => {
   font-size: 14px;
   padding-right: 8px;
   min-width: 0;
+  overflow: hidden;
 }
 
-.database-tree :deep(.el-tree-node__content .tree-node.tree-node--leaf) {
+/* .database-tree :deep(.el-tree-node__content .tree-node.tree-node--leaf) {
   margin-left: -24px;
-}
+} */
 
-.database-tree :deep(.el-tree-node__content .tree-node.tree-node--parent) {
+/* .database-tree :deep(.el-tree-node__content .tree-node.tree-node--parent) {
   margin-left: 0;
-}
+} */
 
 .node-icon {
   font-size: 20px;
@@ -1339,12 +1390,14 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 
+
 .node-label {
   flex: 1;
   color: var(--theme-font-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 160px;   /* 固定宽度，可自行调整 */
 }
 
 .node-ext-info {
@@ -1352,6 +1405,10 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--theme-font-2);
   flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100px;   /* 固定宽度，可自行调整 */
 }
 
 .status-icon {

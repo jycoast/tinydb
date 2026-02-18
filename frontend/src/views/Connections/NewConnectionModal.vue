@@ -94,8 +94,37 @@ const clusterApi = useClusterApiStore()
 const editConnectionRef = ref<any>(null)
 const isEditMode = computed(() => !!editConnectionRef.value?._id)
 
+function pickStr(obj: any, ...keys: string[]): string {
+  if (!obj) return ""
+  for (const k of keys) {
+    const v = obj[k]
+    if (v != null && String(v).trim() !== "") return String(v).trim()
+  }
+  return ""
+}
+
+function pickPort(obj: any): number {
+  if (!obj) return 3306
+  const v = obj.port
+  if (v == null) return 3306
+  const n = typeof v === "string" ? parseInt(v, 10) : Number(v)
+  return Number.isFinite(n) ? n : 3306
+}
+
+function fillFormFromConnection(conn: any, includePassword = false) {
+  formData.name = pickStr(conn, "name", "displayName", "label")
+  formData.engine = conn?.engine || "mysql"
+  formData.host = pickStr(conn, "host", "server")
+  formData.port = pickPort(conn)
+  formData.user = pickStr(conn, "user", "username")
+  if (includePassword && conn?.password != null && String(conn.password).trim() !== "") {
+    formData.password = String(conn.password)
+  }
+}
+
 const [register, { closeModal }] = useModalInner(async (data?: any) => {
   errorMessage.value = ""
+
   if (!data || !data._id) {
     editConnectionRef.value = null
     formData.name = ""
@@ -107,16 +136,22 @@ const [register, { closeModal }] = useModalInner(async (data?: any) => {
     formRef.value?.resetFields()
     return
   }
-  const conn = (await getConnectionInfo({ conid: data._id })) as any
-  const c = conn || data
-  editConnectionRef.value = c
-  formData.name = c.name || ""
-  formData.engine = c.engine || "mysql"
-  formData.host = c.host || c.server || ""
-  formData.port = c.port ? Number(c.port) : 3306
-  formData.user = c.user || c.username || ""
-  formData.password = ""
-  formRef.value?.clearValidate()
+
+  editConnectionRef.value = data
+  fillFormFromConnection(data)
+
+  try {
+    const conn = await getConnectionInfo({ conid: data._id })
+    if (conn && typeof conn === "object") {
+      editConnectionRef.value = conn
+      fillFormFromConnection(conn, true)
+    }
+    formRef.value?.clearValidate()
+  } catch (error) {
+    console.error("Failed to load connection data:", error)
+    errorMessage.value = "加载连接信息失败"
+    formRef.value?.clearValidate()
+  }
 })
 
 const formRef = ref()
@@ -212,7 +247,6 @@ async function handleSubmit() {
     await connectionSaveApi(buildConnectionParams() as any)
     createMessage.success(isEditMode.value ? "连接已更新" : "连接保存成功")
     closeModal()
-    clusterApi.setConnectionList(await import("/@/api").then((m) => m.connectionListApi()))
   } catch (e: any) {
     if (e?.message) return
     errorMessage.value = e?.message || e?.toString() || "保存失败"

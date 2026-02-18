@@ -314,6 +314,7 @@ onMounted(() => {
   height: 100%;
   padding: 12px 16px;
   overflow: hidden;
+  width: 100%;
 }
 .toolbar {
   display: flex;
@@ -334,6 +335,7 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  width: 100%;
 }
 .pagination-row {
   display: flex;

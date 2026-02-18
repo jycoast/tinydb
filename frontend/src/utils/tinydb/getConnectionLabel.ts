@@ -9,8 +9,9 @@ function getConnectionLabelCore(connection, { allowExplicitDatabase = true } = {
   if (!connection) {
     return null;
   }
-  if (connection.displayName) {
-    return connection.displayName;
+  const name = connection.name ?? connection.displayName;
+  if (name != null && String(name).trim() !== "") {
+    return String(name).trim();
   }
   if (connection.singleDatabase && connection.host && allowExplicitDatabase && connection.defaultDatabase) {
     return `${connection.defaultDatabase} on ${connection.host}`;

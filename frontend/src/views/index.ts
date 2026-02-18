@@ -37,6 +37,7 @@ export { default as FunctionList } from './Database/Routine/FunctionList.vue'
 // Server
 export { default as ServerStatus } from './Server/ServerStatus.vue'
 export { default as ServerVariables } from './Server/ServerVariables.vue'
+export { default as ServerSummaryTab } from './Server/ServerSummaryTab.vue'
 
 // Tools
 export { default as DataExport } from './Tools/DataExport.vue'

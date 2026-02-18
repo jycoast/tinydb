@@ -3,59 +3,71 @@
     <div class="container">
       <template v-if="databaseName">
         <div class="item item-primary">
-          <AppIcon icon="icon lock" padRight v-if="connection && connection.isReadOnly"/>
-          <AppIcon icon="icon database" padRight v-else/>
+          <el-icon class="pad-right" v-if="connection && connection.isReadOnly">
+            <Lock />
+          </el-icon>
+          <el-icon class="pad-right" v-else>
+            <DataBoard />
+          </el-icon>
           {{ databaseName }}
-        </div>
-        <div v-if="dbid" class="item clickable" title="Database color">
-          <div class="colorbox">
-            <AppIcon icon="icon palette"/>
-          </div>
         </div>
       </template>
       <template v-if="connectionLabel">
         <div class="item item-primary">
-          <AppIcon icon="icon server" padRight/>
+          <el-icon class="pad-right">
+            <Monitor />
+          </el-icon>
           {{ connectionLabel }}
-        </div>
-        <div class="item clickable" title="Connection color">
-          <div class="colorbox">
-            <AppIcon icon="icon palette"/>
-          </div>
         </div>
       </template>
       <div class="item" v-if="connection?.user">
-        <AppIcon icon="icon account" padRight/>
+        <el-icon class="pad-right">
+          <User />
+        </el-icon>
         {{ connection.user }}
       </div>
       <div class="item item-primary clickable" v-if="connection && status">
         <template v-if="status.name == 'pending'">
-          <AppIcon icon="icon loading" padRight/>
+          <el-icon class="pad-right is-loading">
+            <Loading />
+          </el-icon>
           Loading
         </template>
         <template v-else-if="status.name == 'checkStructure'">
-          <AppIcon icon="icon loading" padRight/>
+          <el-icon class="pad-right is-loading">
+            <Loading />
+          </el-icon>
           Checking model
         </template>
         <template v-else-if="status.name == 'loadStructure'">
-          <AppIcon icon="icon loading" padRight/>
+          <el-icon class="pad-right is-loading">
+            <Loading />
+          </el-icon>
           Loading model
         </template>
         <template v-else-if="status.name == 'ok'">
-          <AppIcon icon="img ok-inv" padRight/>
+          <el-icon class="pad-right el-icon-success">
+            <CircleCheck />
+          </el-icon>
           Connected
         </template>
         <template v-else-if="status.name == 'error'">
-          <AppIcon icon="img error-inv" padRight/>
+          <el-icon class="pad-right el-icon-danger">
+            <CircleClose />
+          </el-icon>
           Error
         </template>
       </div>
       <div class="item" v-if="!connection">
-        <AppIcon icon="icon disconnected" padRight/>
+        <el-icon class="pad-right">
+          <Connection />
+        </el-icon>
         Not connected
       </div>
       <div class="item flex" :title="serverVersion.version" v-if="serverVersion">
-        <AppIcon icon="icon version" padRight/>
+        <el-icon class="pad-right">
+          <Tickets />
+        </el-icon>
         <div class="version">
           {{ serverVersion.versionText || serverVersion.version }}
         </div>
@@ -63,7 +75,9 @@
       <div class="item flex clickable" v-if="status?.analysedTime"
            :title="`Last ${databaseName} model refresh: ${analysedTimeFormat}\nClick for refresh DB model`"
            @click="handleSyncModel">
-        <AppIcon icon="icon history" padRight/>
+        <el-icon class="pad-right">
+          <Clock />
+        </el-icon>
         <div class="version ml-1">
           {{ analysedTimeFromNow + (timerValue ? '' : '') }}
         </div>
@@ -71,7 +85,9 @@
     </div>
     <div class="container" v-for="item in contextItems">
       <div class="item">
-        <AppIcon :icon="item.icon" padRight/>
+        <el-icon class="pad-right">
+          <component :is="getIconComponent(item.icon)" />
+        </el-icon>
         {{ item.text }}
       </div>
     </div>
@@ -81,11 +97,29 @@
 <script setup lang="ts">
 import {storeToRefs} from "pinia"
 import {computed, onBeforeUnmount, onMounted, ref, unref, watch} from "vue"
-import AppIcon from "/@/components/Icon/src/AppIcon.vue"
 import {useBootstrapStore} from "/@/store/modules/bootstrap"
 import getConnectionLabel from "/@/utils/tinydb/getConnectionLabel"
 import {useDatabaseServerVersion, useDatabaseStatus} from "/@/api"
 import {formatToDateTime, fromNow} from "/@/utils/dateUtil"
+import {
+  Lock,
+  DataBoard,
+  Brush,
+  Monitor,
+  User,
+  Loading,
+  CircleCheck,
+  CircleClose,
+  Connection,
+  Tickets,
+  Clock,
+  Close,
+  ArrowRight,
+  Document,
+  Link,
+  Grid,
+  Folder
+} from '@element-plus/icons-vue'
 
 const bootstrap = useBootstrapStore()
 const {currentDatabase} = storeToRefs(bootstrap)
@@ -103,6 +137,33 @@ const timerValue = ref(1)
 
 const analysedTimeFromNow = computed(() => fromNow(status.value?.analysedTime))
 const analysedTimeFormat = computed(() => formatToDateTime(status.value?.analysedTime, "HH:mm:ss"))
+
+// Icon mapping for context items
+const iconMap: Record<string, any> = {
+  'icon loading': Loading,
+  'icon close': Close,
+  'icon lock': Lock,
+  'icon database': DataBoard,
+  'icon palette': Brush,
+  'icon server': Monitor,
+  'icon account': User,
+  'icon disconnected': Connection,
+  'icon version': Tickets,
+  'icon history': Clock,
+  'icon menu-right': ArrowRight,
+  'icon query': Document,
+  'icon new-connection': Link,
+  'img ok-inv': CircleCheck,
+  'img error-inv': CircleClose,
+  'img server': Monitor,
+  'img database': DataBoard,
+  'img table': Grid,
+  'img folder': Folder,
+}
+
+function getIconComponent(iconName: string) {
+  return iconMap[iconName] || Document
+}
 
 watch(() => [dbid.value, connection.value], () => {
   useDatabaseStatus(dbid.value || {}, status)
@@ -173,16 +234,32 @@ function handleSyncModel() {
   background-color: var(--theme-bg-hover);
 }
 
-.colorbox {
-  padding: 2px 6px;
-  border-radius: 6px;
-  color: var(--theme-font-1);
-  background: var(--theme-bg-2);
-  border: 1px solid var(--theme-border);
-  transition: all 0.2s ease;
-}
-
 .colorbox:hover {
   background: var(--theme-bg-hover);
+}
+
+.pad-left {
+  margin-left: 0.25rem;
+}
+
+.pad-right {
+  margin-right: 0.25rem;
+}
+
+.el-icon-success {
+  color: var(--el-color-success);
+}
+
+.el-icon-danger {
+  color: var(--el-color-danger);
+}
+
+.is-loading {
+  animation: rotating 1.5s linear infinite;
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

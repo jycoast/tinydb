@@ -163,7 +163,12 @@ type GetConnectionsRequest struct {
 }
 
 func (conn *Connections) Get(req *GetConnectionsRequest) *serializer.Response {
-	return serializer.SuccessData(serializer.SUCCESS, getCore(req.Conid, true))
+	raw := getCore(req.Conid, true)
+	if raw == nil {
+		return serializer.SuccessData(serializer.SUCCESS, nil)
+	}
+	decrypted := internal.DecryptConnection(raw)
+	return serializer.SuccessData(serializer.SUCCESS, decrypted)
 }
 
 func (conn *Connections) Delete(connection map[string]string) *serializer.Response {

@@ -549,34 +549,19 @@ function splitSqlStatements(sql: string): string[] {
   return statements.length > 0 ? statements : [sql]
 }
 
-function handleDeduplicateSelection() {
+async function handleDeduplicateSelection() {
   const ed = editor.value
-  if (!ed) {
-    ElMessage.warning('编辑器未就绪')
-    return
-  }
+  if (!ed) return
+  const selection = ed.getSelectionRange()
+  if (!selection || selection.start.row === selection.end.row) return
 
-  const selectedText = (ed.getSelectedText?.() as string) || ''
-  if (!selectedText || !selectedText.trim()) {
-    ElMessage.info('请先选中要去重的内容（每行一个值）')
-    return
-  }
+  // 获取选中的文本
+  const selectedText = ed.session.getTextRange(selection)
+  if (!selectedText.trim()) return
 
   // 按行分割
-  const lines = selectedText.split(/\r?\n/)
-
-  // 使用 Set 来跟踪已出现的行（保留第一次出现的行）
-  const seen = new Set<string>()
-  const uniqueLines: string[] = []
-
-  for (const line of lines) {
-    // 使用 trim() 后的内容作为去重的键，但保留原始行的格式
-    const trimmed = line.trim()
-    if (!seen.has(trimmed)) {
-      seen.add(trimmed)
-      uniqueLines.push(line)
-    }
-  }
+  const lines = selectedText.split('\n')
+  const uniqueLines = Array.from(new Set(lines))
 
   // 重新组合成文本
   const deduplicated = uniqueLines.join('\n')
@@ -598,6 +583,102 @@ function handleDeduplicateSelection() {
   ElMessage.success(`去重完成，已移除 ${removedCount} 行重复数据`)
 }
 
+async function handleUpdateToSelect() {
+  const ed = editor.value;
+  if (!ed) return;
+
+  const selection = ed.getSelectionRange();
+  if (!selection) return;
+
+  const selectedText = ed.session.getTextRange(selection);
+  if (!selectedText.trim()) return;
+
+  const sql = selectedText.trim().replace(/;+$/, ""); // 去掉末尾分号
+
+  let selectSQL = tryParseMySQLJoinUpdate(sql)
+               || tryParsePostgresUpdateFrom(sql)
+               || tryParseStandardUpdate(sql);
+
+  if (!selectSQL) {
+    ElMessage.warning("未识别到有效的 UPDATE 语句（标准 / JOIN / FROM）");
+    return;
+  }
+
+  // 替换编辑器中的内容
+  ed.session.replace(selection, selectSQL + ";");
+  ed.clearSelection();
+  ed.focus();
+
+  ElMessage.success("UPDATE 已转换为 SELECT 查询语句");
+}
+
+function tryParseMySQLJoinUpdate(sql) {
+  // 例：
+  // UPDATE a
+  // JOIN b ON ...
+  // LEFT JOIN c ON ...
+  // SET ...
+  // WHERE ...
+
+  const regex = /^UPDATE\s+([\s\S]+?)\s+SET\s+/i;
+  const match = sql.match(regex);
+  if (!match) return null;
+
+  const updatePart = match[1].trim();
+
+  // 提取 WHERE
+  const whereMatch = sql.match(/\bWHERE\b([\s\S]+)/i);
+  let where = "";
+  if (whereMatch) {
+    where = whereMatch[1].trim();
+  }
+
+  // 构造 SELECT
+  return `SELECT * FROM ${updatePart}${where ? ` WHERE ${where}` : ""}`;
+}
+
+function tryParsePostgresUpdateFrom(sql) {
+  // 例：
+  // UPDATE a
+  // SET ...
+  // FROM b
+  // WHERE a.id = b.id
+
+  const updateRegex = /^UPDATE\s+([a-zA-Z0-9_."`\[\]]+(?:\s+[a-zA-Z0-9_]+)?)\s+/i;
+  const updateMatch = sql.match(updateRegex);
+  if (!updateMatch) return null;
+
+  const tableName = updateMatch[1].trim();
+
+  // FROM 子句
+  const fromMatch = sql.match(/\bFROM\b([\s\S]+?)(\bWHERE\b|$)/i);
+  const fromClause = fromMatch ? fromMatch[1].trim() : "";
+
+  // WHERE 子句
+  let where = "";
+  const whereMatch = sql.match(/\bWHERE\b([\s\S]+)/i);
+  if (whereMatch) where = whereMatch[1].trim();
+
+  // 构造 SELECT
+  return `SELECT * FROM ${tableName}${fromClause ? `, ${fromClause}` : ""}${where ? ` WHERE ${where}` : ""}`;
+}
+
+
+function tryParseStandardUpdate(sql) {
+  const tableRegex = /^UPDATE\s+([a-zA-Z0-9_."`\[\]]+(?:\s+[a-zA-Z0-9_]+)?)\s+SET\s+/i;
+  const match = sql.match(tableRegex);
+  if (!match) return null;
+
+  const tableName = match[1].trim();
+
+  const whereMatch = sql.match(/\bWHERE\b([\s\S]+)/i);
+  let where = "";
+  if (whereMatch) where = whereMatch[1].trim();
+
+  return `SELECT * FROM ${tableName}${where ? ` WHERE ${where}` : ""}`;
+}
+
+
 // 右键菜单项（需要在函数定义之后）
 const contextMenuItems = computed<ContextMenuItem[]>(() => [
   {
@@ -611,6 +692,10 @@ const contextMenuItems = computed<ContextMenuItem[]>(() => [
   {
     label: '去重',
     onClick: handleDeduplicateSelection
+  },
+  {
+    label: 'UPDATE 转查询',
+    onClick: handleUpdateToSelect
   }
 ])
 
