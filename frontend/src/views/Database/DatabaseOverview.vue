@@ -680,9 +680,7 @@ async function loadTableColumns(tableNode: TreeNode) {
     )
     
     if (table && table.columns && Array.isArray(table.columns)) {
-      const columns = sortBy(table.columns, (col: any) => 
-        col.ordinalPosition ?? col.columnName
-      )
+      const columns = table.columns
       
       tableNode.children = columns.map((col: any) => {
         const remarkInfo = col.columnComment ? `${col.columnComment}` : ''
@@ -1489,7 +1487,10 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 9px;
   top: 0;
-  bottom: 0;
+  1540→  bottom: 0;
+}
+
+
   border-left: 1px dotted var(--el-border-color);
   pointer-events: none;
 }

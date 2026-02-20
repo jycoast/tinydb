@@ -1,12 +1,11 @@
 package stash
 
 import (
-	"errors"
+	"fmt"
 	"sync"
 	"tinydb/app/db"
 	"tinydb/app/db/adapter"
 	"tinydb/app/pkg/logger"
-	"tinydb/app/pkg/serializer"
 	"tinydb/app/utility"
 )
 
@@ -65,7 +64,7 @@ func (s *StorageSession) Scanner(conid string, connection map[string]interface{}
 
 func (s *StorageSession) SetItem(conid, database string, driver db.Session) error {
 	if driver == nil {
-		return errors.New(serializer.ErrNil)
+		return fmt.Errorf("cannot set nil driver for database '%s' on connection '%s'", database, conid)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -85,7 +84,7 @@ func (s *StorageSession) GetDatabaseMap(conid string) (map[databaseId]db.Session
 
 	sessionMap, ok := s.source[repositoryId(conid)]
 	if !ok {
-		return nil, errors.New(serializer.ErrNil)
+		return nil, fmt.Errorf("connection '%s' not found or not initialized", conid)
 	}
 
 	return sessionMap, nil
@@ -97,7 +96,7 @@ func (s *StorageSession) GetItem(conid, database string) (driver db.Session, err
 
 	sessionMap, ok := s.source[repositoryId(conid)]
 	if !ok {
-		return nil, errors.New(serializer.ErrNil)
+		return nil, fmt.Errorf("connection '%s' not found or not initialized", conid)
 	}
 
 	for k, v := range sessionMap {
@@ -106,7 +105,7 @@ func (s *StorageSession) GetItem(conid, database string) (driver db.Session, err
 		}
 	}
 
-	return nil, errors.New("invalid database")
+	return nil, fmt.Errorf("database '%s' is not connected or connection not established for conid '%s'", database, conid)
 }
 
 func (s *StorageSession) RemoveItem(conid string) (err error) {

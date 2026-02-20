@@ -27,26 +27,15 @@
           size="small"
           filterable
           clearable
-          placeholder="选择库/表"
+          placeholder="选择数据库"
           @change="handleSelectObject"
         >
-          <el-option-group v-if="databaseOptions.length" label="Databases">
-            <el-option
-              v-for="db in databaseOptions"
-              :key="`db:${db}`"
-              :label="db"
-              :value="`db:${db}`"
-            />
-          </el-option-group>
-
-          <el-option-group v-if="tableOptions.length" label="Tables">
-            <el-option
-              v-for="t in tableOptions"
-              :key="`table:${t}`"
-              :label="t"
-              :value="`table:${t}`"
-            />
-          </el-option-group>
+          <el-option
+            v-for="db in databaseOptions"
+            :key="`db:${db}`"
+            :label="db"
+            :value="`db:${db}`"
+          />
         </el-select>
 
         <el-button type="primary" :icon="VideoPlay" :loading="executing" @click="handleExecute" style="flex-shrink: 0;">
@@ -189,6 +178,8 @@ import {
   databaseConnectionsSqlSelectApi,
   getConnectionInfo,
   useDatabaseInfo,
+  useDatabaseList,
+  databaseConnectionsRefreshApi,
 } from "/@/api"
 import AceEditor from '/@/components/Query/AceEditor'
 import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/components/Query/aceApi'
@@ -613,13 +604,6 @@ async function handleUpdateToSelect() {
 }
 
 function tryParseMySQLJoinUpdate(sql) {
-  // 例：
-  // UPDATE a
-  // JOIN b ON ...
-  // LEFT JOIN c ON ...
-  // SET ...
-  // WHERE ...
-
   const regex = /^UPDATE\s+([\s\S]+?)\s+SET\s+/i;
   const match = sql.match(regex);
   if (!match) return null;
@@ -638,12 +622,6 @@ function tryParseMySQLJoinUpdate(sql) {
 }
 
 function tryParsePostgresUpdateFrom(sql) {
-  // 例：
-  // UPDATE a
-  // SET ...
-  // FROM b
-  // WHERE a.id = b.id
-
   const updateRegex = /^UPDATE\s+([a-zA-Z0-9_."`\[\]]+(?:\s+[a-zA-Z0-9_]+)?)\s+/i;
   const updateMatch = sql.match(updateRegex);
   if (!updateMatch) return null;
@@ -716,10 +694,22 @@ async function handleChangeConid(conid?: string) {
       return
     }
 
-    // Pick a reasonable default database:
-    // - keep existing db if still present
-    // - else use connection defaultDatabase
-    // - else first from cached list
+    // 获取数据库列表
+    const dbListRef = ref<any[]>([])
+    useDatabaseList({ conid }, dbListRef)
+    
+    // 等待数据加载完成
+    let retries = 0
+    while (retries < 10 && (!dbListRef.value || dbListRef.value.length === 0)) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      retries++
+    }
+    
+    // 将数据库列表保存到 localStorage
+    if (dbListRef.value && dbListRef.value.length > 0) {
+      localStorage.setItem(`database_list_${conid}`, JSON.stringify(dbListRef.value))
+    }
+    
     const cachedDbs = databaseOptions.value
     const keep = currentDatabaseName.value && cachedDbs.includes(currentDatabaseName.value) ? currentDatabaseName.value : null
     const db =
@@ -728,6 +718,15 @@ async function handleChangeConid(conid?: string) {
       cachedDbs[0] ||
       currentDatabaseName.value ||
       undefined
+
+    // 如果有默认数据库，自动选择它
+    if (db) {
+      selectedDatabase.value = db
+      selectedObject.value = `db:${db}`
+      // 刷新数据库结构信息
+      databaseInfoStore.value = null
+      useDatabaseInfo({conid, database: db}, databaseInfoStore)
+    }
 
     bootstrap.setCurrentDatabase({
       connection: conn,
@@ -767,6 +766,10 @@ async function handleSelectObject(val: string) {
         name: db,
         title: db,
       } as any)
+      
+      // 强制刷新数据库结构信息
+      databaseInfoStore.value = null
+      useDatabaseInfo({conid, database: db}, databaseInfoStore)
     } catch (e: any) {
       ElMessage.error(`切换数据库失败：${e?.message || e}`)
     }
@@ -1249,6 +1252,62 @@ const resultsInfo = computed(() => {
 async function handleExecute() {
   if (!effectiveConid.value || !effectiveDatabaseName.value) {
     error.value = '请先选择数据库连接'
+    showResults.value = true
+    return
+  }
+
+  // 验证数据库连接有效性并等待连接建立
+  try {
+    // 先刷新数据库连接状态
+    await databaseConnectionsRefreshApi({
+      conid: effectiveConid.value,
+      database: effectiveDatabaseName.value,
+      keepOpen: true
+    })
+    
+    // 检查连接状态
+    const conn = await getConnectionInfo({
+      conid: effectiveConid.value, 
+      database: effectiveDatabaseName.value
+    })
+    
+    if (!conn) {
+      error.value = `无效的数据库连接: ${effectiveDatabaseName.value}`
+      showResults.value = true
+      return
+    }
+    
+    // 检查连接状态是否为成功
+    const connectionStatus = (conn as any)?.status || (conn as any)?.Status
+    if (connectionStatus && connectionStatus.name !== 'ok' && connectionStatus.Name !== 'ok') {
+      // 如果连接还在建立中，等待一段时间
+      if (connectionStatus.name === 'pending' || connectionStatus.Name === 'pending') {
+        // 显示等待提示
+        ElMessage.info('正在建立数据库连接，请稍候...')
+        
+        // 等待连接建立完成
+        let retries = 0
+        while (retries < 15) { // 最多等待3秒 (15 * 200ms)
+          await new Promise(resolve => setTimeout(resolve, 200))
+          const refreshedConn = await getConnectionInfo({
+            conid: effectiveConid.value, 
+            database: effectiveDatabaseName.value
+          })
+          
+          const refreshedStatus = (refreshedConn as any)?.status || (refreshedConn as any)?.Status
+          if (refreshedStatus && (refreshedStatus.name === 'ok' || refreshedStatus.Name === 'ok')) {
+            break
+          }
+          retries++
+        }
+      } else {
+        error.value = `数据库连接失败: ${connectionStatus.message || connectionStatus.Message || '未知错误'}`
+        showResults.value = true
+        return
+      }
+    }
+  } catch (e: any) {
+    error.value = `数据库连接验证失败: ${e?.message || e}`
     showResults.value = true
     return
   }

@@ -67,24 +67,78 @@
         size="small"
         max-height="calc(100vh - 220px)"
         style="width: 100%"
+        @selection-change="handleSelectionChange"
+        @row-contextmenu="handleRowRightClick"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column
-          v-for="col in tableColumns"
+          v-for="(col, colIndex) in tableColumns"
           :key="col.dataIndex"
           :prop="col.dataIndex"
           :label="col.title"
           :min-width="col.width"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row, $index }">
+            <div 
+              class="cell-container"
+              :class="{ 'cell-editing': isCellEditing($index, colIndex) }"
+              @click="startCellEdit($index, colIndex, row[col.dataIndex])"
+            >
+              <template v-if="isCellEditing($index, colIndex)">
+                <input
+                  :ref="(el) => setEditingInputRef(el, $index, colIndex)"
+                  v-model="editingCell!.currentValue"
+                  class="cell-input"
+                  @blur="cancelCellEdit"
+                  @keydown.enter="saveCellEdit"
+                  @keydown.esc="cancelCellEdit"
+                  @keydown.tab.prevent
+                />
+              </template>
+              <template v-else>
+                <span class="cell-value">{{ formatCellValue(row[col.dataIndex]) }}</span>
+              </template>
+            </div>
+          </template>
+        </el-table-column>
         <template #empty>
           <el-empty description="暂无数据" />
         </template>
       </el-table>
     </div>
+    
+    <!-- 右键菜单 -->
+    <div 
+      v-if="contextMenuVisible" 
+      class="context-menu" 
+      :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+      @mouseleave="hideContextMenu"
+    >
+      <div 
+        class="context-menu-item" 
+        @click="handleCopyAsInsert"
+      >
+        复制为Insert语句
+      </div>
+    </div>
+    
     <div class="pagination-row">
-      <span class="summary">
-        {{ summaryText }}
-      </span>
+      <div class="pagination-left">
+        <el-button
+          v-if="editingCell"
+          type="primary"
+          :icon="CircleCheck"
+          size="small"
+          @click="saveCellEdit"
+          class="submit-edit-btn"
+        >
+          提交
+        </el-button>
+        <span class="summary">
+          {{ summaryText }}
+        </span>
+      </div>
       <el-pagination
         v-model:current-page="currentPage"
         :page-size="pageSize"
@@ -105,8 +159,11 @@ export const matchingProps = ['conid', 'database', 'schemaName', 'pureName']
 
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { RefreshRight, Delete } from '@element-plus/icons-vue'
-import { databaseConnectionsSqlSelectApi } from '/@/api'
+import { RefreshRight, Delete, CircleCheck } from '@element-plus/icons-vue'
+import { databaseConnectionsSqlSelectApi, useDatabaseInfo } from '/@/api'
+import { ElMessage } from 'element-plus'
+import type { ContextMenuItem } from '/@/components/Modals/typing'
+import { copyRowsToClipboard } from '/@/utils/tinydb/clipboard'
 
 const props = withDefaults(
   defineProps<{
@@ -125,6 +182,15 @@ const error = ref('')
 const rows = ref<any[]>([])
 const hasMore = ref(true)
 const columnNames = ref<string[]>([])
+const selectedRows = ref<any[]>([])
+const contextMenuVisible = ref(false)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+const rightClickedRow = ref<any>(null)
+const tableStructure = ref<any>(null)
+
+// Cell editing state
+const editingCell = ref<{ rowIndex: number; columnIndex: number; originalValue: any; currentValue: any } | null>(null)
 let filterIdCounter = 0
 interface FilterCondition {
   id: number
@@ -263,8 +329,28 @@ async function loadData() {
 }
 
 const tableColumns = computed(() => {
-  const cols = columnNames.value.length > 0 ? columnNames.value : (rows.value[0] && typeof rows.value[0] === 'object' && !Array.isArray(rows.value[0]) ? Object.keys(rows.value[0]) : [])
-  return cols.map((k) => ({ title: k, dataIndex: k, key: k, width: 140 }))
+  // Priority 1: Use table structure columns if available (maintains database-defined order)
+  if (tableStructure.value && tableStructure.value.columns && Array.isArray(tableStructure.value.columns)) {
+    return tableStructure.value.columns.map((col: any) => ({
+      title: col.columnName || col.name,
+      dataIndex: col.columnName || col.name,
+      key: col.columnName || col.name,
+      width: 140
+    }))
+  }
+  
+  // Priority 2: Use columnNames (from SELECT query)
+  if (columnNames.value.length > 0) {
+    return columnNames.value.map((k) => ({ title: k, dataIndex: k, key: k, width: 140 }))
+  }
+  
+  // Priority 3: Derive from first row data (fallback)
+  if (rows.value.length > 0 && rows.value[0] && typeof rows.value[0] === 'object') {
+    const keys = Object.keys(rows.value[0]).filter(key => key !== 'key')
+    return keys.map((k) => ({ title: k, dataIndex: k, key: k, width: 140 }))
+  }
+  
+  return []
 })
 
 const tableRows = computed(() => {
@@ -294,15 +380,289 @@ function onSizeChange() {
   loadData()
 }
 
+async function loadTableStructure() {
+  if (!props.conid || !props.database || !props.pureName) {
+    return
+  }
+  
+  try {
+    // Load database structure to get proper column order
+    const structureRef = ref<any>(null)
+    useDatabaseInfo(
+      { 
+        conid: props.conid, 
+        database: props.database 
+      }, 
+      structureRef
+    )
+    
+    // Wait for structure to load
+    let retries = 0
+    while (retries < 10 && (!structureRef.value || !structureRef.value.tables)) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      retries++
+    }
+    
+    if (structureRef.value && structureRef.value.tables) {
+      // Find the specific table
+      const table = structureRef.value.tables.find((t: any) => 
+        t.pureName === props.pureName && 
+        (props.schemaName ? t.schemaName === props.schemaName : true)
+      )
+      
+      if (table) {
+        tableStructure.value = table
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to load table structure:', e)
+    // Continue without structure - will fall back to other methods
+  }
+}
+
+function handleSelectionChange(selection: any[]) {
+  selectedRows.value = selection
+}
+
+function handleRowRightClick(row: any, column: any, event: MouseEvent) {
+  event.preventDefault()
+  rightClickedRow.value = row
+  contextMenuX.value = event.clientX
+  contextMenuY.value = event.clientY
+  contextMenuVisible.value = true
+  
+  // 确保菜单在视窗内
+  setTimeout(() => {
+    const menu = document.querySelector('.context-menu') as HTMLElement
+    if (menu) {
+      const rect = menu.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      
+      if (rect.right > viewportWidth) {
+        contextMenuX.value = viewportWidth - rect.width - 5
+      }
+      if (rect.bottom > viewportHeight) {
+        contextMenuY.value = viewportHeight - rect.height - 5
+      }
+    }
+  }, 0)
+}
+
+function hideContextMenu() {
+  contextMenuVisible.value = false
+  rightClickedRow.value = null
+}
+
+function generateInsertStatement(row: any): string {
+  const tableName = props.schemaName 
+    ? `${quoteIdentifier(props.schemaName)}.${quoteIdentifier(props.pureName)}`
+    : quoteIdentifier(props.pureName)
+  
+  const columns = Object.keys(row).filter(key => key !== 'key')
+  const columnList = columns.map(col => quoteIdentifier(col)).join(', ')
+  
+  const values = columns.map(col => {
+    const value = row[col]
+    if (value === null || value === undefined) {
+      return 'NULL'
+    }
+    if (typeof value === 'number') {
+      return String(value)
+    }
+    if (typeof value === 'boolean') {
+      return value ? '1' : '0'
+    }
+    // 字符串值需要转义
+    return `'${String(value).replace(/'/g, "''")}'`
+  }).join(', ')
+  
+  return `INSERT INTO ${tableName} (${columnList}) VALUES (${values});`
+}
+
+function handleCopyAsInsert() {
+  hideContextMenu()
+  
+  const rowsToCopy = rightClickedRow.value ? [rightClickedRow.value] : selectedRows.value
+  
+  if (rowsToCopy.length === 0) {
+    ElMessage.warning('请先选择要复制的行')
+    return
+  }
+  
+  const insertStatements = rowsToCopy.map(row => generateInsertStatement(row)).join('\n')
+  
+  navigator.clipboard.writeText(insertStatements).then(() => {
+    ElMessage.success(`已复制 ${rowsToCopy.length} 行的Insert语句到剪贴板`)
+  }).catch(() => {
+    // 降级方案
+    const textarea = document.createElement('textarea')
+    textarea.value = insertStatements
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success(`已复制 ${rowsToCopy.length} 行的Insert语句到剪贴板`)
+  })
+}
+
+// 点击其他地方隐藏菜单
+document.addEventListener('click', (event) => {
+  const contextMenu = document.querySelector('.context-menu')
+  if (contextMenu && !contextMenu.contains(event.target as Node)) {
+    hideContextMenu()
+  }
+})
+
+// Cell editing functions
+let currentEditingInput: HTMLInputElement | null = null
+
+function setEditingInputRef(el: Element | null, rowIndex: number, columnIndex: number) {
+  if (el && isCellEditing(rowIndex, columnIndex)) {
+    currentEditingInput = el as HTMLInputElement
+    // Focus and select after next tick
+    setTimeout(() => {
+      if (currentEditingInput) {
+        currentEditingInput.focus()
+        currentEditingInput.select()
+      }
+    }, 0)
+  }
+}
+
+function isCellEditing(rowIndex: number, columnIndex: number): boolean {
+  return editingCell.value?.rowIndex === rowIndex && editingCell.value?.columnIndex === columnIndex
+}
+
+function formatCellValue(value: any): string {
+  if (value === null || value === undefined) {
+    return 'NULL'
+  }
+  if (typeof value === 'boolean') {
+    return value ? 'true' : 'false'
+  }
+  return String(value)
+}
+
+function startCellEdit(rowIndex: number, columnIndex: number, value: any) {
+  // If already editing another cell, cancel it first
+  if (editingCell.value) {
+    cancelCellEdit()
+  }
+  
+  editingCell.value = {
+    rowIndex,
+    columnIndex,
+    originalValue: value,
+    currentValue: value === null || value === undefined ? '' : String(value)
+  }
+  
+  // The focus will be handled by setEditingInputRef when the input is rendered
+}
+
+function cancelCellEdit() {
+  editingCell.value = null
+  currentEditingInput = null
+}
+
+async function saveCellEdit() {
+  console.log('Saving cell edit...')
+  if (!editingCell.value) return
+    console.log('Saving cell edit2...')
+  const { rowIndex, columnIndex, originalValue, currentValue } = editingCell.value
+  const row = tableRows.value[rowIndex]
+  const column = tableColumns.value[columnIndex]
+  
+  // Check if value actually changed
+  if (currentValue === String(originalValue)) {
+    cancelCellEdit()
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    // Convert value to appropriate type
+    let newValue: any = currentValue
+    if (currentValue === '' || currentValue.toLowerCase() === 'null') {
+      newValue = null
+    } else if (currentValue.toLowerCase() === 'true') {
+      newValue = true
+    } else if (currentValue.toLowerCase() === 'false') {
+      newValue = false
+    } else {
+      // Try to parse as number
+      const num = Number(currentValue)
+      if (!isNaN(num) && String(num) === currentValue) {
+        newValue = num
+      }
+    }
+    
+    // Build UPDATE statement
+    const tableName = props.schemaName 
+      ? `${quoteIdentifier(props.schemaName)}.${quoteIdentifier(props.pureName)}`
+      : quoteIdentifier(props.pureName)
+    
+    // Get primary key or use first column as identifier (simplified approach)
+    const primaryKeyColumn = columnNames.value[0] || 'id'
+    const primaryKeyValue = row[primaryKeyColumn]
+    
+    const setClause = `${quoteIdentifier(column.dataIndex)} = ${formatSqlValue(newValue)}`
+    const whereClause = `${quoteIdentifier(primaryKeyColumn)} = ${formatSqlValue(primaryKeyValue)}`
+    
+    const updateSql = `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`
+    
+    // Execute the update
+    const result = await databaseConnectionsSqlSelectApi({
+      conid: props.conid,
+      database: props.database,
+      select: { sql: updateSql }
+    }) as any
+    
+    if (result?.errorMessage) {
+      throw new Error(result.errorMessage)
+    }
+    
+    // Update local data
+    const updatedRows = [...rows.value]
+    updatedRows[rowIndex] = { ...updatedRows[rowIndex], [column.dataIndex]: newValue }
+    rows.value = updatedRows
+    
+    ElMessage.success('数据更新成功')
+    cancelCellEdit()
+    
+  } catch (error: any) {
+    ElMessage.error(`更新失败: ${error.message || '未知错误'}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+function formatSqlValue(value: any): string {
+  if (value === null || value === undefined) {
+    return 'NULL'
+  }
+  if (typeof value === 'number') {
+    return String(value)
+  }
+  if (typeof value === 'boolean') {
+    return value ? '1' : '0'
+  }
+  // String value - escape single quotes
+  return `'${String(value).replace(/'/g, "''")}'`
+}
+
 watch(
   () => [props.conid, props.database, props.schemaName, props.pureName],
   () => {
     currentPage.value = 1
+    loadTableStructure()
     loadData()
   }
 )
 
 onMounted(() => {
+  loadTableStructure()
   loadData()
 })
 </script>
@@ -380,5 +740,84 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.context-menu {
+  position: fixed;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  box-shadow: var(--el-box-shadow-light);
+  z-index: 3000;
+  min-width: 160px;
+  padding: 4px 0;
+}
+
+.context-menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s;
+}
+
+.context-menu-item:hover {
+  background: var(--el-fill-color-light);
+  color: var(--el-color-primary);
+}
+
+.context-menu-item:active {
+  background: var(--el-fill-color);
+}
+
+/* Cell editing styles */
+.cell-container {
+  padding: 4px 8px;
+  cursor: pointer;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.cell-container:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.cell-container.cell-editing {
+  background-color: var(--el-color-primary-light-9);
+  border: 2px solid var(--el-color-primary);
+  padding: 2px 6px;
+  outline: none;
+}
+
+.cell-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 2px;
+  color: var(--el-text-color-primary);
+}
+
+.cell-value {
+  word-break: break-all;
+}
+
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.submit-edit-btn {
+  transition: all 0.3s;
+}
+
+.submit-edit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 </style>
