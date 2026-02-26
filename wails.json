@@ -5,12 +5,12 @@
   "frontend:dev:watcher": "npm run dev -- --host 127.0.0.1 --port 3100 --strictPort",
   "frontend:dev:serverUrl": "http://localhost:3100",
   "author": {
-    "name": "liutiyong",
-    "email": "422720735@qq.com"
+    "name": "jiyongchao",
+    "email": "470520366@qq.com"
   },
   "wailsjsdir": "frontend/src",
   "info": {
-    "companyName": "Individual Developer tiyong",
+    "companyName": "shokz",
     "productName": "tinydb",
     "productVersion": "0.0.2.2",
     "comments": "multiple database visualization development tools"
