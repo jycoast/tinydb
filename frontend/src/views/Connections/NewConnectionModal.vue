@@ -177,6 +177,22 @@ const rules = {
   user: [{ required: true, message: "请输入用户名", trigger: "blur" }],
 }
 
+function getValidationErrorMessage(e: any, fallback: string): string {
+  if (e == null) return fallback
+  if (typeof e === "string") return e
+  if (e?.message && typeof e.message === "string") return e.message
+  if (typeof e === "object") {
+    for (const key of Object.keys(e)) {
+      const val = (e as Record<string, unknown>)[key]
+      if (Array.isArray(val) && val.length > 0 && val[0] && typeof (val[0] as any).message === "string") {
+        return (val[0] as any).message
+      }
+      if (val && typeof (val as any).message === "string") return (val as any).message
+    }
+  }
+  return fallback
+}
+
 function buildConnectionParams() {
   const editConn = editConnectionRef.value
   const password = formData.password || (editConn?.password ?? "")
@@ -217,9 +233,9 @@ async function handleTestConnection() {
       createMessage.success("连接测试成功")
     }
   } catch (e: any) {
-    if (e?.message) return
-    errorMessage.value = e?.message || e?.toString() || "测试失败"
-    createMessage.error(errorMessage.value)
+    const msg = getValidationErrorMessage(e, "测试失败")
+    errorMessage.value = msg
+    createMessage.error(msg)
   } finally {
     testing.value = false
   }
@@ -248,9 +264,9 @@ async function handleSubmit() {
     createMessage.success(isEditMode.value ? "连接已更新" : "连接保存成功")
     closeModal()
   } catch (e: any) {
-    if (e?.message) return
-    errorMessage.value = e?.message || e?.toString() || "保存失败"
-    createMessage.error(errorMessage.value)
+    const msg = getValidationErrorMessage(e, "保存失败")
+    errorMessage.value = msg
+    createMessage.error(msg)
   }
 }
 </script>

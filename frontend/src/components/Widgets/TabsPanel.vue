@@ -183,67 +183,15 @@ async function duplicateTab(tab: any) {
   ElMessage.success("已复制标签页")
 }
 
-function toggleFavorite(tab: any) {
-  const data = tab?.appObjectData
-  if (data?.objectTypeField) {
-    const exists = (pinnedTables.value || []).some(x => isSamePinnedTable(x, data))
-    if (exists) {
-      localeStore.updatePinnedTables(list => (list || []).filter(x => !isSamePinnedTable(x, data)))
-      ElMessage.success("已从收藏移除")
-    } else {
-      localeStore.updatePinnedTables(list => [...(list || []), data])
-      ElMessage.success("已加入收藏")
-    }
-    return
-  }
-
-  const conid = tab?.props?.conid
-  const database = tab?.props?.database
-  if (conid && database) {
-    getConnectionInfo({conid, database}).then((conn: any) => {
-      if (!conn) {
-        ElMessage.error("无法获取连接信息，收藏失败")
-        return
-      }
-      const exists = (pinnedDatabases.value || []).some(x => x?.name == database && x?.connection?._id == conn._id)
-      if (exists) {
-        localeStore.updatePinnedDatabases(list => (list || []).filter(x => !(x?.name == database && x?.connection?._id == conn._id)))
-        ElMessage.success("已从收藏移除")
-      } else {
-        localeStore.updatePinnedDatabases(list => [
-          ...(list || []),
-          {connection: conn, name: database, title: database} as any,
-        ])
-        ElMessage.success("已加入收藏")
-      }
-    }).catch((e) => ElMessage.error(`收藏失败：${e?.message || e}`))
-    return
-  }
-
-  ElMessage.warning("该标签页暂不支持加入收藏")
-}
-
 const [createContextMenu] = useContextMenu()
 
 function getContextMenu(tab: any) {
-  const {tabid, appObjectData} = tab
-  const isPinned = appObjectData?.objectTypeField
-    ? (pinnedTables.value || []).some(x => isSamePinnedTable(x, appObjectData))
-    : false
-
+  const {tabid} = tab
   return [
-    {text: "Close", onClick: () => closeTab(tabid)},
-    {text: "Close all", onClick: closeAll},
-    {text: "Close others", onClick: () => closeOthers(tabid)},
-    {text: "Duplicate", onClick: () => duplicateTab(tab)},
-    [
-      {divider: true},
-      {
-        text: isPinned ? "Remove from favorites" : "Add to favorites",
-        onClick: () => toggleFavorite(tab),
-      },
-    ],
-    {divider: true},
+    {text: "关闭", onClick: () => closeTab(tabid)},
+    {text: "关闭所有", onClick: closeAll},
+    {text: "关闭其他", onClick: () => closeOthers(tabid)},
+    {text: "复制", onClick: () => duplicateTab(tab)}
   ]
 }
 

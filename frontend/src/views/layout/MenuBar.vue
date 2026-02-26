@@ -194,17 +194,23 @@ function handleItemClick(item: MenuChildItem, menu: MenuBarMenu) {
 
 function toggleDarkMode(value: boolean) {
   isDarkMode.value = value
-  // 切换CSS类
+  const root = document.documentElement
   if (value) {
-    document.documentElement.classList.add('dark')
+    root.setAttribute('data-theme', 'dark')
+    root.classList.add('dark')
+    root.classList.remove('theme-type-light')
+    root.classList.add('theme-type-dark')
   } else {
-    document.documentElement.classList.remove('dark')
+    root.setAttribute('data-theme', 'light')
+    root.classList.remove('dark')
+    root.classList.remove('theme-type-dark')
+    root.classList.add('theme-type-light')
   }
 }
 
 function saveSettings() {
-  // 保存设置到本地存储
   localStorage.setItem('tinydb-dark-mode', isDarkMode.value.toString())
+  localStorage.setItem('__APP__DARK__MODE__', isDarkMode.value ? 'dark' : 'light')
   settingsDialogVisible.value = false
 }
 
@@ -222,13 +228,12 @@ onMounted(() => {
   }
   document.addEventListener('click', clickOutsideHandler)
 
-  // 从本地存储加载设置
-  const savedDarkMode = localStorage.getItem('tinydb-dark-mode')
-  if (savedDarkMode !== null) {
-    isDarkMode.value = savedDarkMode === 'true'
-    if (isDarkMode.value) {
-      document.documentElement.classList.add('dark')
-    }
+  const saved = localStorage.getItem('tinydb-dark-mode') ?? localStorage.getItem('__APP__DARK__MODE__')
+  if (saved !== null) {
+    isDarkMode.value = saved === 'true' || saved === 'dark'
+    toggleDarkMode(isDarkMode.value)
+  } else {
+    toggleDarkMode(false)
   }
 })
 
