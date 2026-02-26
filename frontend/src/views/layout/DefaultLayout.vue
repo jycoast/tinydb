@@ -133,7 +133,7 @@ subscribeRecentDatabaseSwitch()
 <style scoped>
 .root {
   color: var(--theme-font-1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: var(--el-font-family);
   background: var(--theme-bg-0);
 }
 

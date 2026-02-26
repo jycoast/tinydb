@@ -782,6 +782,10 @@ function getContextMenuItems(data: TreeNode): any[] {
       {
         label: '设计表',
         command: 'design-table'
+      },
+      {
+        label: '复制表名',
+        command: 'copy-table-name'
       }
     )
   }
@@ -821,6 +825,9 @@ async function handleMenuCommand(command: string) {
         break
       case 'open-table':
         openTableData(node)
+        break
+      case 'copy-table-name':
+        handleCopyTableName(node)
         break
       case 'create-table':
         handleCreateTable(node)
@@ -909,6 +916,17 @@ async function handleCopyConnection(node: TreeNode) {
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success('已复制到剪贴板')
+  } catch {
+    ElMessage.error('复制失败')
+  }
+}
+
+async function handleCopyTableName(node: TreeNode) {
+  const name = node.schemaName ? `${node.schemaName}.${node.pureName}` : (node.pureName ?? node.label ?? '')
+  if (!name) return
+  try {
+    await navigator.clipboard.writeText(name)
+    ElMessage.success('已复制表名')
   } catch {
     ElMessage.error('复制失败')
   }
@@ -1453,6 +1471,19 @@ onBeforeUnmount(() => {
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: var(--theme-bg-selected);
 } */
+
+/* 仅根节点为叶子时（如未连接时的连接节点）不显示展开图标且不占位，与搜索框对齐 */
+:deep(.database-tree > .el-tree-node > .el-tree-node__content > .el-tree-node__expand-icon.is-leaf) {
+  width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+:deep(.database-tree > .el-tree-node > .el-tree-node__content > .el-tree-node__expand-icon.is-leaf::before) {
+  content: none;
+}
 
 /* 展开/折叠用加减号表示，方框包裹，完全隐藏默认三角图标 */
 /* :deep(.el-tree-node__expand-icon::before) {

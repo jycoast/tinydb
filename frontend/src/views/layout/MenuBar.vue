@@ -221,7 +221,7 @@ onMounted(() => {
     }
   }
   document.addEventListener('click', clickOutsideHandler)
-  
+
   // 从本地存储加载设置
   const savedDarkMode = localStorage.getItem('tinydb-dark-mode')
   if (savedDarkMode !== null) {

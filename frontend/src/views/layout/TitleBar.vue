@@ -1,12 +1,16 @@
 <template>
-  <div class="tb-root">
-    <div class="tb-left" @dblclick="toggleMaximise">
+  <div
+    class="tb-root"
+    :style="dragStyle"
+    @dblclick="toggleMaximise"
+  >
+    <div class="tb-left" :style="dragStyle">
       <div class="tb-app" :style="noDragStyle" @dblclick.stop>
         <img class="tb-icon" :src="logoUrl" alt="tinydb" />
         <span class="tb-title">tinydb</span>
       </div>
       <div class="tb-menubar" :style="noDragStyle" @dblclick.stop>
-        <MenuBar/>
+        <MenuBar />
       </div>
     </div>
     <div class="tb-right" :style="noDragStyle" @dblclick.stop>
@@ -33,16 +37,22 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, onUnmounted, ref} from 'vue'
-import {Minus, Close, FullScreen, CopyDocument} from '@element-plus/icons-vue'
-import {WindowIsMaximised, WindowMinimise, WindowToggleMaximise, Quit} from '/@/wailsjs/runtime/runtime'
-import MenuBar from './MenuBar.vue'
-import logoUrl from '/src/assets/images/logo.png'
+import { onMounted, onUnmounted, ref } from "vue"
+import { Minus, Close, FullScreen, CopyDocument } from "@element-plus/icons-vue"
+import {
+  WindowIsMaximised,
+  WindowMinimise,
+  WindowToggleMaximise,
+  Quit,
+} from "/@/wailsjs/runtime/runtime"
+import MenuBar from "./MenuBar.vue"
+import logoUrl from "/src/assets/images/logo.png"
 
 const isMaximised = ref(false)
 
-// Wails frameless drag region wiring
-const noDragStyle = {['--wails-draggable' as any]: 'no-drag'}
+// Wails 通过内联样式识别可拖拽区域（--wails-draggable）
+const dragStyle = { "--wails-draggable": "drag" } as const
+const noDragStyle = { "--wails-draggable": "no-drag" } as const
 
 async function refreshMaxState() {
   try {
@@ -86,11 +96,10 @@ onUnmounted(() => {
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  background: #ffffff;
-  border-bottom: 1px solid #d9d9d9;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
   user-select: none;
-  -webkit-app-region: drag;
-  --wails-draggable: drag;
+  cursor: move;
 }
 
 .tb-left {
@@ -100,16 +109,14 @@ onUnmounted(() => {
   align-items: center;
   padding-left: 8px;
   gap: 8px;
-  /* 左侧区域可拖动，但内部交互元素不可拖动 */
-  -webkit-app-region: drag;
-  --wails-draggable: drag;
+  cursor: move;
 }
 
 .tb-app {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  -webkit-app-region: no-drag;
+  cursor: default;
 }
 
 .tb-icon {
@@ -119,8 +126,8 @@ onUnmounted(() => {
 }
 
 .tb-title {
-  font-size: 14px;
-  color: #1f1f1f;
+  font-size: var(--el-font-size-base);
+  color: var(--el-text-color-primary);
 }
 
 .tb-menubar {
@@ -129,40 +136,40 @@ onUnmounted(() => {
   height: 100%;
   display: flex;
   align-items: center;
-  -webkit-app-region: no-drag;
+  cursor: default;
 }
 
-/* Integrate MenuBar into titlebar (no double borders / full-height alignment) */
 .tb-menubar :deep(.menu-bar-container) {
   background: transparent;
   border-bottom: none;
   height: 100%;
+  --wails-draggable: drag;
 }
 
 .tb-menubar :deep(.menu-label) {
   height: 100%;
+
 }
 
 .tb-right {
   display: inline-flex;
   align-items: center;
-  -webkit-app-region: no-drag;
+  cursor: default;
 }
 
 .tb-btn {
   width: 40px;
   height: 100%;
   border-radius: 0;
-  color: #1f1f1f;
-  -webkit-app-region: no-drag;
+  color: var(--el-text-color-primary);
 }
 
 .tb-btn:hover {
-  background: #f2f2f2;
+  background: var(--el-fill-color-light);
 }
 
 .tb-btn-close:hover {
-  background: #ff4d4f;
-  color: #ffffff;
+  background: var(--el-color-danger);
+  color: var(--el-color-white);
 }
 </style>

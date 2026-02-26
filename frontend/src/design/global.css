@@ -7,7 +7,7 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+  font-family: var(--el-font-family);
   font-size: 14px;
   margin: 0;
   -webkit-font-smoothing: antialiased;

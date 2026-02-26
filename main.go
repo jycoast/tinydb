@@ -2,17 +2,28 @@ package main
 
 import (
 	"embed"
+	"log"
+	"runtime"
+
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/logger"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
-	"log"
 	"tinydb/app/bridge"
 )
 
 //go:embed frontend/dist
 var assets embed.FS
+
+func windowsOptions() *windows.Options {
+	opts := &windows.Options{Theme: windows.Light}
+	if runtime.GOOS == "windows" {
+		opts.WebviewIsTransparent = true
+		opts.WindowIsTranslucent = true
+	}
+	return opts
+}
 
 func main() {
 	app := bridge.NewApp()
@@ -23,14 +34,14 @@ func main() {
 		Title:  "tinydb",
 		Width:  1024,
 		Height: 768,
-		// Use a custom (frontend-rendered) titlebar so we can force a pure white background on Windows.
+		// 无边框 + CSS 拖拽（参考常见 Wails 方案：内联 --wails-draggable，Windows 下透明以正确命中拖动区域）
 		Frameless:       true,
 		CSSDragProperty: "--wails-draggable",
 		CSSDragValue:    "drag",
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		Windows:          &windows.Options{Theme: windows.Light},
+		Windows: windowsOptions(),
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		LogLevel:         logger.DEBUG,
 		OnStartup:        app.Startup,

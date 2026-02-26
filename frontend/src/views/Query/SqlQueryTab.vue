@@ -58,101 +58,29 @@
       />
     </div>
 
-    <!-- 结果区 -->
-    <div v-if="showResults"
-         style="flex: 0 0 38%; min-height: 200px; max-height: 50%; display: flex; flex-direction: column; border-top: 1px solid var(--theme-border);">
-      <el-card
-        shadow="never"
-        style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
-        :body-style="{ padding: 0, flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }"
-      >
-        <template #header>
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <span>查询结果</span>
-              <span v-if="resultsInfo" style="font-size: 12px; color: #909399; margin-left: 8px;">
-                {{ resultsInfo }}
-              </span>
-            </div>
-            <el-space>
-              <el-button size="small" :icon="DocumentCopy" @click="handleCopyResults">
-                复制 (Ctrl+C)
-              </el-button>
-              <el-button size="small" @click="clearResultSelection">清除选择</el-button>
-            </el-space>
-          </div>
-        </template>
-        <div
-          ref="resultsHotkeyHost"
-          tabindex="0"
-          style="flex: 1; overflow: auto; padding: 12px; outline: none;"
-          @mousedown="focusResultsHotkeyHost"
-          @keydown="handleResultsKeyDown"
-        >
-          <el-alert
-            v-if="error"
-            type="error"
-            title="执行失败"
-            :closable="true"
-            @close="error = ''"
-            show-icon
-          >
-            <template #default>
-              <pre class="sql-error-pre">{{ error }}</pre>
-            </template>
-          </el-alert>
-
-          <el-table
-            v-else-if="queryResult && resultTableData.length > 0"
-            :data="resultTableData"
-            :row-key="(row: any) => row.key"
-            :max-height="resultsScrollY"
-            size="default"
-            border
-            v-loading="executing"
-            @row-click="handleTableRowClick"
-            @selection-change="handleSelectionChange"
-            style="width: 100%"
-          >
-            <el-table-column type="selection" width="55" />
-            <el-table-column
-              v-for="col in tableColumns"
-              :key="col.key"
-              :prop="col.dataIndex"
-              :label="col.title"
-              :width="col.width"
-              :show-overflow-tooltip="col.ellipsis"
-            >
-              <template #default="{ row, column }">
-                <div
-                  @click="handleCellClick(row, column.property)"
-                  @dblclick="startEditResultCell(row.key, column.property)"
-                >
-                  <el-input
-                    v-if="isEditingCell(row.key, column.property)"
-                    v-model="editingResultValue"
-                    size="small"
-                    autofocus
-                    @blur="commitEditResultCell(row.key, column.property)"
-                    @keyup.enter="commitEditResultCell(row.key, column.property)"
-                    @click.stop
-                  />
-                  <span v-else>{{ row[column.property] }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <template #empty>
-              <el-empty description="查询成功，但没有返回数据" />
-            </template>
-          </el-table>
-
-          <el-empty
-            v-else-if="queryResult && resultTableData.length === 0"
-            description="查询成功，但没有返回数据"
-          />
-        </div>
-      </el-card>
-    </div>
+    <QueryResult
+      v-if="showResults"
+      ref="queryResultRef"
+      :results-info="resultsInfo"
+      :error="error"
+      :query-result="queryResult"
+      :result-table-data="resultTableData"
+      :table-columns="tableColumns"
+      :results-scroll-y="resultsScrollY"
+      :executing="executing"
+      v-model:editing-result-value="editingResultValue"
+      :editing-result-cell="editingResultCell"
+      @close="showResults = false"
+      @clear-error="error = ''"
+      @copy="handleCopyResults"
+      @copy-as-insert="handleCopyAsInsert"
+      @clear-selection="clearResultSelection"
+      @row-click="handleTableRowClick"
+      @selection-change="handleSelectionChange"
+      @cell-click="handleCellClick"
+      @start-edit-cell="startEditResultCell"
+      @commit-edit-cell="commitEditResultCell"
+    />
   </div>
 </template>
 
@@ -168,11 +96,7 @@ import {storeToRefs} from 'pinia'
 import {useBootstrapStore} from '/@/store/modules/bootstrap'
 import {debounce} from 'lodash-es'
 import { ElMessage } from 'element-plus'
-import {
-  Delete,
-  VideoPlay,
-  DocumentCopy
-} from '@element-plus/icons-vue'
+import { Delete, VideoPlay } from '@element-plus/icons-vue'
 import type {ContextMenuItem} from '/@/components/Modals/typing'
 import {
   databaseConnectionsSqlSelectApi,
@@ -182,11 +106,12 @@ import {
   databaseConnectionsRefreshApi,
 } from "/@/api"
 import AceEditor from '/@/components/Query/AceEditor'
+import QueryResult from '/@/views/Query/QueryResult.vue'
 import { ace, type Editor as AceEditorType, type IEditSession, type Position } from '/@/components/Query/aceApi'
 import 'ace-builds/src-noconflict/ext-language_tools'
 import type {DatabaseInfo, TableInfo, ColumnInfo} from '/@/lib/tinydb-types'
 import {useClusterApiStore} from '/@/store/modules/clusterApi'
-import {copyRowsToClipboard} from '/@/utils/tinydb/clipboard'
+import { copyRowsToClipboard, copyTextToClipboard, formatRowsAsInsertSql } from '/@/utils/tinydb/clipboard'
 import {saveQueryHistory} from '/@/utils/queryHistory'
 
 const props = defineProps({
@@ -215,7 +140,7 @@ const resultSelectedRowKeys = ref<Array<string | number>>([])
 const activeResultCell = ref<{ rowKey: string | number; dataIndex: string } | null>(null)
 const editingResultCell = ref<{ rowKey: string | number; dataIndex: string } | null>(null)
 const editingResultValue = ref<string>('')
-const resultsHotkeyHost = ref<HTMLElement | null>(null)
+const queryResultRef = ref<InstanceType<typeof QueryResult> | null>(null)
 const connectionName = ref('')
 const resultsScrollY = ref<number>(260)
 const databaseStructure = ref<DatabaseInfo | null>(null)
@@ -544,34 +469,61 @@ async function handleDeduplicateSelection() {
   const ed = editor.value
   if (!ed) return
   const selection = ed.getSelectionRange()
-  if (!selection || selection.start.row === selection.end.row) return
+  if (!selection || selection.start.row === selection.end.row) {
+    ElMessage.info('请选择多行后再去重')
+    return
+  }
 
-  // 获取选中的文本
   const selectedText = ed.session.getTextRange(selection)
   if (!selectedText.trim()) return
 
-  // 按行分割
   const lines = selectedText.split('\n')
   const uniqueLines = Array.from(new Set(lines))
-
-  // 重新组合成文本
   const deduplicated = uniqueLines.join('\n')
 
-  // 如果去重后没有变化，提示用户
   if (deduplicated === selectedText) {
     ElMessage.info('选中内容中没有重复的行')
     return
   }
 
-  // 替换选中的内容
-  // @ts-ignore
-  const range = ed.getSelectionRange()
-  ed.session.replace(range, deduplicated)
+  ed.session.replace(selection, deduplicated)
   ed.clearSelection()
   ed.focus()
 
   const removedCount = lines.length - uniqueLines.length
   ElMessage.success(`去重完成，已移除 ${removedCount} 行重复数据`)
+}
+
+async function handleRemoveRepeatedLines() {
+  const ed = editor.value
+  if (!ed) return
+  const selection = ed.getSelectionRange()
+  if (!selection || selection.start.row === selection.end.row) return
+
+  const selectedText = ed.session.getTextRange(selection)
+  if (!selectedText.trim()) return
+
+  const lines = selectedText.split('\n')
+  const countMap = new Map<string, number>()
+  for (const line of lines) {
+    countMap.set(line, (countMap.get(line) ?? 0) + 1)
+  }
+  const onceOnly = lines.filter((line) => countMap.get(line) === 1)
+  const result = onceOnly.join('\n')
+
+  if (result === selectedText) {
+    ElMessage.info('选中内容中没有出现多次的行')
+    return
+  }
+
+  // @ts-ignore
+  const range = ed.getSelectionRange()
+  ed.session.replace(range, result)
+  ed.clearSelection()
+  ed.focus()
+
+  const removedCount = lines.length - onceOnly.length
+  ElMessage.success(`已去掉出现次数≥2的数据，共移除 ${removedCount} 行`)
 }
 
 async function handleUpdateToSelect() {
@@ -670,6 +622,10 @@ const contextMenuItems = computed<ContextMenuItem[]>(() => [
   {
     label: '去重',
     onClick: handleDeduplicateSelection
+  },
+  {
+    label: '保留单次出现项',
+    onClick: handleRemoveRepeatedLines
   },
   {
     label: 'UPDATE 转查询',
@@ -1122,10 +1078,6 @@ const tableColumns = computed(() => {
   })
 })
 
-function isEditingCell(rowKey: string | number, dataIndex: string): boolean {
-  return !!editingResultCell.value && editingResultCell.value.rowKey === rowKey && editingResultCell.value.dataIndex === dataIndex
-}
-
 function handleCellClick(row: any, property: string) {
   activeResultCell.value = {rowKey: row?.key, dataIndex: property}
 }
@@ -1135,7 +1087,7 @@ function handleTableRowClick(row: any) {
     rowKey: row?.key,
     dataIndex: (activeResultCell.value?.dataIndex || (tableColumns.value?.[0] as any)?.dataIndex) as string
   }
-  focusResultsHotkeyHost()
+  queryResultRef.value?.focusHost?.()
 }
 
 function handleSelectionChange(selection: any[]) {
@@ -1158,16 +1110,12 @@ function normalizeRowsToTableData(rows: any[], cols: any[]) {
 }
 
 
-function focusResultsHotkeyHost() {
-  resultsHotkeyHost.value?.focus?.()
-}
-
 function startEditResultCell(rowKey: string | number, dataIndex: string) {
   if (rowKey === undefined || rowKey === null) return
   editingResultCell.value = {rowKey, dataIndex}
   const row = resultTableData.value.find((r) => r?.key === rowKey)
   editingResultValue.value = row?.[dataIndex] === null || row?.[dataIndex] === undefined ? '' : String(row?.[dataIndex])
-  nextTick(() => focusResultsHotkeyHost())
+  nextTick(() => queryResultRef.value?.focusHost?.())
 }
 
 function commitEditResultCell(rowKey: string | number, dataIndex: string) {
@@ -1228,13 +1176,24 @@ function handleCopyResults() {
   ElMessage.success('已复制')
 }
 
-function handleResultsKeyDown(e: KeyboardEvent) {
-  // Ctrl/Cmd + C
-  // @ts-ignore
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C' || (e as any).keyCode === 67)) {
-    e.preventDefault()
-    handleCopyResults()
+function handleCopyAsInsert() {
+  if (!queryResult.value) return
+  const cols = (tableColumns.value || []).map((c: any) => c?.dataIndex).filter(Boolean)
+  if (!cols.length) {
+    ElMessage.info('没有可复制的列')
+    return
   }
+  const rows =
+    resultSelectedRowKeys.value.length > 0
+      ? resultTableData.value.filter((r) => resultSelectedRowKeys.value.includes(r?.key))
+      : resultTableData.value
+  if (!rows.length) {
+    ElMessage.info(resultSelectedRowKeys.value.length > 0 ? '没有选中的行' : '没有可复制的数据')
+    return
+  }
+  const sql = formatRowsAsInsertSql(cols, rows)
+  copyTextToClipboard(sql)
+  ElMessage.success(`已复制 ${rows.length} 行为 Insert 语句`)
 }
 
 // Element Plus 表格分页需要单独处理，这里暂时不使用分页
@@ -1389,13 +1348,3 @@ function handleClear() {
 }
 </script>
 
-<style scoped>
-.sql-error-pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
-}
-</style>

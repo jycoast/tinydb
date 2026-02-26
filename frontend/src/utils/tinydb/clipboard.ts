@@ -111,6 +111,32 @@ export function copyRowsToClipboard(format, columns, rows, options) {
   copyTextToClipboard(formatted)
 }
 
+/** 将值格式化为 SQL INSERT 中的字面量（通用：单引号转义、NULL、数字） */
+function sqlValueLiteral(val: unknown): string {
+  if (val === null || val === undefined) return "NULL"
+  if (typeof val === "number" && !Number.isNaN(val)) return String(val)
+  if (typeof val === "boolean") return val ? "1" : "0"
+  if (typeof val === "bigint") return String(val)
+  if (val instanceof Date) return `'${val.toISOString().slice(0, 19).replace("T", " ")}'`
+  const s = String(val)
+  return `'${s.replace(/\\/g, "\\\\").replace(/'/g, "''")}'`
+}
+
+/** 将多行结果格式化为 INSERT 语句（表名默认 table_name，可替换） */
+export function formatRowsAsInsertSql(
+  columns: string[],
+  rows: Record<string, unknown>[],
+  tableName = "table_name"
+): string {
+  const id = (c: string) => (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(c) ? c : `\`${c}\``)
+  return rows
+    .map((row) => {
+      const vals = columns.map((col) => sqlValueLiteral(row[col]))
+      return `INSERT INTO ${id(tableName)} (${columns.map(id).join(", ")}) VALUES (${vals.join(", ")});`
+    })
+    .join("\n")
+}
+
 export const copyRowsFormatDefs = {
   textWithHeaders: {
     label: "Copy with headers",
