@@ -64,14 +64,14 @@
             >
               <img
                 v-if="data.type === 'connection'"
-                :src="connectionIcon"
+                :src="data.conid && openedConnections.includes(data.conid) ? connectionConnectedIcon : connectionIcon"
                 alt="connection"
                 class="node-icon connection-icon"
               />
               <img
                 v-if="data.type === 'database'"
-                :src="databaseIcon"
-                alt="connection"
+                :src="data.conid && openedConnections.includes(data.conid) ? databaseConnectedIcon : databaseIcon"
+                alt="database"
                 class="node-icon connection-icon"
               />
               <img
@@ -155,7 +155,9 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, CircleCheck, CircleClose, Loading, DArrowLeft, DArrowRight, Document, Clock } from '@element-plus/icons-vue'
 import databaseIcon from '/src/assets/svg/database.svg'
+import databaseConnectedIcon from '/@/assets/svg/database-connected.svg'
 import connectionIcon from '/@/assets/svg/connection.svg'
+import connectionConnectedIcon from '/@/assets/svg/connection-connected.svg'
 import tableIcon from '/@/assets/svg/table.svg'
 import columnsIcon from '/@/assets/svg/columns.svg'
 import openNewTab from '/@/utils/tinydb/openNewTab'
