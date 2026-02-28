@@ -95,7 +95,14 @@
               <span class="node-label">{{ node.label }}</span>
               <span v-if="data.extInfo" class="node-ext-info">{{ data.extInfo }}</span>
               <el-icon
-                v-if="data.statusIcon"
+                v-if="data.type === 'connection' && disconnectingConid === data.conid"
+                class="status-icon is-loading"
+                title="断开中..."
+              >
+                <Loading />
+              </el-icon>
+              <el-icon
+                v-else-if="data.statusIcon"
                 :class="['status-icon', data.statusIcon]"
                 :title="data.statusTitle"
               >
@@ -161,8 +168,8 @@ import {useLocaleStore} from "/@/store/modules/locale"
 import {
   getConnectionInfo,
   getDatabaseInfo,
+  getDatabaseList,
   useConnectionList,
-  useDatabaseList,
   useDatabaseInfo,
   useServerStatus,
   serverConnectionsRefreshApi,
@@ -207,6 +214,7 @@ const contextMenuVisible = ref(false)
 const contextMenuStyle = ref<{ position: string; left: string; top: string }>({ position: 'fixed', left: '0px', top: '0px' })
 const contextMenuItems = ref<any[]>([])
 const contextMenuNode = ref<TreeNode | null>(null)
+const disconnectingConid = ref<string | null>(null)
 
 const structureCache = ref<Record<string, any>>({})
 
@@ -373,15 +381,18 @@ async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiv
   clearStructureCacheForConnection(conn._id)
   try {
     let databases: TablesNameSort[] = []
-    
+
     if ((conn as any).singleDatabase) {
       const name = (conn as any).defaultDatabase || (conn as any).database || 'default'
       databases = [{ name, sortOrder: '0' }]
     } else {
-      const dbRef = ref<TablesNameSort[]>([])
-      useDatabaseList<TablesNameSort[]>({ conid: String(conn._id) }, dbRef as any)
-      await new Promise(resolve => setTimeout(resolve, 100))
-      databases = dbRef.value || []
+      const raw = await getDatabaseList({ conid: String(conn._id) })
+      if (Array.isArray(raw)) {
+        databases = raw.map((d: any) => ({
+          name: d?.name ?? d?.Name ?? String(d),
+          sortOrder: d?.sortOrder ?? '0'
+        }))
+      }
     }
 
     const sortedDatabases = sortBy(databases, db => db.sortOrder ?? db.name)
@@ -503,18 +514,10 @@ async function loadCategoryObjects(node: TreeNode) {
     return
   }
   try {
-    const objectsRef = ref<any>(null)
-    useDatabaseInfo({ conid: node.conid, database: node.database }, objectsRef)
-    let retries = 0
-    while (retries < 15 && (!objectsRef.value || Object.keys(objectsRef.value).length === 0)) {
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      retries++
-    }
-    const objects = objectsRef.value || {}
-    if (objects && typeof objects === 'object' && Object.keys(objects).length > 0) {
-      structureCache.value[cacheKey] = objects
-    }
-    buildCategoryChildrenFromObjects(node, objects)
+    const objects = await getDatabaseInfo({ conid: node.conid, database: node.database }) as Record<string, unknown>
+    const data = (objects && typeof objects === 'object') ? objects : {}
+    structureCache.value[cacheKey] = data
+    buildCategoryChildrenFromObjects(node, data)
   } catch (e) {
     console.error('加载对象列表失败', e)
     node.children = [{
@@ -612,9 +615,6 @@ async function handleNodeClick(data: TreeNode, node: any) {
       try {
         await serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true })
         await databaseConnectionsRefreshApi({ conid: data.conid, database: data.database, keepOpen: true })
-        
-        await new Promise(resolve => setTimeout(resolve, 300))
-        
         if (data.children && data.children.length > 0) {
           const tablesCategory = data.children.find((child: TreeNode) => child.category === 'tables')
           if (tablesCategory) {
@@ -641,7 +641,7 @@ async function handleNodeClick(data: TreeNode, node: any) {
   }
   
   if (data.type === 'object' && data.category === 'tables' && data.objectType === 'tables') {
-    openTableData(data)
+    await openTableData(data)
   }
 }
 
@@ -824,7 +824,7 @@ async function handleMenuCommand(command: string) {
         await handleServerSummary(node)
         break
       case 'open-table':
-        openTableData(node)
+        await openTableData(node)
         break
       case 'copy-table-name':
         handleCopyTableName(node)
@@ -906,7 +906,7 @@ async function handleRefreshConnection(node: TreeNode) {
 async function handleDisconnectConnection(node: TreeNode) {
   const conn = connectionsWithStatus.value.find(c => c._id === node.conid)
   if (conn) {
-    disconnectServerConnection(conn, true)
+    await disconnectServerConnection(conn, true)
   }
 }
 
@@ -949,8 +949,16 @@ function handleNewQuery(node: TreeNode) {
   )
 }
 
-function openTableData(node: TreeNode) {
+async function openTableData(node: TreeNode) {
   if (!node.conid || !node.database || !node.pureName) return
+  try {
+    await serverConnectionsRefreshApi({ conid: node.conid, keepOpen: true })
+    await databaseConnectionsRefreshApi({ conid: node.conid, database: node.database, keepOpen: true })
+  } catch (e: any) {
+    const msg = e?.message ?? String(e)
+    ElMessage.error(msg.includes('not connected') || msg.includes('not established') ? '连接已断开或未建立，请先展开该数据库' : msg)
+    return
+  }
   const tableDisplayName = node.schemaName ? `${node.schemaName}.${node.pureName}` : node.pureName
   openNewTab({
     title: `${tableDisplayName} - 数据`,
@@ -1183,47 +1191,49 @@ function handleCreateTable(node: TreeNode) {
   }
 }
 
-function disconnectServerConnection(conid: any, showConfirmation = true) {
+function disconnectServerConnection(conid: any, showConfirmation = true): Promise<void> {
+  const id = conid?._id
+  if (!id) return Promise.resolve()
+
   const doDisconnect = async () => {
-    const id = conid?._id
-    if (!id) return
-
+    disconnectingConid.value = id
     try {
-      await serverConnectionsRefreshApi({ conid: id, keepOpen: false })
-    } catch (e) {
-      console.warn('serverConnectionsRefreshApi(close) failed', e)
-    }
-
-    try {
-      const current = bootstrap.currentDatabase as any
-      const dbName = current?.connection?._id === id ? current?.name : conid?.defaultDatabase
-      if (dbName) {
-        await databaseConnectionsRefreshApi({ conid: id, database: dbName, keepOpen: false })
+      try {
+        await serverConnectionsRefreshApi({ conid: id, keepOpen: false })
+      } catch (e) {
+        console.warn('serverConnectionsRefreshApi(close) failed', e)
       }
-    } catch (e) {
-      console.warn('databaseConnectionsRefreshApi(close) failed', e)
-    }
 
-    const { removeLocalStorage } = await import('/@/utils/tinydb/storageCache')
-    removeLocalStorage(`database_list_${id}`)
+      try {
+        const current = bootstrap.currentDatabase as any
+        const dbName = current?.connection?._id === id ? current?.name : conid?.defaultDatabase
+        if (dbName) {
+          await databaseConnectionsRefreshApi({ conid: id, database: dbName, keepOpen: false })
+        }
+      } catch (e) {
+        console.warn('databaseConnectionsRefreshApi(close) failed', e)
+      }
 
-    bootstrap.updateExpandedConnections((list) => list.filter((x) => x !== id))
-    bootstrap.updateOpenedConnections((list) => list.filter((x) => x !== id))
-    bootstrap.updateOpenedSingleDatabaseConnections((list) => list.filter((x) => x !== id))
+      const { removeLocalStorage } = await import('/@/utils/tinydb/storageCache')
+      removeLocalStorage(`database_list_${id}`)
 
-    if ((bootstrap.currentDatabase as any)?.connection?._id === id) {
-      bootstrap.setCurrentDatabase(null)
+      bootstrap.updateExpandedConnections((list) => list.filter((x) => x !== id))
+      bootstrap.updateOpenedConnections((list) => list.filter((x) => x !== id))
+      bootstrap.updateOpenedSingleDatabaseConnections((list) => list.filter((x) => x !== id))
+
+      if ((bootstrap.currentDatabase as any)?.connection?._id === id) {
+        bootstrap.setCurrentDatabase(null)
+      }
+    } finally {
+      disconnectingConid.value = null
     }
   }
-
-  if (!conid?._id) return
 
   if (!showConfirmation) {
-    void doDisconnect()
-    return
+    return doDisconnect()
   }
 
-  ElMessageBox.confirm(`确定要断开 ${getConnectionLabel(conid)}?`, '断开确认', {
+  return ElMessageBox.confirm(`确定要断开 ${getConnectionLabel(conid)}?`, '断开确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
@@ -1367,14 +1377,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* .database-tree :deep(.el-tree-node__content .tree-node.tree-node--leaf) {
-  margin-left: -24px;
-} */
-
-/* .database-tree :deep(.el-tree-node__content .tree-node.tree-node--parent) {
-  margin-left: 0;
-} */
-
 .node-icon {
   font-size: 20px;
   flex-shrink: 0;
@@ -1413,7 +1415,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: 160px;   /* 固定宽度，可自行调整 */
+  width: 160px;
 }
 
 .node-ext-info {
@@ -1424,7 +1426,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  width: 100px;   /* 固定宽度，可自行调整 */
+  width: 80px;
 }
 
 .status-icon {
@@ -1455,23 +1457,6 @@ onBeforeUnmount(() => {
   }
 }
 
-/* :deep(.el-tree-node__content) {
-  height: 28px;
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-:deep(.el-tree-node__content:hover) {
-  background-color: var(--theme-bg-hover);
-}
-
-:deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: var(--theme-bg-selected);
-} */
-
 /* 仅根节点为叶子时（如未连接时的连接节点）不显示展开图标且不占位，与搜索框对齐 */
 :deep(.database-tree > .el-tree-node > .el-tree-node__content > .el-tree-node__expand-icon.is-leaf) {
   width: 0;
@@ -1484,49 +1469,4 @@ onBeforeUnmount(() => {
 :deep(.database-tree > .el-tree-node > .el-tree-node__content > .el-tree-node__expand-icon.is-leaf::before) {
   content: none;
 }
-
-/* 展开/折叠用加减号表示，方框包裹，完全隐藏默认三角图标 */
-/* :deep(.el-tree-node__expand-icon::before) {
-  content: "+";
-  font-size: 13px;
-  line-height: 0;
-  font-weight: normal;
-}
-
-:deep(.el-tree-node__expand-icon.expanded::before) {
-  content: "−";
-}
-:deep(.el-tree-node__expand-icon.is-leaf) {
-  border-color: transparent;
-  background: transparent;
-  color: transparent;
-  visibility: hidden;
-}
-:deep(.el-tree-node__expand-icon.is-leaf::before) {
-  content: none;
-} */
-
-/* 虚线连接线：所有层级的父子节点展开后都显示，竖线在子节点容器左侧，横线从竖线连到当前节点 */
-/* :deep(.el-tree-node.is-expanded > .el-tree-node__children) {
-  overflow: visible;
-}
-:deep(.el-tree-node__children) {
-  position: relative;
-}
-:deep(.el-tree-node__children::before) {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 0;
-  1540→  bottom: 0;
-}
-
-
-  border-left: 1px dotted var(--el-border-color);
-  pointer-events: none;
-}
-
-:deep(.el-tree-node:first-child > .el-tree-node__content::before) {
-  display: none;
-} */
 </style>
