@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"io/fs"
 	"log"
 	"runtime"
 
@@ -13,7 +14,7 @@ import (
 	"tinydb/app/bridge"
 )
 
-//go:embed frontend/dist
+//go:embed all:frontend/dist
 var assets embed.FS
 
 func windowsOptions() *windows.Options {
@@ -23,6 +24,14 @@ func windowsOptions() *windows.Options {
 		opts.WindowIsTranslucent = true
 	}
 	return opts
+}
+
+func mustSubFS(f fs.FS, dir string) fs.FS {
+	sub, err := fs.Sub(f, dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return sub
 }
 
 func main() {
@@ -39,7 +48,7 @@ func main() {
 		CSSDragProperty: "--wails-draggable",
 		CSSDragValue:    "drag",
 		AssetServer: &assetserver.Options{
-			Assets: assets,
+			Assets: mustSubFS(assets, "frontend/dist"),
 		},
 		Windows: windowsOptions(),
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},

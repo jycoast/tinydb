@@ -38,11 +38,20 @@ async function bootstrap() {
     loadingEl.classList.add('hidden');
   }
 
-  // Multilingual configuration - 延迟加载语言文件，不阻塞初始渲染
-  // 多语言配置 - 异步加载语言文件，不阻塞初始渲染
   setupI18n(app).catch(err => {
     console.warn('Failed to setup i18n:', err);
   });
 }
 
-bootstrap();
+function showBootstrapError(err: unknown) {
+  const appEl = document.getElementById('app');
+  const loadingEl = document.getElementById('app-loading');
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (appEl) {
+    const msg = err instanceof Error ? err.message : String(err);
+    appEl.innerHTML = `<div style="padding:24px;font-family:system-ui;color:#333;"><p style="color:#c00;font-weight:bold;">应用启动失败</p><pre style="background:#f5f5f5;padding:12px;overflow:auto;font-size:12px;">${msg}</pre></div>`;
+  }
+  console.error('bootstrap failed:', err);
+}
+
+bootstrap().catch(showBootstrapError);

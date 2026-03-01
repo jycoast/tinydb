@@ -37,13 +37,25 @@ export async function apiCall<T>(url: string, params?: any): Promise<T | void> {
       throw new Error("window.go is not defined")
     }
 
-    url.split(/[.\/]/).filter(item => item).forEach(key => {
-      if (self && typeof self === "object" && key in self) {
-        self = self[key]
-      } else {
-        throw new Error(`Cannot access ${key} in window.go path`)
+    const pathParts = url.split(/[.\/]/).filter(item => item)
+    let pathErr: Error | null = null
+    pathParts.forEach(key => {
+      if (self && typeof self === "object") {
+        const next = key in self ? self[key] : self[key.charAt(0).toLowerCase() + key.slice(1)]
+        if (next !== undefined) {
+          self = next
+          return
+        }
       }
+      pathErr = new Error(`Cannot access ${key} in window.go path`)
     })
+
+    if (pathErr) {
+      if (pathParts[0] === "bridge" && pathParts.length > 1) {
+        return apiCall(pathParts.slice(1).join("."), params)
+      }
+      throw pathErr
+    }
 
     if (typeof self !== "function") {
       throw new Error(`window.go.${url} is not a function`)

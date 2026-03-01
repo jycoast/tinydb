@@ -15,5 +15,5 @@
     "productVersion": "0.0.2.2",
     "comments": "multiple database visualization development tools"
   },
-  "obfuscated": true
+  "obfuscated": false
 }
