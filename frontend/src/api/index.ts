@@ -142,6 +142,10 @@ export function getDatabaseInfo(args: { conid: string; database: string }) {
   return getCore(databaseInfoLoader, args)
 }
 
+export function getDatabaseList(args: { conid: string }) {
+  return getCore(databaseListLoader, args)
+}
+
 export function getConnectionInfo(args) {
   return getCore(connectionInfoLoader, args)
 }
