@@ -2,6 +2,8 @@ package mysql
 
 import (
 	"database/sql"
+	"strings"
+
 	"tinydb/app/db/standard/modules"
 )
 
@@ -238,20 +240,26 @@ func (s *Source) Programmables(sql string) (*modules.MysqlRowsResult, error) {
 	var programmables []*modules.Programmable
 	var pureName, objectType, modifyDate, returnDataType string
 	var routineDefinition interface{}
-	var isDeterministic bool
+	var isDeterministic interface{}
 	for sqlQuery.Rows.Next() {
-		if err = sqlQuery.Rows.Scan(&pureName, &modifyDate); err != nil {
+		if err = sqlQuery.Rows.Scan(&pureName, &objectType, &modifyDate, &returnDataType, &routineDefinition, &isDeterministic); err != nil {
 			return nil, err
-		} else {
-			programmables = append(programmables, &modules.Programmable{
-				PureName:          pureName,
-				ObjectType:        objectType,
-				ModifyDate:        modifyDate,
-				ReturnDataType:    returnDataType,
-				RoutineDefinition: routineDefinition,
-				IsDeterministic:   isDeterministic,
-			})
 		}
+		deterministic := false
+		switch v := isDeterministic.(type) {
+		case string:
+			deterministic = strings.EqualFold(v, "YES")
+		case []byte:
+			deterministic = strings.EqualFold(string(v), "YES")
+		}
+		programmables = append(programmables, &modules.Programmable{
+			PureName:          pureName,
+			ObjectType:        objectType,
+			ModifyDate:        modifyDate,
+			ReturnDataType:    returnDataType,
+			RoutineDefinition: routineDefinition,
+			IsDeterministic:   deterministic,
+		})
 	}
 
 	return &modules.MysqlRowsResult{Rows: programmables, Columns: sqlQuery.Columns}, nil

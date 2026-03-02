@@ -1,5 +1,7 @@
 const apiLogging = false
 
+import * as Bridge from "../../../bindings/tinydb/app/bridge/index.js"
+
 function isLikelyWailsEnv() {
   try {
     return window.location?.hostname === "wails.localhost" || !!(window as any).runtime
@@ -8,76 +10,65 @@ function isLikelyWailsEnv() {
   }
 }
 
-async function waitForGo(maxWaitMs?: number): Promise<void> {
-  const likelyWails = isLikelyWailsEnv()
-  const maxWait = maxWaitMs ?? (likelyWails ? 15000 : 1500)
-
-  const startTime = Date.now()
-  while (!window["go"]) {
-    if (Date.now() - startTime > maxWait) {
-      if (!likelyWails) {
-        throw new Error("当前运行环境未注入 Wails（window.go 不存在）。请使用 `wails dev` 启动。")
-      }
-      throw new Error("Wails 后端尚未初始化完成（window.go 未就绪），请稍后重试。")
-    }
-    await new Promise(resolve => setTimeout(resolve, 100))
+async function waitForBindings(_maxWaitMs?: number): Promise<void> {
+  if (typeof Bridge.ConnectionsService?.List !== "function") {
+    throw new Error("当前运行环境未注入 Wails（bindings 不存在）。请使用 `wails3 dev` 启动。")
   }
+}
+
+const urlToBinding: Record<string, (params?: any) => Promise<unknown>> = {
+  "Connections.Test": (p) => Bridge.ConnectionsService.Test(p),
+  "Connections.Save": (p) => Bridge.ConnectionsService.Save(p),
+  "Connections.List": () => Bridge.ConnectionsService.List(),
+  "Connections.Get": (p) => Bridge.ConnectionsService.Get(p),
+  "Connections.Delete": (p) => Bridge.ConnectionsService.Delete(p),
+  "DatabaseConnections.Refresh": (p) => Bridge.DatabaseConnections.Refresh(p),
+  "DatabaseConnections.Structure": (p) => Bridge.DatabaseConnections.Structure(p),
+  "DatabaseConnections.SqlSelect": (p) => Bridge.DatabaseConnections.SqlSelect(p),
+  "DatabaseConnections.CollectionData": (p) => Bridge.DatabaseConnections.CollectionData(p),
+  "DatabaseConnections.CreateTable": (p) => Bridge.DatabaseConnections.CreateTable(p),
+  "DatabaseConnections.Status": (p) => Bridge.DatabaseConnections.Status(p),
+  "DatabaseConnections.ServerVersion": (p) => Bridge.DatabaseConnections.ServerVersion(p),
+  "DatabaseConnections.Disconnect": (p) => Bridge.DatabaseConnections.Disconnect(p),
+  "ServerConnections.Refresh": (p) => Bridge.ServerConnections.Refresh(p),
+  "ServerConnections.ListDatabases": (p) => Bridge.ServerConnections.ListDatabases(p ?? {}),
+  "ServerConnections.ServerStatus": () => Bridge.ServerConnections.ServerStatus(),
+  "ServerConnections.CreateDatabase": (p) => Bridge.ServerConnections.CreateDatabase(p),
+  "Plugins.Installed": () => Bridge.PluginsService.Installed(),
+  "Plugins.Script": (p) => Bridge.PluginsService.Script(p),
+  "Configs.GetSettings": () => Bridge.Configs.GetSettings(),
 }
 
 export async function apiCall<T>(url: string, params?: any): Promise<T | void> {
   if (apiLogging) {
     console.log(">>> API CALL", url, params)
   }
-
   try {
-    await waitForGo()
-
-    let self: any = window["go"]
-    if (!self) {
-      throw new Error("window.go is not defined")
+    await waitForBindings()
+    let key = url
+    if (key.startsWith("bridge.")) {
+      key = key.slice("bridge.".length)
     }
-
-    const pathParts = url.split(/[.\/]/).filter(item => item)
-    let pathErr: Error | null = null
-    pathParts.forEach(key => {
-      if (self && typeof self === "object") {
-        const next = key in self ? self[key] : self[key.charAt(0).toLowerCase() + key.slice(1)]
-        if (next !== undefined) {
-          self = next
-          return
-        }
-      }
-      pathErr = new Error(`Cannot access ${key} in window.go path`)
-    })
-
-    if (pathErr) {
-      if (pathParts[0] === "bridge" && pathParts.length > 1) {
-        return apiCall(pathParts.slice(1).join("."), params)
-      }
-      throw pathErr
+    if (key === "config/get-settings" || key === "config.get-settings") {
+      key = "Configs.GetSettings"
     }
-
-    if (typeof self !== "function") {
-      throw new Error(`window.go.${url} is not a function`)
+    const fn = urlToBinding[key]
+    if (!fn) {
+      throw new Error(`Unknown API: ${url}`)
     }
-
-    const resp = (!params || Object.keys(params).length === 0) ? await self() : await self(params)
+    const resp = await fn(params)
     return processApiResponse(url, params, resp)
   } catch (e) {
     return Promise.reject(e)
   }
 }
 
-function processApiResponse(url: string, params: any, resp: any) {
+function processApiResponse(_url: string, _params: any, resp: any) {
   if (apiLogging) {
-    console.log("<<< API RESPONSE", url, params, resp)
+    console.log("<<< API RESPONSE", _url, _params, resp)
   }
-
-  if (resp.status === 1) {
-    return {
-      ...resp,
-      errorMessage: resp.message,
-    }
+  if (resp?.status === 1) {
+    return { ...resp, errorMessage: resp.message }
   }
-  return resp.result
+  return resp?.result
 }

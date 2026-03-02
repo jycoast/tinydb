@@ -1,0 +1,38 @@
+# https://taskfile.dev
+# wails3 dev -> 可直接运行: wails3 dev -config ./build/config.yml -port 3100
+# wails3 build -> 会执行本文件的 build 任务
+version: "3"
+
+vars:
+  APP_NAME: tinydb
+  BIN_DIR: build/bin
+  VITE_PORT: "3100"
+
+tasks:
+  dev:
+    summary: 开发模式（也可直接执行 wails3 dev -config ./build/config.yml -port 3100）
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
+  build:
+    summary: 构建应用（先打包前端，再编译 Go）
+    cmds:
+      - task: frontend:build
+      - go build -o {{.BIN_DIR}}/{{.APP_NAME}} ./.
+
+  frontend:build:
+    summary: 仅构建前端
+    dir: frontend
+    cmds:
+      - npm run build
+
+  dev:frontend:
+    summary: 启动前端开发服务器（供 wails3 dev 的 dev_mode 调用）
+    dir: frontend
+    cmds:
+      - npm run dev
+
+  run:
+    summary: 运行已构建的二进制（需先 build）
+    cmds:
+      - "{{.BIN_DIR}}/{{.APP_NAME}}"

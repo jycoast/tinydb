@@ -1,8 +1,15 @@
 package bridge
 
-import "tinydb/app/pkg/serializer"
+import (
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"tinydb/app/pkg/serializer"
+)
 
 type Configs struct {
+}
+
+func NewConfigsService(_ *application.App) *Configs {
+	return &Configs{}
 }
 
 type Settings struct {

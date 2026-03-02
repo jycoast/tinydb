@@ -3,12 +3,14 @@ import {isArray} from "lodash-es"
 import {isFunction} from "/@/utils/is"
 import stableStringify from "json-stable-stringify"
 import {extendDatabaseInfo} from "/@/lib/tinydb-tools"
+import { Events } from "@wailsio/runtime"
+
 function safeEventsOn(eventName: string, callback: (...data: any) => void) {
   try {
-    const runtime = (window as any).runtime
-    if (runtime?.EventsOnMultiple) {
-      runtime.EventsOnMultiple(eventName, callback, -1)
-    }
+    Events.On(eventName, (e: { data?: unknown }) => {
+      const data = e?.data !== undefined ? e.data : e
+      callback(data)
+    })
   } catch (e) {
     console.warn(`Failed to register event listener for "${eventName}"`, e)
   }

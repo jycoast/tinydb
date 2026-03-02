@@ -97,12 +97,14 @@ function dispatchCacheChange(reloadTrigger) {
   }
 }
 
+import { Events } from "@wailsio/runtime"
+
 export function initCacheListener() {
   try {
-    const { EventsOn } = (window as any).runtime || {}
-    if (EventsOn) {
-      EventsOn("changed-cache", reloadTrigger => dispatchCacheChange(reloadTrigger))
-    }
+    Events.On("changed-cache", (e: { data?: string }) => {
+      const reloadTrigger = e?.data
+      if (reloadTrigger) dispatchCacheChange(reloadTrigger)
+    })
   } catch (e) {
     console.log(e)
   }

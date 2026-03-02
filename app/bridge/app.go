@@ -4,59 +4,30 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"tinydb/app/db/stash"
 	"tinydb/app/pkg/logger"
 )
 
-var Application *App
 var applicationOnce sync.Once
 
-// App struct
-type App struct {
-	ctx                 context.Context
-	Connections         *Connections
-	DatabaseConnections *DatabaseConnections
-	ServerConnections   *ServerConnections
-	Plugins             *Plugins
+type AppService struct {
+	app *application.App
 }
 
-// NewApp creates a new App application struct
-func NewApp() *App {
-	applicationOnce.Do(func() {
-		Application = &App{
-			Connections:         NewConnections(),
-			DatabaseConnections: NewDatabaseConnections(),
-			ServerConnections:   NewServerConnections(),
-			Plugins:             NewPlugins(),
-		}
+func NewAppService(app *application.App) *AppService {
+	return &AppService{app: app}
+}
+
+func (a *AppService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
+	logger.Infof("%s", fmt.Sprintf("tinydb app startup"))
+	a.app.Event.On("common:WindowClosing", func(_ *application.CustomEvent) {
+		stash.GetStorageSession().Clear()
 	})
-
-	return Application
+	return nil
 }
 
-// startup is called when the app starts. The tinydbCtx is saved
-// so we can call the runtime methods
-func (a *App) Startup(ctx context.Context) {
-	a.ctx = ctx
-	logger.Infof("%s", fmt.Sprintf(`tinydb app startup`))
-}
-
-// shutdown is called at application termination
-func (a *App) Shutdown(ctx context.Context) {
-	// Perform your teardown here
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
+func (a *AppService) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
-// domReady is called after the front-end dom has been loaded
-func (a App) DomReady(ctx context.Context) {
-	// Add your action here
-}
-
-func (a *App) OnBeforeClose(ctx context.Context) bool {
-	stash.GetStorageSession().Clear()
-	return false
 }

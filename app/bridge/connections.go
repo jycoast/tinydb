@@ -2,9 +2,10 @@ package bridge
 
 import (
 	"fmt"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"path"
 	"strings"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"tinydb/app/db/adapter"
 	"tinydb/app/internal"
 	"tinydb/app/pkg/serializer"
@@ -15,7 +16,8 @@ var JsonLinesDatabase *utility.JsonLinesDatabase
 var dir string
 var filename string
 
-type Connections struct {
+type ConnectionsService struct {
+	app *application.App
 }
 
 func init() {
@@ -24,8 +26,19 @@ func init() {
 	JsonLinesDatabase = utility.NewJsonLinesDatabase(filename)
 }
 
-func NewConnections() *Connections {
-	return &Connections{}
+func NewConnectionsService(app *application.App) *ConnectionsService {
+	return &ConnectionsService{app: app}
+}
+
+func showMessageDialog(app *application.App, isError bool, title, message string) {
+	if app == nil || app.Dialog == nil {
+		return
+	}
+	if isError {
+		app.Dialog.Error().SetTitle(title).SetMessage(message).Show()
+	} else {
+		app.Dialog.Info().SetTitle(title).SetMessage(message).Show()
+	}
 }
 
 func getCore(conid string, mask bool) map[string]interface{} {
@@ -46,7 +59,7 @@ const (
 	oK                = "OK"
 )
 
-func (conn *Connections) Test(connection map[string]interface{}) *serializer.Response {
+func (conn *ConnectionsService) Test(connection map[string]interface{}) *serializer.Response {
 	if connection == nil || connection["engine"] == nil || connection["engine"].(string) == "" {
 		return serializer.Fail(serializer.ParamsErr)
 	}
@@ -83,48 +96,25 @@ func (conn *Connections) Test(connection map[string]interface{}) *serializer.Res
 			errorMsg = fmt.Sprintf("连接失败：%v\n连接参数：%+v", err, logParams)
 		}
 
-		runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.ErrorDialog,
-			Title:         "连接错误",
-			Message:       errorMsg,
-			Buttons:       []string{oK},
-			DefaultButton: oK,
-		})
+		showMessageDialog(conn.app, true, "连接错误", errorMsg)
 		fmt.Printf("Connection error: %v\n", err)
 		return serializer.Fail(err.Error())
 	}
 	version, err := driver.Version()
 	if err != nil {
-		runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.ErrorDialog,
-			Title:         testTitleFailed,
-			Message:       err.Error(),
-			Buttons:       []string{oK},
-			DefaultButton: oK,
-		})
+		showMessageDialog(conn.app, true, testTitleFailed, err.Error())
 		return serializer.Fail(err.Error())
 	}
-	runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-		Title:         testTitleSuccess,
-		Message:       "Connected" + fmt.Sprintf(": %s", version.VersionText),
-		Buttons:       []string{oK},
-		DefaultButton: oK,
-	})
+	showMessageDialog(conn.app, false, testTitleSuccess, "Connected"+fmt.Sprintf(": %s", version.VersionText))
 	return serializer.SuccessData(serializer.SUCCESS, nil)
 }
 
-func (conn *Connections) Save(connection map[string]string) *serializer.Response {
+func (conn *ConnectionsService) Save(connection map[string]string) *serializer.Response {
 	encrypted := internal.EncryptConnection(connection)
 	//验证obj的唯一性，除去key字段，所有key对应的值都要一致。
 	unknownMap := utility.TransformUnknownMap(encrypted)
 	if exists := utility.UnknownMapSome(JsonLinesDatabase.Find(), unknownMap); exists {
-		runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.ErrorDialog,
-			Title:         connectionFailed,
-			Message:       "Connection with same connection name already exists in the project.",
-			Buttons:       []string{oK},
-			DefaultButton: oK,
-		})
+		showMessageDialog(conn.app, true, connectionFailed, "Connection with same connection name already exists in the project.")
 		return serializer.Fail(serializer.ParamsErr)
 	}
 
@@ -139,21 +129,15 @@ func (conn *Connections) Save(connection map[string]string) *serializer.Response
 	}
 
 	if err != nil {
-		runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-			Type:          runtime.ErrorDialog,
-			Title:         testTitleFailed,
-			Message:       err.Error(),
-			Buttons:       []string{oK},
-			DefaultButton: oK,
-		})
+		showMessageDialog(conn.app, true, testTitleFailed, err.Error())
 
 		return serializer.Fail(serializer.ParamsErr)
 	}
-	utility.EmitChanged(Application.ctx, "connection-list-changed")
+	utility.EmitChanged("connection-list-changed")
 	return serializer.SuccessData(serializer.SUCCESS, res)
 }
 
-func (conn *Connections) List() *serializer.Response {
+func (conn *ConnectionsService) List() *serializer.Response {
 	find := JsonLinesDatabase.Find()
 	return serializer.SuccessData(serializer.SUCCESS, find)
 }
@@ -162,7 +146,7 @@ type GetConnectionsRequest struct {
 	Conid string `json:"conid"`
 }
 
-func (conn *Connections) Get(req *GetConnectionsRequest) *serializer.Response {
+func (conn *ConnectionsService) Get(req *GetConnectionsRequest) *serializer.Response {
 	raw := getCore(req.Conid, true)
 	if raw == nil {
 		return serializer.SuccessData(serializer.SUCCESS, nil)
@@ -171,27 +155,20 @@ func (conn *Connections) Get(req *GetConnectionsRequest) *serializer.Response {
 	return serializer.SuccessData(serializer.SUCCESS, decrypted)
 }
 
-func (conn *Connections) Delete(connection map[string]string) *serializer.Response {
+func (conn *ConnectionsService) Delete(connection map[string]string) *serializer.Response {
 	//ok := dialog.Message("你确认要删除\"%s\"吗?", connection["name"]).Title("确认删除").YesNo()
 	//if !ok {
-	//	return serializer.Fail(Application.ctx, fmt.Sprintf("%v", ok))
+	//	return serializer.Fail(fmt.Sprintf("%v", ok))
 	//}
 
 	uuid, ok := connection["_id"]
 	if ok && uuid != "" {
 		res, err := JsonLinesDatabase.Remove(uuid)
 		if err != nil {
-			runtime.MessageDialog(Application.ctx, runtime.MessageDialogOptions{
-				Type:          runtime.ErrorDialog,
-				Title:         deleteFailed,
-				Message:       err.Error(),
-				Buttons:       []string{oK},
-				DefaultButton: oK,
-			})
-
+			showMessageDialog(conn.app, true, deleteFailed, err.Error())
 			return serializer.Fail(err.Error())
 		}
-		utility.EmitChanged(Application.ctx, "connection-list-changed")
+		utility.EmitChanged("connection-list-changed")
 		return serializer.SuccessData(serializer.SUCCESS, res)
 	}
 

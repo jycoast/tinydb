@@ -33,6 +33,7 @@
     "gen:icon": "esno ./build/generate/icon/index.ts"
   },
   "dependencies": {
+    "@wailsio/runtime": "^3.0.0-alpha.79",
     "@element-plus/icons-vue": "^2.3.2",
     "@iconify/iconify": "^2.2.1",
     "@vue/runtime-core": "^3.2.33",

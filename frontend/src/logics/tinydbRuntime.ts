@@ -1,15 +1,26 @@
-import {storeToRefs} from "pinia"
+import { storeToRefs } from "pinia"
+import { Events } from "@wailsio/runtime"
+
 function safeEventsOn(eventName: string, callback: (...data: any) => void) {
-  const runtime = (window as any).runtime
-  if (runtime?.EventsOnMultiple) {
-    runtime.EventsOnMultiple(eventName, callback, -1)
+  try {
+    Events.On(eventName, (e: { data?: unknown }) => {
+      const data = e?.data !== undefined ? e.data : e
+      callback(data)
+    })
+  } catch {
+    // ignore
   }
 }
 
 function safeEventsEmit(eventName: string, ...data: any) {
-  const runtime = (window as any).runtime
-  if (runtime?.EventsEmit) {
-    runtime.EventsEmit(eventName, ...data)
+  try {
+    if (data.length > 0) {
+      Events.Emit(eventName, data.length === 1 ? data[0] : data)
+    } else {
+      Events.Emit(eventName)
+    }
+  } catch {
+    // ignore
   }
 }
 import {useBootstrapStore} from "/@/store/modules/bootstrap"

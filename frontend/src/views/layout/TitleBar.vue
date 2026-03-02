@@ -39,12 +39,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue"
 import { Minus, Close, FullScreen, CopyDocument } from "@element-plus/icons-vue"
-import {
-  WindowIsMaximised,
-  WindowMinimise,
-  WindowToggleMaximise,
-  Quit,
-} from "/@/wailsjs/runtime/runtime"
+import { Application, Window } from "@wailsio/runtime"
 import MenuBar from "./MenuBar.vue"
 import logoUrl from "/src/assets/images/logo.png"
 
@@ -56,27 +51,32 @@ const noDragStyle = { "--wails-draggable": "no-drag" } as const
 
 async function refreshMaxState() {
   try {
-    isMaximised.value = await WindowIsMaximised()
+    const w = Window.Current()
+    isMaximised.value = w ? await w.IsMaximised() : false
   } catch {
     isMaximised.value = false
   }
 }
 
 function minimise() {
-  void WindowMinimise()
+  const w = Window.Current()
+  if (w) w.Minimise()
 }
 
 async function toggleMaximise() {
   try {
-    await WindowToggleMaximise()
-    await refreshMaxState()
+    const w = Window.Current()
+    if (w) {
+      await w.ToggleMaximise()
+      await refreshMaxState()
+    }
   } catch {
     // ignore
   }
 }
 
 function closeWindow() {
-  void Quit()
+  void Application.Quit()
 }
 
 let timer: number | null = null

@@ -2,9 +2,11 @@ package bridge
 
 import (
 	"fmt"
-	"github.com/samber/lo"
 	"strings"
 	"sync"
+
+	"github.com/samber/lo"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"tinydb/app/analyser"
 	"tinydb/app/db/standard/modules"
 	"tinydb/app/internal/schema"
@@ -29,6 +31,10 @@ func NewDatabaseConnections() *DatabaseConnections {
 	}
 }
 
+func NewDatabaseConnectionsService(_ *application.App) *DatabaseConnections {
+	return NewDatabaseConnections()
+}
+
 func (dc *DatabaseConnections) handleStructure(conid, database string, structure map[string]interface{}) {
 	existing := findByDatabaseConnection(dc.Opened, conid, database)
 
@@ -37,7 +43,7 @@ func (dc *DatabaseConnections) handleStructure(conid, database string, structure
 	}
 
 	existing.Structure = structure
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("database-structure-changed-%s-%s", conid, database))
+	utility.EmitChanged(fmt.Sprintf("database-structure-changed-%s-%s", conid, database))
 }
 
 func (dc *DatabaseConnections) handleStructureTime(conid, database string, analysedTime utility.UnixTime) {
@@ -49,7 +55,7 @@ func (dc *DatabaseConnections) handleStructureTime(conid, database string, analy
 
 	existing.AnalysedTime = analysedTime
 
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("database-status-changed-%s-%s", conid, database))
+	utility.EmitChanged(fmt.Sprintf("database-status-changed-%s-%s", conid, database))
 }
 
 func (dc *DatabaseConnections) handleVersion(conid, database string, version *modules.Version) {
@@ -58,7 +64,7 @@ func (dc *DatabaseConnections) handleVersion(conid, database string, version *mo
 		return
 	}
 	existing.ServerVersion = version
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("database-server-version-changed-%s-%s", conid, database))
+	utility.EmitChanged(fmt.Sprintf("database-server-version-changed-%s-%s", conid, database))
 }
 
 func (dc *DatabaseConnections) handleError(conid, database string, err error) {
@@ -74,7 +80,7 @@ func (dc *DatabaseConnections) handleStatus(conid, database string, status *sche
 		return
 	}
 	existing.Status = status
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("database-status-changed-%s-%s", conid, database))
+	utility.EmitChanged(fmt.Sprintf("database-status-changed-%s-%s", conid, database))
 }
 
 func (dc *DatabaseConnections) handlePing() {
@@ -260,7 +266,7 @@ func (dc *DatabaseConnections) sendRequest(conn *schema.OpenedDatabaseConnection
 
 	switch message.MsgType {
 	case "sqlSelect":
-		res = dc.DatabaseConnection.HandleSqlSelect(Application.ctx, conn, message.Payload)
+		res = dc.DatabaseConnection.HandleSqlSelect(conn, message.Payload)
 	case "collectionData":
 		res = dc.DatabaseConnection.HandleCollectionData(conn, message.Payload.(*modules.CollectionDataOptions))
 	default:
@@ -296,7 +302,7 @@ func (dc *DatabaseConnections) close(conid, database string, kill bool) {
 			},
 		}
 
-		utility.EmitChanged(Application.ctx, fmt.Sprintf("database-status-changed-%s-%s", conid, database))
+		utility.EmitChanged(fmt.Sprintf("database-status-changed-%s-%s", conid, database))
 	}
 }
 

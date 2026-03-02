@@ -1,12 +1,12 @@
 package sideQuests
 
 import (
-	"context"
 	"errors"
 	"sync"
 	"time"
+
 	"github.com/samber/lo"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"tinydb/app/db"
 	"tinydb/app/db/adapter"
 	"tinydb/app/db/adapter/mongo"
@@ -171,8 +171,7 @@ func (msg *DatabaseConnection) handleIncrementalRefresh(ch chan *schema.EchoMess
 	})*/
 }
 
-func (msg *DatabaseConnection) HandleSqlSelect(
-	ctx context.Context, conn *schema.OpenedDatabaseConnection, selectParams interface{}) *schema.EchoMessage {
+func (msg *DatabaseConnection) HandleSqlSelect(conn *schema.OpenedDatabaseConnection, selectParams interface{}) *schema.EchoMessage {
 	// Fast-path: if frontend already passed raw SQL like { sql: "select 1" }, run directly.
 	switch v := selectParams.(type) {
 	case map[string]interface{}:
@@ -212,15 +211,25 @@ func (msg *DatabaseConnection) HandleSqlSelect(
 		}
 	}
 	
-	runtime.EventsEmit(ctx, "handleSqlSelect", selectParams)
-	runtime.EventsOnce(ctx, "handleSqlSelectReturn", func(sql ...interface{}) {
+	app := application.Get()
+	if app == nil || app.Event == nil {
+		return &schema.EchoMessage{MsgType: "response", Err: errors.New("application not ready")}
+	}
+	app.Event.Emit("handleSqlSelect", selectParams)
+	cancel := app.Event.On("handleSqlSelectReturn", func(e *application.CustomEvent) {
+		var sqlStr string
+		if e != nil && e.Data != nil {
+			if s, ok := e.Data.(string); ok {
+				sqlStr = s
+			}
+		}
 		utility.WithRecover(func() {
 			driver, err := stash.GetStorageSession().GetItem(conn.Conid, conn.Database)
 			if err != nil {
 				safeSend(&schema.EchoMessage{MsgType: "response", Err: err})
 				return
 			}
-			safeSend(msg.handleQueryData(driver, sql[0].(string), true))
+			safeSend(msg.handleQueryData(driver, sqlStr, true))
 		}, func(err error) {
 			safeSend(&schema.EchoMessage{
 				MsgType: "response",
@@ -228,6 +237,7 @@ func (msg *DatabaseConnection) HandleSqlSelect(
 			})
 		})
 	})
+	defer cancel()
 
 	// Never hang forever: timeout if frontend doesn't respond.
 	select {

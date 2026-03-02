@@ -1,0 +1,28 @@
+# Wails v3 构建/开发配置
+# 见 https://v3alpha.wails.io/learn/build/
+name: tinydb
+
+# 开发模式：wails3 dev 会读取 dev_mode，用 refresh 监听文件并执行任务
+dev_mode:
+  root_path: .
+  log_level: warn
+  debounce: 1000
+  ignore:
+    dir:
+      - .git
+      - node_modules
+      - frontend
+      - build
+    file:
+      - .DS_Store
+      - .gitignore
+    watched_extension:
+      - "*.go"
+    git_ignore: true
+  executes:
+    - cmd: task dev:frontend
+      type: background
+    - cmd: task build
+      type: blocking
+    - cmd: task run
+      type: primary

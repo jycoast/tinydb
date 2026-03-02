@@ -2,8 +2,10 @@ package bridge
 
 import (
 	"fmt"
-	"github.com/samber/lo"
 	"sync"
+
+	"github.com/samber/lo"
+	"github.com/wailsapp/wails/v3/pkg/application"
 	"tinydb/app/db/adapter"
 	"tinydb/app/db/standard/modules"
 	"tinydb/app/db/stash"
@@ -32,6 +34,10 @@ func NewServerConnections() *ServerConnections {
 	}
 }
 
+func NewServerConnectionsService(_ *application.App) *ServerConnections {
+	return NewServerConnections()
+}
+
 func (sc *ServerConnections) handleDatabases(conid string, databases interface{}) {
 	existing := findByServerConnection(sc.Opened, conid)
 
@@ -41,7 +47,7 @@ func (sc *ServerConnections) handleDatabases(conid string, databases interface{}
 
 	existing.Databases = databases
 
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("database-list-changed-%s", conid))
+	utility.EmitChanged(fmt.Sprintf("database-list-changed-%s", conid))
 }
 
 func (sc *ServerConnections) handleVersion(conid string, version *modules.Version) {
@@ -52,7 +58,7 @@ func (sc *ServerConnections) handleVersion(conid string, version *modules.Versio
 	}
 
 	existing.Version = version
-	utility.EmitChanged(Application.ctx, fmt.Sprintf("server-version-changed-%s", conid))
+	utility.EmitChanged(fmt.Sprintf("server-version-changed-%s", conid))
 }
 
 func (sc *ServerConnections) handleStatus(conid string, status *schema.OpenedStatus) {
@@ -64,7 +70,7 @@ func (sc *ServerConnections) handleStatus(conid string, status *schema.OpenedSta
 
 	existing.Status = status
 
-	utility.EmitChanged(Application.ctx, "server-status-changed")
+	utility.EmitChanged("server-status-changed")
 }
 
 func (sc *ServerConnections) handlePing() {}
@@ -97,7 +103,7 @@ func (sc *ServerConnections) ensureOpened(conid string) *schema.OpenedServerConn
 	if sc.Closed != nil {
 		delete(sc.Closed, conid)
 	}
-	utility.EmitChanged(Application.ctx, "server-status-changed")
+	utility.EmitChanged("server-status-changed")
 
 	ch := make(chan *schema.EchoMessage)
 	defer func() {
@@ -172,7 +178,7 @@ func (sc *ServerConnections) Close(conid string, kill bool) {
 		}
 		sc.LastPinged[conid] = 0
 		_ = stash.GetStorageSession().RemoveItem(conid)
-		utility.EmitChanged(Application.ctx, "server-status-changed")
+		utility.EmitChanged("server-status-changed")
 	}
 }
 

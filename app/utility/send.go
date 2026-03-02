@@ -1,11 +1,13 @@
 package utility
 
 import (
-	"context"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
-func EmitChanged(ctx context.Context, key string) {
-	runtime.EventsEmit(ctx, "changed-cache", key)
-	runtime.EventsEmit(ctx, key)
+func EmitChanged(key string) {
+	app := application.Get()
+	if app != nil && app.Event != nil {
+		app.Event.Emit("changed-cache", key)
+		app.Event.Emit(key)
+	}
 }
