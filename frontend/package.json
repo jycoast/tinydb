@@ -1,8 +1,8 @@
 {
   "name": "tinydb-frontend",
-  "version": "0.0.2.2",
+  "version": "0.0.1",
   "author": {
-    "name": "bob",
+    "name": "Jimmy",
     "email": "jycoast@163.com",
     "url": "https://github.com/jycoast/tinydb"
   },
@@ -29,8 +29,7 @@
     "test:gzip": "npx http-server dist --cors --gzip -c-1",
     "test:br": "npx http-server dist --cors --brotli -c-1",
     "reinstall": "rimraf pnpm-lock.yaml && rimraf package.lock.json && rimraf node_modules && npm run bootstrap",
-    "prepare": "husky install || echo \"husky install failed, continuing...\"",
-    "gen:icon": "esno ./build/generate/icon/index.ts"
+    "prepare": "husky install || echo \"husky install failed, continuing...\""
   },
   "dependencies": {
     "@wailsio/runtime": "^3.0.0-alpha.79",
@@ -42,15 +41,11 @@
     "@vueuse/shared": "^8.3.0",
     "@zxcvbn-ts/core": "^2.0.1",
     "ace-builds": "^1.43.5",
-    "any-touch": "^2.2.0",
     "axios": "^0.26.1",
-    "cropperjs": "^1.5.12",
     "crypto-js": "^4.1.1",
     "dayjs": "^1.11.1",
-    "echarts": "^5.3.2",
     "element-plus": "^2.13.0",
     "install": "^0.13.0",
-    "intro.js": "^5.1.0",
     "json-stable-stringify": "^1.0.2",
     "localforage": "^1.10.0",
     "lodash-es": "^4.17.21",
@@ -60,12 +55,10 @@
     "pinia": "2.0.12",
     "print-js": "^1.6.0",
     "qs": "^6.10.3",
-    "showdown": "^2.1.0",
     "sortablejs": "^1.15.0",
     "sql-formatter": "^15.4.2",
     "vue": "^3.2.45",
     "vue-i18n": "^9.1.9",
-    "vue-json-pretty": "^2.0.6",
     "vue-router": "^4.0.14",
     "vue-types": "^4.1.1"
   },
@@ -79,7 +72,6 @@
     "@types/crypto-js": "^4.1.1",
     "@types/fs-extra": "^9.0.13",
     "@types/inquirer": "^8.2.1",
-    "@types/intro.js": "^3.0.2",
     "@types/json-stable-stringify": "^1.0.34",
     "@types/lodash-es": "^4.17.6",
     "@types/node": "^17.0.25",
@@ -87,7 +79,6 @@
     "@types/parsimmon": "^1.10.6",
     "@types/qrcode": "^1.4.2",
     "@types/qs": "^6.9.7",
-    "@types/showdown": "^1.9.4",
     "@types/sortablejs": "^1.10.7",
     "@typescript-eslint/eslint-plugin": "^5.20.0",
     "@typescript-eslint/parser": "^5.20.0",
