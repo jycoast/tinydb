@@ -27,52 +27,8 @@
           @dblclick.stop="handleNodeDblClick(data)"
         >
           <img
-            v-if="data.type === 'connection'"
-            :src="
-              data.conid && openedConnections.includes(data.conid)
-                ? connectionConnectedIcon
-                : connectionIcon
-            "
-            alt="connection"
-            class="node-icon connection-icon"
-          />
-          <img
-            v-if="data.type === 'database'"
-            :src="
-              data.conid && openedConnections.includes(data.conid)
-                ? databaseConnectedIcon
-                : databaseIcon
-            "
-            alt="database"
-            class="node-icon connection-icon"
-          />
-          <img
-            v-if="data.type === 'category'"
-            :src="
-              data.category === 'views'
-                ? viewIcon
-                : data.category === 'functions'
-                ? functionIcon
-                : tableIcon
-            "
-            alt=""
-            class="node-icon connection-icon"
-          />
-          <img
-            v-if="data.type === 'object'"
-            :src="
-              data.category === 'views'
-                ? viewIcon
-                : data.category === 'functions'
-                ? functionIcon
-                : tableIcon
-            "
-            alt=""
-            class="node-icon connection-icon"
-          />
-          <img
-            v-if="data.type === 'column'"
-            :src="columnsIcon"
+            v-if="nodeIcon(data)"
+            :src="nodeIcon(data)"
             alt=""
             class="node-icon connection-icon"
           />
@@ -125,23 +81,11 @@
   import type { IActiveConnection } from '/@/types/connections';
   import type { TablesNameSort } from '/@/types/mysql';
   import type { ElTree } from 'element-plus';
+  import type { TreeNode } from './tree/types';
+  import { getNodeHandlerKey } from './tree/getNodeHandlerKey';
+  import { NODE_HANDLERS } from './tree/handlers';
 
-  export interface TreeNode {
-    id: string;
-    label: string;
-    type: 'connection' | 'database' | 'category' | 'object' | 'column';
-    conid?: string;
-    database?: string;
-    category?: string;
-    objectType?: string;
-    extInfo?: string;
-    statusIcon?: string;
-    statusTitle?: string;
-    children?: TreeNode[];
-    rawData?: any;
-    schemaName?: string;
-    pureName?: string;
-  }
+  export type { TreeNode };
 
   const props = defineProps<{
     connectionsWithStatus: IActiveConnection[];
@@ -285,7 +229,7 @@
           {
             id: `category_${conn._id}_${db.name}_tables`,
             label: '表',
-            type: 'category',
+            type: 'tables',
             conid: conn._id,
             database: db.name,
             category: 'tables',
@@ -294,7 +238,7 @@
           {
             id: `category_${conn._id}_${db.name}_views`,
             label: '视图',
-            type: 'category',
+            type: 'views',
             conid: conn._id,
             database: db.name,
             category: 'views',
@@ -303,7 +247,7 @@
           {
             id: `category_${conn._id}_${db.name}_functions`,
             label: '函数',
-            type: 'category',
+            type: 'functions',
             conid: conn._id,
             database: db.name,
             category: 'functions',
@@ -346,10 +290,11 @@
     }
     const sortedList = sortBy(objectList, ['schemaName', 'pureName']);
     node.children = sortedList.map((obj) => {
-      const tableNode: TreeNode = {
+      const itemType = mapObjectTypeFieldToNodeType(obj.objectTypeField);
+      const childNode: TreeNode = {
         id: `object_${node.conid}_${node.database}_${node.category}_${obj.pureName}`,
         label: obj.pureName || obj.name,
-        type: 'object',
+        type: itemType,
         conid: node.conid,
         database: node.database,
         category: node.category,
@@ -359,21 +304,28 @@
         rawData: obj,
         children: [],
       };
-      if (node.category === 'tables' && obj.objectTypeField === 'tables') {
-        tableNode.children = [
+      if (itemType === 'table') {
+        childNode.children = [
           {
-            id: `columns_placeholder_${tableNode.id}`,
+            id: `columns_placeholder_${childNode.id}`,
             label: '加载中...',
             type: 'column',
             children: [],
           },
         ];
       }
-      return tableNode;
+      return childNode;
     });
     if (node.children!.length === 0) {
       node.children = [{ id: `empty_${node.id}`, label: '暂无数据', type: 'object', children: [] }];
     }
+  }
+
+  function mapObjectTypeFieldToNodeType(field: string): 'table' | 'view' | 'function' {
+    if (field === 'tables') return 'table';
+    if (field === 'views' || field === 'matviews') return 'view';
+    if (field === 'functions') return 'function';
+    return 'table';
   }
 
   async function loadCategoryObjects(node: TreeNode) {
@@ -433,100 +385,6 @@
     }
   }
 
-  async function handleNodeClick(data: TreeNode, node: any) {
-    if (data.type === 'connection' && data.conid) {
-      const isExpanded = expandedConnections.value.includes(data.conid);
-      if (!isExpanded) {
-        bootstrap.updateExpandedConnections((old) => [...old, data.conid!]);
-        bootstrap.updateOpenedConnections((old) =>
-          old.includes(data.conid!) ? old : [...old, data.conid!],
-        );
-        try {
-          await serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true });
-        } catch (e) {
-          console.error('打开连接失败', e);
-        }
-        const connectionNode = treeData.value.find((n) => n.id === `connection_${data.conid}`);
-        if (connectionNode) {
-          const conn = props.connectionsWithStatus.find((c) => c._id === data.conid);
-          if (conn) {
-            await loadDatabasesForConnection(connectionNode, conn);
-            await nextTick();
-            treeRef.value?.setCurrentKey(node.key);
-            node.expanded = true;
-          }
-        }
-      } else {
-        bootstrap.updateExpandedConnections((old) => old.filter((id) => id !== data.conid));
-        node.expanded = false;
-      }
-    }
-
-    if (data.type === 'database' && data.conid && data.database) {
-      const key = `${data.conid}::${data.database}`;
-      const isExpanded = expandedConnections.value.includes(key);
-      if (!isExpanded) {
-        bootstrap.updateExpandedConnections((old) => [...old, key]);
-        try {
-          await serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true });
-          await databaseConnectionsRefreshApi({
-            conid: data.conid,
-            database: data.database,
-            keepOpen: true,
-          });
-          if (data.children && data.children.length > 0) {
-            const tablesCategory = data.children.find((c: TreeNode) => c.category === 'tables');
-            if (tablesCategory) {
-              await loadCategoryObjects(tablesCategory);
-              await nextTick();
-            }
-          }
-        } catch (e) {
-          console.error('刷新数据库结构失败', e);
-        }
-        node.expanded = true;
-      } else {
-        bootstrap.updateExpandedConnections((old) => old.filter((id) => id !== key));
-        node.expanded = false;
-      }
-    }
-
-    if (data.type === 'category') {
-      if (node.expanded && (!data.children || data.children.length === 0)) {
-        await loadCategoryObjects(data);
-        await nextTick();
-        treeRef.value?.setCurrentKey(node.key);
-      }
-    }
-
-    if (data.type === 'object' && data.category === 'tables' && data.objectType === 'tables') {
-      node.expanded = !node.expanded;
-    }
-  }
-
-  function handleNodeDblClick(data: TreeNode) {
-    if (data.type === 'object' && data.category === 'tables' && data.objectType === 'tables') {
-      emit('open-table', data);
-    }
-  }
-
-  async function handleNodeExpand(data: TreeNode) {
-    if (data.type === 'category' && (!data.children || data.children.length === 0)) {
-      await loadCategoryObjects(data);
-      await nextTick();
-    }
-    if (
-      data.type === 'object' &&
-      data.category === 'tables' &&
-      data.objectType === 'tables' &&
-      data.children?.length === 1 &&
-      data.children[0].id.includes('columns_placeholder')
-    ) {
-      await loadTableColumns(data);
-      await nextTick();
-    }
-  }
-
   async function loadTableColumns(tableNode: TreeNode) {
     if (!tableNode.conid || !tableNode.database || !tableNode.pureName) return;
     try {
@@ -575,6 +433,58 @@
     }
   }
 
+  const handlerContext = {
+    treeData,
+    treeRef,
+    props,
+    emit,
+    bootstrap,
+    expandedConnections,
+    openedConnections,
+    disconnectingConid,
+    nextTick,
+    loadDatabasesForConnection,
+    loadCategoryObjects,
+    loadTableColumns,
+    serverConnectionsRefreshApi,
+    databaseConnectionsRefreshApi,
+    getConnectionLabel,
+    icons: {
+      connectionIcon,
+      connectionConnectedIcon,
+      databaseIcon,
+      databaseConnectedIcon,
+      tableIcon,
+      functionIcon,
+      viewIcon,
+      columnsIcon,
+    },
+  };
+
+  function nodeIcon(data: TreeNode): string | undefined {
+    const key = getNodeHandlerKey(data);
+    const handler = NODE_HANDLERS[key];
+    return handler?.getIcon?.(data, handlerContext) ?? undefined;
+  }
+
+  async function handleNodeClick(data: TreeNode, node: any) {
+    const key = getNodeHandlerKey(data);
+    const handler = NODE_HANDLERS[key];
+    if (handler?.onClick) await handler.onClick(data, node, handlerContext);
+  }
+
+  function handleNodeDblClick(data: TreeNode) {
+    const key = getNodeHandlerKey(data);
+    const handler = NODE_HANDLERS[key];
+    handler?.onDblClick?.(data, handlerContext);
+  }
+
+  async function handleNodeExpand(data: TreeNode) {
+    const key = getNodeHandlerKey(data);
+    const handler = NODE_HANDLERS[key];
+    if (handler?.onExpand) await handler.onExpand(data, handlerContext);
+  }
+
   function handleContextMenu(event: MouseEvent, data: TreeNode) {
     event.preventDefault();
     event.stopPropagation();
@@ -592,58 +502,10 @@
     createContextMenu({ event, items });
   }
 
-  function getContextMenuItems(data: TreeNode): any[] {
-    const items: any[] = [];
-    if (data.type === 'connection') {
-      const conn = props.connectionsWithStatus.find((c) => c._id === data.conid);
-      const isOpened = conn && openedConnections.value.includes(conn._id);
-      if (isOpened) items.push({ label: '关闭连接', command: 'disconnect-connection' });
-      items.push(
-        { label: '编辑连接', command: 'edit-connection' },
-        { label: '复制连接', command: 'copy-connection' },
-        { label: '新建查询', command: 'new-query' },
-      );
-      if (isOpened) items.push({ label: '刷新', command: 'refresh-connection' });
-      items.push(
-        { divider: true },
-        { label: '删除', command: 'delete-connection' },
-        { label: '创建数据库', command: 'create-database' },
-        { label: '服务器概览', command: 'server-summary' },
-      );
-    } else if (data.type === 'database') {
-      const menuItems = getDatabaseMenuItems(data.conid, data.database);
-      items.push(
-        ...menuItems.map((item: any) => ({
-          label: item.text,
-          command: item.command,
-          divider: item.divider,
-        })),
-      );
-    } else if (data.type === 'object' && data.category === 'tables') {
-      items.push(
-        { label: '打开表', command: 'open-table' },
-        { label: '新建表', command: 'create-table' },
-        { label: '删除表', command: 'drop-table' },
-        { label: '清空表', command: 'truncate-table' },
-        { label: '设计表', command: 'design-table' },
-        { label: '复制表名', command: 'copy-table-name' },
-      );
-    }
-    return items;
-  }
-
-  function getDatabaseMenuItems(_conid?: string, _database?: string) {
-    return [
-      { text: '新建查询', command: 'db-new-query' },
-      { text: '新建表', command: 'db-create-table' },
-      { text: '新建集合', command: '' },
-      { text: '导入向导', command: '' },
-      { text: '导出向导', command: '' },
-      { text: '恢复/导入 SQL 转储', command: '' },
-      { text: '备份/导出 SQL 转储', command: '' },
-      { divider: true },
-      { text: '关闭数据库', command: 'db-close-database' },
-    ];
+  function getContextMenuItems(data: TreeNode) {
+    const key = getNodeHandlerKey(data);
+    const handler = NODE_HANDLERS[key];
+    return handler?.getContextMenuItems?.(data, handlerContext) ?? [];
   }
 
   async function handleMenuCommand(command: string) {
@@ -758,7 +620,7 @@
     const categoryNode = treeData.value
       .flatMap((c) => c.children || [])
       .flatMap((db) => db.children || [])
-      .find((cat) => cat.category === 'tables' && cat.conid === conid && cat.database === database);
+      .find((cat) => cat.type === 'tables' && cat.conid === conid && cat.database === database);
     if (categoryNode) await loadCategoryObjects(categoryNode);
   }
 
@@ -792,6 +654,10 @@
     padding-right: 8px;
     min-width: 0;
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
   }
 
   .node-icon {
@@ -848,6 +714,12 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  :deep(.database-tree .el-tree-node__content) {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
   }
 
   :deep(

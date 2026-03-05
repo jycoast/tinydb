@@ -35,6 +35,8 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "@iconify/iconify": "^2.2.1",
+    "@tanstack/vue-table": "^8.21.3",
+    "@tanstack/vue-virtual": "^3.13.19",
     "@vue/runtime-core": "^3.2.33",
     "@vue/shared": "^3.2.33",
     "@vueuse/core": "^8.3.0",
