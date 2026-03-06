@@ -46,41 +46,54 @@
 
     </div>
 
-    <!-- 编辑区：Ace Editor -->
-    <div style="flex: 1; min-height: 0; position: relative;">
-      <AceEditor
-        :value="sqlContent"
-        mode="mysql"
-        :options="editorOptions"
-        :menu="contextMenuItems as any"
-        @init="handleEditorInit"
-        @input="handleSqlInput"
-      />
-    </div>
+    <!-- 编辑区 + 可拖拽结果区 -->
+    <div style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+      <div style="flex: 1; min-height: 0; position: relative;">
+        <AceEditor
+          :value="sqlContent"
+          mode="mysql"
+          :options="editorOptions"
+          :menu="contextMenuItems as any"
+          @init="handleEditorInit"
+          @input="handleSqlInput"
+        />
+      </div>
 
-    <QueryResult
-      v-if="showResults"
-      ref="queryResultRef"
-      :results-info="resultsInfo"
-      :error="error"
-      :query-result="queryResult"
-      :result-table-data="resultTableData"
-      :table-columns="tableColumns"
-      :results-scroll-y="resultsScrollY"
-      :executing="executing"
-      v-model:editing-result-value="editingResultValue"
-      :editing-result-cell="editingResultCell"
-      @close="showResults = false"
-      @clear-error="error = ''"
-      @copy="handleCopyResults"
-      @copy-as-insert="handleCopyAsInsert"
-      @clear-selection="clearResultSelection"
-      @row-click="handleTableRowClick"
-      @selection-change="handleSelectionChange"
-      @cell-click="handleCellClick"
-      @start-edit-cell="startEditResultCell"
-      @commit-edit-cell="commitEditResultCell"
-    />
+      <div
+        v-if="showResults"
+        class="query-result-resize-handle"
+        @mousedown="onResultResizeStart"
+      />
+
+      <div
+        v-if="showResults"
+        class="query-result-panel"
+        :style="{ height: resultsPanelHeight + 'px' }"
+      >
+        <QueryResult
+          ref="queryResultRef"
+          :results-info="resultsInfo"
+          :error="error"
+          :query-result="queryResult"
+          :result-table-data="resultTableData"
+          :table-columns="tableColumns"
+          :results-scroll-y="resultsScrollY"
+          :executing="executing"
+          v-model:editing-result-value="editingResultValue"
+          :editing-result-cell="editingResultCell"
+          @close="showResults = false"
+          @clear-error="error = ''"
+          @copy="handleCopyResults"
+          @copy-as-insert="handleCopyAsInsert"
+          @clear-selection="clearResultSelection"
+          @row-click="handleTableRowClick"
+          @selection-change="handleSelectionChange"
+          @cell-click="handleCellClick"
+          @start-edit-cell="startEditResultCell"
+          @commit-edit-cell="commitEditResultCell"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -142,7 +155,9 @@ const editingResultCell = ref<{ rowKey: string | number; dataIndex: string } | n
 const editingResultValue = ref<string>('')
 const queryResultRef = ref<InstanceType<typeof QueryResult> | null>(null)
 const connectionName = ref('')
-const resultsScrollY = ref<number>(260)
+const RESULTS_PANEL_HEADER = 56
+const resultsPanelHeight = ref<number>(320)
+const resultsScrollY = ref<number>(320 - RESULTS_PANEL_HEADER)
 const databaseStructure = ref<DatabaseInfo | null>(null)
 
 // 编辑器配置
@@ -755,7 +770,35 @@ function focusEditor() {
 
 function recalcResultsScroll() {
   const h = window.innerHeight || 900
-  resultsScrollY.value = Math.max(160, Math.min(520, Math.floor(h * 0.28)))
+  const target = Math.max(200, Math.min(520, Math.floor(h * 0.35)))
+  resultsPanelHeight.value = target
+  resultsScrollY.value = target - RESULTS_PANEL_HEADER
+}
+
+function onResultResizeStart(e: MouseEvent) {
+  e.preventDefault()
+  const startY = e.clientY
+  const startH = resultsPanelHeight.value
+  const minH = 160
+  const maxH = Math.min(600, Math.floor((window.innerHeight || 800) * 0.7))
+
+  function onMove(ev: MouseEvent) {
+    const delta = startY - ev.clientY
+    const next = Math.max(minH, Math.min(maxH, startH + delta))
+    resultsPanelHeight.value = next
+    resultsScrollY.value = next - RESULTS_PANEL_HEADER
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+
+  document.body.style.cursor = 'ns-resize'
+  document.body.style.userSelect = 'none'
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
 }
 
 // 获取数据库结构
@@ -1348,3 +1391,25 @@ function handleClear() {
 }
 </script>
 
+<style scoped>
+.query-result-resize-handle {
+  flex: 0 0 auto;
+  height: 6px;
+  min-height: 6px;
+  cursor: ns-resize;
+  background: var(--el-border-color-lighter);
+  transition: background 0.15s;
+  user-select: none;
+}
+.query-result-resize-handle:hover {
+  background: var(--el-color-primary-light-5);
+}
+.query-result-panel {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--theme-border);
+}
+</style>

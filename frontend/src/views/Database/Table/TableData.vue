@@ -69,44 +69,47 @@
       <el-alert type="error" :title="error" show-icon />
     </div>
     <div class="table-wrap" v-loading="loading">
-      <DataTable
-        :columns="tableColumns"
-        :data="tableRows"
-        row-key="key"
-        :selectable="true"
-        :selected-column-id="selectedColumnDataIndex"
-        max-height="calc(100vh - 220px)"
-        empty-text="暂无数据"
-        @selection-change="handleSelectionChange"
-        @row-contextmenu="handleRowRightClick"
-        @header-click="handleHeaderClick"
-      >
-        <template #cell="{ rowIndex, columnIndex, value }">
-          <div
-            class="cell-container"
-            :class="{ 'cell-editing': isCellEditing(rowIndex, columnIndex) }"
-            @click="startCellEdit(rowIndex, columnIndex, value)"
-          >
-            <template v-if="isCellEditing(rowIndex, columnIndex)">
-              <input
-                :ref="(el) => setEditingInputRef(el as HTMLInputElement | null, rowIndex, columnIndex)"
-                v-model="editingCell!.currentValue"
-                class="cell-input"
-                @blur="cancelCellEdit"
-                @keydown.enter="saveCellEdit"
-                @keydown.esc="cancelCellEdit"
-                @keydown.tab.prevent
-              />
-            </template>
-            <template v-else>
-              <span class="cell-value">{{ formatCellValue(value) }}</span>
-            </template>
-          </div>
-        </template>
-        <template #empty>
-          <el-empty description="暂无数据" />
-        </template>
-      </DataTable>
+      <div class="table-inner">
+        <DataTable
+          :columns="tableColumns"
+          :data="tableRows"
+          row-key="key"
+          :selectable="false"
+          :selected-column-id="selectedColumnDataIndex"
+          max-height="calc(100vh - 220px)"
+          empty-text="暂无数据"
+          @selection-change="handleSelectionChange"
+          @row-contextmenu="handleRowRightClick"
+          @header-click="handleHeaderClick"
+          @body-click="selectedColumnDataIndex = null"
+        >
+          <template #cell="{ rowIndex, columnIndex, value }">
+            <div
+              class="cell-container"
+              :class="{ 'cell-editing': isCellEditing(rowIndex, columnIndex) }"
+              @click="startCellEdit(rowIndex, columnIndex, value)"
+            >
+              <template v-if="isCellEditing(rowIndex, columnIndex)">
+                <input
+                  :ref="(el) => setEditingInputRef(el as HTMLInputElement | null, rowIndex, columnIndex)"
+                  v-model="editingCell!.currentValue"
+                  class="cell-input"
+                  @blur="cancelCellEdit"
+                  @keydown.enter="saveCellEdit"
+                  @keydown.esc="cancelCellEdit"
+                  @keydown.tab.prevent
+                />
+              </template>
+              <template v-else>
+                <span class="cell-value">{{ formatCellValue(value) }}</span>
+              </template>
+            </div>
+          </template>
+          <template #empty>
+            <el-empty description="暂无数据" />
+          </template>
+        </DataTable>
+      </div>
     </div>
 
     <!-- 右键菜单 -->
@@ -140,10 +143,10 @@
       </div>
       <el-pagination
         v-model:current-page="currentPage"
-        :page-size="pageSize"
+        v-model:page-size="pageSize"
         :total="totalDisplay"
         layout="prev, pager, next, sizes"
-        :page-sizes="[50, 100, 200, 500]"
+        :page-sizes="[100, 500, 1000]"
         small
         @current-change="onPageChange"
         @size-change="onSizeChange"
@@ -558,11 +561,11 @@
   function setEditingInputRef(el: Element | null, rowIndex: number, columnIndex: number) {
     if (el && isCellEditing(rowIndex, columnIndex)) {
       currentEditingInput = el as HTMLInputElement;
-      // Focus and select after next tick
       setTimeout(() => {
         if (currentEditingInput) {
           currentEditingInput.focus();
-          currentEditingInput.select();
+          const len = currentEditingInput.value.length;
+          currentEditingInput.setSelectionRange(len, len);
         }
       }, 0);
     }
@@ -743,10 +746,22 @@
     flex-shrink: 0;
   }
   .table-wrap {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    min-width: 0;
+    overflow: hidden;
     width: 100%;
+  }
+
+  .table-inner {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .pagination-row {
     display: flex;

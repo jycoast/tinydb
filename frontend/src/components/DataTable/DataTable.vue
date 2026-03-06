@@ -1,12 +1,26 @@
 <template>
-  <div ref="tableContainerRef" class="data-table-container" :style="{ maxHeight: maxHeight }">
+  <div class="data-table-wrapper" :style="{ height: '100%', maxHeight: maxHeight }">
     <div v-if="data.length === 0" class="data-table-empty">
       <slot name="empty">
         <span>{{ emptyText }}</span>
       </slot>
     </div>
-    <div v-else class="data-table-scroll" :style="{ height: totalSize + 'px' }">
-      <table class="data-table">
+    <div
+      v-else
+      ref="tableContainerRef"
+      class="data-table-container"
+    >
+      <div
+        class="data-table-scroll"
+        :style="{
+          height: totalSize + 'px',
+          width: tableWidthPx,
+        }"
+      >
+        <table
+          class="data-table"
+          :style="{ width: tableWidthPx }"
+        >
         <thead class="data-table-head">
           <tr
             v-for="headerGroup in table.getHeaderGroups()"
@@ -24,20 +38,36 @@
               :style="{ width: header.getSize() + 'px', minWidth: header.getSize() + 'px' }"
               @click="onHeaderClick(header)"
             >
-              <template v-if="header.column.id === 'select'">
-                <el-checkbox
-                  :model-value="table.getIsAllRowsSelected()"
-                  :indeterminate="table.getIsSomeRowsSelected()"
-                  @update:model-value="table.getToggleAllRowsSelectedHandler()?.($event)"
-                />
-              </template>
-              <template v-else>
-                {{ header.column.columnDef.header as string }}
-              </template>
+              <span class="data-table-th-content">
+                <template v-if="header.column.id === 'select'">
+                  <el-checkbox
+                    :model-value="table.getIsAllRowsSelected()"
+                    :indeterminate="table.getIsSomeRowsSelected()"
+                    @update:model-value="
+                      (val) =>
+                        table.getToggleAllRowsSelectedHandler()?.({ target: { checked: val } })
+                    "
+                  />
+                </template>
+                <template v-else>
+                  {{ header.column.columnDef.header as string }}
+                </template>
+              </span>
+              <div
+                v-if="header.column.getCanResize()"
+                class="data-table-resize-handle"
+                @mousedown="onResizeStart(header, $event)"
+                @touchstart="onResizeStart(header, $event)"
+                @click.stop
+              ></div>
             </th>
           </tr>
         </thead>
-        <tbody class="data-table-body" :style="{ height: totalSize + 'px', position: 'relative' }">
+        <tbody
+          class="data-table-body"
+          :style="{ height: totalSize + 'px', position: 'relative' }"
+          @click="emit('body-click')"
+        >
           <tr
             v-for="vRow in virtualRows"
             :key="rows[vRow.index]?.id"
@@ -69,26 +99,32 @@
               <template v-if="cell.column.id === 'select'">
                 <el-checkbox
                   :model-value="rows[vRow.index].getIsSelected()"
-                  @update:model-value="rows[vRow.index].getToggleSelectedHandler()?.($event)"
+                  @update:model-value="
+                    (val) =>
+                      rows[vRow.index].getToggleSelectedHandler()?.({ target: { checked: val } })
+                  "
                   @click.stop
                 />
               </template>
               <template v-else>
-                <slot
-                  name="cell"
-                  :row="rows[vRow.index].original"
-                  :column="getColumnById(cell.column.id)"
-                  :row-index="vRow.index"
-                  :column-index="getDataColumnIndex(cell.column.id)"
-                  :value="cell.getValue()"
-                >
-                  <span class="data-table-cell-text">{{ formatCellValue(cell.getValue()) }}</span>
-                </slot>
+                <div class="data-table-cell-inner">
+                  <slot
+                    name="cell"
+                    :row="rows[vRow.index].original"
+                    :column="getColumnById(cell.column.id)"
+                    :row-index="vRow.index"
+                    :column-index="getDataColumnIndex(cell.column.id)"
+                    :value="cell.getValue()"
+                  >
+                    <span class="data-table-cell-text">{{ formatCellValue(cell.getValue()) }}</span>
+                  </slot>
+                </div>
               </template>
             </td>
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </template>
@@ -122,6 +158,7 @@
     (e: 'selection-change', rows: Record<string, unknown>[]): void;
     (e: 'row-contextmenu', row: Record<string, unknown>, event: MouseEvent): void;
     (e: 'header-click', columnId: string): void;
+    (e: 'body-click'): void;
   }>();
 
   const rowSelection = ref<Record<string, boolean>>({});
@@ -147,6 +184,8 @@
         header: col.title,
         size: col.width ?? 140,
         minSize: 60,
+        maxSize: 800,
+        enableResizing: true,
         cell: () => null,
       });
     }
@@ -163,6 +202,8 @@
     getRowId: (row) => String(row[props.rowKey] ?? Math.random()),
     getCoreRowModel: getCoreRowModel(),
     enableRowSelection: props.selectable,
+    enableColumnResizing: true,
+    columnResizeMode: 'onEnd',
     state: {
       get rowSelection() {
         return rowSelection.value;
@@ -186,6 +227,17 @@
 
   const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
   const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+
+  const tableWidth = computed(() => {
+    const headerGroups = table.getHeaderGroups();
+    if (!headerGroups.length) return 0;
+    return headerGroups[0].headers.reduce((sum, h) => sum + h.getSize(), 0);
+  });
+
+  const tableWidthPx = computed(() => {
+    const w = tableWidth.value;
+    return w > 0 ? w + 'px' : '100%';
+  });
 
   watch(
     rowSelection,
@@ -216,6 +268,15 @@
     emit('header-click', header.column.id);
   }
 
+  function onResizeStart(
+    header: { getResizeHandler: () => (e: MouseEvent | TouchEvent) => void },
+    e: MouseEvent | TouchEvent,
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    header.getResizeHandler()(e);
+  }
+
   function onCellContextmenu(row: Record<string, unknown>, event: MouseEvent) {
     event.preventDefault();
     emit('row-contextmenu', row, event);
@@ -229,12 +290,25 @@
 </script>
 
 <style scoped>
-  .data-table-container {
-    overflow: auto;
-    position: relative;
+  .data-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--el-border-color);
     border-radius: 4px;
     background: var(--el-bg-color);
+    overflow: hidden;
+  }
+
+  .data-table-container {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+    position: relative;
   }
 
   .data-table-empty {
@@ -248,12 +322,11 @@
 
   .data-table-scroll {
     position: relative;
-    width: 100%;
+    display: inline-block;
   }
 
   .data-table {
     display: grid;
-    width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
   }
@@ -274,13 +347,59 @@
   .data-table-th {
     display: flex;
     align-items: center;
+    position: relative;
     padding: 8px 12px;
+    user-select: none;
     font-size: 12px;
     font-weight: 600;
     color: var(--el-text-color-primary);
     border-bottom: 1px solid var(--el-border-color);
+    border-right: 1px solid var(--el-border-color-lighter);
     box-sizing: border-box;
     flex-shrink: 0;
+  }
+
+  .data-table-th:last-child {
+    border-right: none;
+  }
+
+  .data-table-th-content {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .data-table-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .data-table-resize-handle:hover {
+    background: var(--el-color-primary-light-7);
+  }
+
+  .data-table-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 2px;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 16px;
+    border-radius: 1px;
+    background: var(--el-border-color);
+  }
+
+  .data-table-resize-handle:hover::after {
+    background: var(--el-color-primary);
   }
 
   .data-table-th--selected {
@@ -296,7 +415,9 @@
   .data-table-row {
     display: flex;
     width: 100%;
+    height: 36px;
     border-bottom: 1px solid var(--el-border-color-lighter);
+    box-sizing: border-box;
   }
 
   .data-table-row--striped {
@@ -306,17 +427,33 @@
   .data-table-td {
     display: flex;
     align-items: center;
-    padding: 4px 12px;
+    height: 36px;
+    padding: 0 12px;
     font-size: 13px;
     color: var(--el-text-color-regular);
     border-bottom: 1px solid var(--el-border-color-lighter);
+    border-right: 1px solid var(--el-border-color-lighter);
     box-sizing: border-box;
     flex-shrink: 0;
+    min-width: 0;
     overflow: hidden;
+  }
+
+  .data-table-td:last-child {
+    border-right: none;
   }
 
   .data-table-td--selected {
     background-color: var(--el-color-primary-light-9);
+  }
+
+  .data-table-cell-inner {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 36px;
   }
 
   .data-table-cell-text {
