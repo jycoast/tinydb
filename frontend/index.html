@@ -10,8 +10,8 @@
     />
     <title><%= title %></title>
     <link rel="icon" href="/favicon.ico" />
-    <link rel='stylesheet' href='/bulma.css'>
-<!--    <link rel='stylesheet' href='/style.css'>-->
+    <link rel="stylesheet" href="/bulma.css" />
+    <!--    <link rel='stylesheet' href='/style.css'>-->
   </head>
   <body>
     <script>
@@ -25,7 +25,24 @@
       })();
     </script>
     <script>
-      (function() {
+      (function () {
+        if (typeof window !== 'undefined' && window.ResizeObserver) {
+          var Native = window.ResizeObserver;
+          window.ResizeObserver = function (callback) {
+            var wrapped = function (entries, observer) {
+              var ent = entries;
+              var obs = observer;
+              window.requestAnimationFrame(function () {
+                callback(ent, obs);
+              });
+            };
+            return new Native(wrapped);
+          };
+        }
+      })();
+    </script>
+    <script>
+      (function () {
         var errShown = false;
         function showErr(msg) {
           if (errShown) return;
@@ -33,19 +50,38 @@
           var loading = document.getElementById('app-loading');
           var app = document.getElementById('app');
           if (loading) loading.classList.add('hidden');
-          if (app) app.innerHTML = '<div style="padding:24px;font-family:system-ui;color:#333;"><p style="color:#c00;font-weight:bold;">应用启动失败</p><pre style="background:#f5f5f5;padding:12px;overflow:auto;font-size:12px;white-space:pre-wrap;">' + (msg || '未知错误') + '</pre></div>';
+          if (app) {
+            var wrap = document.createElement('div');
+            wrap.style.cssText = 'padding:24px;font-family:system-ui;color:#333;';
+            var title = document.createElement('p');
+            title.style.cssText = 'color:#c00;font-weight:bold;';
+            title.textContent = '应用启动失败';
+            var pre = document.createElement('pre');
+            pre.style.cssText =
+              'background:#f5f5f5;padding:12px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-word;';
+            pre.textContent = msg && String(msg).trim() ? msg : '未知错误';
+            wrap.appendChild(title);
+            wrap.appendChild(pre);
+            app.innerHTML = '';
+            app.appendChild(wrap);
+          }
         }
-        window.onerror = function(_, _u, line, col, err) {
-          showErr((err && err.message) || 'line ' + line + ':' + col);
+        window.onerror = function (msg, source, lineno, colno, err) {
+          var text = (err && err.message) || (msg && String(msg)) || 'line ' + lineno + ':' + colno;
+          if (err && err.stack) text += '\n\n' + err.stack;
+          showErr(text);
           return true;
         };
-        window.onunhandledrejection = function(e) {
-          var msg = (e.reason && (e.reason.message || String(e.reason))) || 'Promise 未处理错误';
-          showErr(msg);
+        window.onunhandledrejection = function (e) {
+          var reason = e.reason;
+          var text = (reason && (reason.message || String(reason))) || 'Promise 未处理错误';
+          if (reason && reason.stack) text += '\n\n' + reason.stack;
+          showErr(text);
         };
-        setTimeout(function() {
+        setTimeout(function () {
           var app = document.getElementById('app');
-          if (!errShown && app && app.children.length === 0) showErr('主脚本可能未加载（如 404），请重新打包或查看控制台。');
+          if (!errShown && app && app.children.length === 0)
+            showErr('主脚本可能未加载（如 404），请重新打包或查看控制台。');
         }, 4000);
       })();
     </script>
@@ -66,13 +102,13 @@
         transform: translateY(0);
         transition: opacity 0.4s ease, transform 0.4s ease;
       }
-      
+
       #app-loading.hidden {
         opacity: 0;
         transform: translateY(-10px);
         pointer-events: none;
       }
-      
+
       .loading-content {
         display: flex;
         flex-direction: column;
@@ -81,7 +117,7 @@
       }
 
       .loading-logo {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size: 20px;
         letter-spacing: 0.12em;
         color: #303133;
@@ -97,7 +133,7 @@
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
-      
+
       .loading-dots {
         display: flex;
         gap: 6px;
@@ -122,21 +158,40 @@
       }
 
       @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
       }
 
       @keyframes pulse {
-        0% { transform: translateY(0); opacity: 0.2; }
-        50% { transform: translateY(-4px); opacity: 1; }
-        100% { transform: translateY(0); opacity: 0.2; }
+        0% {
+          transform: translateY(0);
+          opacity: 0.2;
+        }
+        50% {
+          transform: translateY(-4px);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(0);
+          opacity: 0.2;
+        }
       }
 
       @keyframes logoFade {
-        0% { opacity: 0.5; transform: translateY(0); }
-        100% { opacity: 1; transform: translateY(-2px); }
+        0% {
+          opacity: 0.5;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
       }
-      
+
       body {
         margin: 0;
         padding: 0;
@@ -159,25 +214,25 @@
     <script type="module" src="/src/main.ts"></script>
     <script>
       // 当 Vue 应用挂载后隐藏加载占位符
-      (function() {
+      (function () {
         const app = document.getElementById('app');
         const loading = document.getElementById('app-loading');
-        
+
         if (app && loading) {
-          const observer = new MutationObserver(function() {
+          const observer = new MutationObserver(function () {
             if (app.children.length > 0) {
               loading.classList.add('hidden');
               observer.disconnect();
             }
           });
-          
+
           observer.observe(app, {
             childList: true,
-            subtree: true
+            subtree: true,
           });
-          
+
           // 备用：3秒后强制隐藏
-          setTimeout(function() {
+          setTimeout(function () {
             if (loading && !loading.classList.contains('hidden')) {
               loading.classList.add('hidden');
             }

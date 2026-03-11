@@ -282,9 +282,29 @@
     emit('row-contextmenu', row, event);
   }
 
+  function formatDateLike(value: Date | string | number): string {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    const y = d.getFullYear();
+    const M = String(d.getMonth() + 1).padStart(2, '0');
+    const D = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${y}-${M}-${D} ${h}:${m}:${s}`;
+  }
+
+  function isDateLike(value: unknown): boolean {
+    if (value instanceof Date) return !Number.isNaN(value.getTime());
+    if (typeof value === 'number') return value > 1e10 || value < -1e10;
+    if (typeof value !== 'string') return false;
+    return /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
   function formatCellValue(value: unknown): string {
     if (value === null || value === undefined) return 'NULL';
     if (typeof value === 'boolean') return value ? 'true' : 'false';
+    if (isDateLike(value)) return formatDateLike(value as Date | string | number);
     return String(value);
   }
 </script>

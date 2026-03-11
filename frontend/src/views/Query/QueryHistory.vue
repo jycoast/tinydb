@@ -231,7 +231,7 @@ onMounted(() => {
   window.addEventListener('resize', debouncedUpdateTableHeight)
   if (pageContentRef.value) {
     const resizeObserver = new ResizeObserver(() => {
-      updateTableHeight()
+      window.requestAnimationFrame(() => updateTableHeight())
     })
     resizeObserver.observe(pageContentRef.value)
     ;(pageContentRef.value as any).__resizeObserver = resizeObserver

@@ -741,4 +741,9 @@
     ) {
     content: none;
   }
+
+  :deep(.el-collapse-transition-enter-active),
+  :deep(.el-collapse-transition-leave-active) {
+    transition: none !important;
+  }
 </style>

@@ -200,7 +200,9 @@ export default defineComponent({
         }
       }, 100)
 
-      resizeObserver.value = new ResizeObserver(() => resizeEditor())
+      resizeObserver.value = new ResizeObserver(() => {
+        window.requestAnimationFrame(() => resizeEditor())
+      })
       if (containerRef.value) {
         resizeObserver.value.observe(containerRef.value)
       }

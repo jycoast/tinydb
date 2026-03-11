@@ -3,14 +3,15 @@ import ResizeObserver from "resize-observer-polyfill"
 const isServer = typeof window === "undefined"
 
 function resizeHandler(entries: any[]) {
-  for (const entry of entries) {
-    const listeners = entry.target.__resizeListeners__ || []
-    if (listeners.length) {
-      listeners.forEach((fn: () => any) => {
-        fn()
-      })
+  window.requestAnimationFrame(() => {
+    if (!Array.isArray(entries) || !entries.length) return
+    for (const entry of entries) {
+      const listeners = entry.target.__resizeListeners__ || []
+      if (listeners.length) {
+        listeners.forEach((fn: () => any) => fn())
+      }
     }
-  }
+  })
 }
 
 export function addResizeListener(element: any, fn: () => any) {

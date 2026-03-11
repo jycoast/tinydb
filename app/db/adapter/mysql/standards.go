@@ -98,7 +98,7 @@ func (s *Source) CreateDatabase(name string) error {
 
 func (s *Source) Query(sql string) (interface{}, error) {
 	// Protect the app from returning huge result sets (Wails marshalling + UI rendering can hang).
-	const maxRows = 2000
+	const maxRows = 5000
 
 	// Validate SQL to prevent syntax errors from empty identifiers
 	// Trim SQL to handle trailing whitespace/newlines

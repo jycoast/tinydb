@@ -48,8 +48,20 @@ function showBootstrapError(err: unknown) {
   const loadingEl = document.getElementById('app-loading');
   if (loadingEl) loadingEl.classList.add('hidden');
   if (appEl) {
-    const msg = err instanceof Error ? err.message : String(err);
-    appEl.innerHTML = `<div style="padding:24px;font-family:system-ui;color:#333;"><p style="color:#c00;font-weight:bold;">应用启动失败</p><pre style="background:#f5f5f5;padding:12px;overflow:auto;font-size:12px;">${msg}</pre></div>`;
+    let text = err instanceof Error ? err.message : String(err);
+    if (err instanceof Error && err.stack) text += '\n\n' + err.stack;
+    const wrap = document.createElement('div');
+    wrap.setAttribute('style', 'padding:24px;font-family:system-ui;color:#333;');
+    const title = document.createElement('p');
+    title.setAttribute('style', 'color:#c00;font-weight:bold;');
+    title.textContent = '应用启动失败';
+    const pre = document.createElement('pre');
+    pre.setAttribute('style', 'background:#f5f5f5;padding:12px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-word;');
+    pre.textContent = text;
+    wrap.appendChild(title);
+    wrap.appendChild(pre);
+    appEl.innerHTML = '';
+    appEl.appendChild(wrap);
   }
   console.error('bootstrap failed:', err);
 }

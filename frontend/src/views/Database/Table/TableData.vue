@@ -3,6 +3,11 @@
     <div v-if="columnNames.length > 0" class="filter-section">
       <div class="filter-rows">
         <div v-for="(item, index) in filterConditions" :key="item.id" class="filter-row-single">
+          <el-checkbox
+            :model-value="item.enabled !== false"
+            @update:model-value="(v) => setFilterEnabled(item, v)"
+            class="filter-row-check"
+          />
           <el-select
             v-model="item.field"
             size="small"
@@ -12,7 +17,7 @@
             default-first-option
             allow-create
           >
-            <el-option v-for="col in columnNames" :key="col" :label="col" :value="col" />
+            <el-option v-for="col in filterColumnNames" :key="col" :label="col" :value="col" />
           </el-select>
           <el-select
             v-model="item.operator"
@@ -129,7 +134,7 @@
           type="primary"
           :icon="CircleCheck"
           size="small"
-          @click="saveCellEdit"
+          @mousedown.prevent="saveCellEdit"
           class="submit-edit-btn"
         >
           提交
@@ -201,6 +206,7 @@
   let filterIdCounter = 0;
   interface FilterCondition {
     id: number;
+    enabled: boolean;
     field: string;
     operator: string;
     value: string;
@@ -221,6 +227,7 @@
   function buildWhereClause(): string {
     const parts: string[] = [];
     for (const item of filterConditions.value) {
+      if (item.enabled === false) continue;
       const field = (item.field || '').trim();
       const op = (item.operator || '').trim();
       const val = (item.value || '').trim();
@@ -257,10 +264,15 @@
     return operator === 'IS NULL' || operator === 'IS NOT NULL';
   }
 
+  function setFilterEnabled(item: FilterCondition, enabled: boolean) {
+    item.enabled = enabled;
+  }
+
   function addFilterCondition() {
-    const firstCol = columnNames.value[0] || '';
+    const firstCol = filterColumnNames.value[0] || columnNames.value[0] || '';
     filterConditions.value.push({
       id: ++filterIdCounter,
+      enabled: true,
       field: firstCol,
       operator: '=',
       value: '',
@@ -358,6 +370,10 @@
 
     return [];
   });
+
+  const filterColumnNames = computed(() =>
+    tableColumns.value.map((c: { dataIndex: string }) => c.dataIndex),
+  );
 
   const tableRows = computed(() => {
     return rows.value.map((r: any, i: number) => ({
@@ -577,12 +593,34 @@
     );
   }
 
+  function formatDateLike(value: Date | string | number): string {
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    const y = d.getFullYear();
+    const M = String(d.getMonth() + 1).padStart(2, '0');
+    const D = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${y}-${M}-${D} ${h}:${m}:${s}`;
+  }
+
+  function isDateLike(value: any): boolean {
+    if (value instanceof Date) return !Number.isNaN(value.getTime());
+    if (typeof value === 'number') return value > 1e10 || value < -1e10;
+    if (typeof value !== 'string') return false;
+    return /^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(value) || /^\d{4}-\d{2}-\d{2}$/.test(value);
+  }
+
   function formatCellValue(value: any): string {
     if (value === null || value === undefined) {
       return 'NULL';
     }
     if (typeof value === 'boolean') {
       return value ? 'true' : 'false';
+    }
+    if (isDateLike(value)) {
+      return formatDateLike(value);
     }
     return String(value);
   }
@@ -644,14 +682,28 @@
         ? `${quoteIdentifier(props.schemaName)}.${quoteIdentifier(props.pureName)}`
         : quoteIdentifier(props.pureName);
 
-      // Get primary key or use first column as identifier (simplified approach)
-      const primaryKeyColumn = columnNames.value[0] || 'id';
-      const primaryKeyValue = row[primaryKeyColumn];
+      const pkColumns: string[] =
+        tableStructure.value?.primaryKey?.columns?.map((c: any) => c.columnName) ?? [];
+      const hasPk = pkColumns.length > 0;
+      let whereColumns: string[];
+      if (hasPk) {
+        whereColumns = pkColumns;
+      } else {
+        const fallbackCol = columnNames.value[0] || 'id';
+        const colExists = fallbackCol in row && row[fallbackCol] != null;
+        whereColumns = colExists ? [fallbackCol] : columnNames.value.filter((c) => row[c] != null);
+      }
 
+      if (whereColumns.length === 0) {
+        ElMessage.warning('该表无主键且无法确定唯一条件，暂不支持编辑保存');
+        return;
+      }
+
+      const whereParts = whereColumns.map(
+        (col) => `${quoteIdentifier(col)} = ${formatSqlValue(row[col])}`,
+      );
+      const whereClause = whereParts.join(' AND ');
       const setClause = `${quoteIdentifier(column.dataIndex)} = ${formatSqlValue(newValue)}`;
-      const whereClause = `${quoteIdentifier(primaryKeyColumn)} = ${formatSqlValue(
-        primaryKeyValue,
-      )}`;
 
       const updateSql = `UPDATE ${tableName} SET ${setClause} WHERE ${whereClause}`;
 
@@ -666,9 +718,13 @@
         throw new Error(result.errorMessage);
       }
 
-      // Update local data
+      // Update local data (store date in MySQL format for consistency)
+      let valueToStore = newValue;
+      if (isDateLike(newValue)) {
+        valueToStore = formatDateLike(newValue instanceof Date ? newValue : (newValue as string | number));
+      }
       const updatedRows = [...rows.value];
-      updatedRows[rowIndex] = { ...updatedRows[rowIndex], [column.dataIndex]: newValue };
+      updatedRows[rowIndex] = { ...updatedRows[rowIndex], [column.dataIndex]: valueToStore };
       rows.value = updatedRows;
 
       ElMessage.success('数据更新成功');
@@ -690,8 +746,11 @@
     if (typeof value === 'boolean') {
       return value ? '1' : '0';
     }
-    // String value - escape single quotes
-    return `'${String(value).replace(/'/g, "''")}'`;
+    let str = String(value);
+    if (isDateLike(value)) {
+      str = formatDateLike(value instanceof Date ? value : (value as string | number));
+    }
+    return `'${str.replace(/'/g, "''")}'`;
   }
 
   watch(
@@ -791,6 +850,9 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+  }
+  .filter-row-check {
+    flex-shrink: 0;
   }
   .filter-field {
     width: 160px;
