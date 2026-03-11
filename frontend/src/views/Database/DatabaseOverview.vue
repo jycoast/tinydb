@@ -178,7 +178,11 @@
             if (current?.connection?._id === node.conid && current?.name === node.database) {
               bootstrap.setCurrentDatabase(null);
             }
+            bootstrap.updateOpenedDatabases((list) =>
+              list.filter((k) => k !== `${node.conid}::${node.database}`),
+            );
             ElMessage.success('数据库已关闭');
+            treePanelRef.value?.collapseDatabaseNode(node.conid!, node.database!);
             treePanelRef.value?.refreshDatabaseStructure(node.conid!, node.database!);
           } catch (e: any) {
             ElMessage.error(`关闭数据库失败：${e?.message || String(e)}`);

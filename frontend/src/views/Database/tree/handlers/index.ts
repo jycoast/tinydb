@@ -16,6 +16,7 @@ const connectionHandler: NodeTypeHandler = {
 const databaseHandler: NodeTypeHandler = {
   getIcon: database.getIcon,
   onClick: database.onClick,
+  onDblClick: database.onDblClick,
   getContextMenuItems: database.getContextMenuItems,
 };
 

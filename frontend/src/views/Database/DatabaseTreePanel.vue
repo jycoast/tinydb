@@ -6,7 +6,7 @@
       ref="treeRef"
       :data="filteredTreeData"
       :props="treeProps"
-      :expand-on-click-node="true"
+      :expand-on-click-node="false"
       :default-expand-all="false"
       :filter-node-method="filterNode"
       node-key="id"
@@ -23,6 +23,7 @@
           :class="{
             'tree-node--leaf': node.isLeaf,
             'tree-node--parent': !node.isLeaf,
+            'tree-node--database-unopened': data.type === 'database' && !isDatabaseOpened(data),
           }"
           @dblclick.stop="handleNodeDblClick(data)"
         >
@@ -38,6 +39,13 @@
             v-if="data.type === 'connection' && disconnectingConid === data.conid"
             class="status-icon is-loading"
             title="断开中..."
+          >
+            <Loading />
+          </el-icon>
+          <el-icon
+            v-else-if="data.type === 'database' && data.loading"
+            class="status-icon is-loading"
+            title="加载中..."
           >
             <Loading />
           </el-icon>
@@ -118,7 +126,12 @@
   const structureCache = ref<Record<string, any>>({});
 
   const bootstrap = useBootstrapStore();
-  const { openedConnections, expandedConnections } = storeToRefs(bootstrap);
+  const { openedConnections, expandedConnections, openedDatabases } = storeToRefs(bootstrap);
+
+  function isDatabaseOpened(data: TreeNode) {
+    if (!data.conid || !data.database) return false;
+    return openedDatabases.value.includes(`${data.conid}::${data.database}`);
+  }
 
   const treeProps = { children: 'children', label: 'label' };
 
@@ -202,7 +215,6 @@
   }
 
   async function loadDatabasesForConnection(connectionNode: TreeNode, conn: IActiveConnection) {
-    clearStructureCacheForConnection(conn._id);
     try {
       let databases: TablesNameSort[] = [];
       if ((conn as any).singleDatabase) {
@@ -255,16 +267,6 @@
           },
         ],
       }));
-      for (const dbNode of connectionNode.children as TreeNode[]) {
-        if (!dbNode.database) continue;
-        const cacheKey = `${conn._id}::${dbNode.database}`;
-        try {
-          const info = await getDatabaseInfo({ conid: conn._id, database: dbNode.database });
-          if (info && typeof info === 'object') structureCache.value[cacheKey] = info;
-        } catch {
-          /**/
-        }
-      }
     } catch (e) {
       console.error('加载数据库列表失败', e);
       connectionNode.children = [];
@@ -441,6 +443,7 @@
     bootstrap,
     expandedConnections,
     openedConnections,
+    openedDatabases,
     disconnectingConid,
     nextTick,
     loadDatabasesForConnection,
@@ -448,7 +451,9 @@
     loadTableColumns,
     serverConnectionsRefreshApi,
     databaseConnectionsRefreshApi,
+    getDatabaseInfo,
     getConnectionLabel,
+    structureCache,
     icons: {
       connectionIcon,
       connectionConnectedIcon,
@@ -594,8 +599,10 @@
         }
         const { removeLocalStorage } = await import('/@/utils/tinydb/storageCache');
         removeLocalStorage(`database_list_${id}`);
+        clearStructureCacheForConnection(id);
         bootstrap.updateExpandedConnections((list) => list.filter((x) => x !== id));
         bootstrap.updateOpenedConnections((list) => list.filter((x) => x !== id));
+        bootstrap.updateOpenedDatabases((list) => list.filter((k) => !k.startsWith(`${id}::`)));
         bootstrap.updateOpenedSingleDatabaseConnections((list) => list.filter((x) => x !== id));
         if ((bootstrap.currentDatabase as any)?.connection?._id === id) {
           bootstrap.setCurrentDatabase(null);
@@ -624,9 +631,18 @@
     if (categoryNode) await loadCategoryObjects(categoryNode);
   }
 
+  function collapseDatabaseNode(conid: string, database: string) {
+    const key = `${conid}::${database}`;
+    bootstrap.updateExpandedConnections((list) => list.filter((k) => k !== key));
+    const nodeId = `database_${conid}_${database}`;
+    const treeNode = treeRef.value?.getNode?.(nodeId);
+    if (treeNode) treeNode.expanded = false;
+  }
+
   defineExpose({
     refreshDatabaseStructure,
     buildTreeData,
+    collapseDatabaseNode,
   });
 </script>
 
@@ -739,6 +755,14 @@
         > .el-tree-node__content
         > .el-tree-node__expand-icon.is-leaf::before
     ) {
+    content: none;
+  }
+
+  :deep(.database-tree .el-tree-node__content:has(.tree-node--database-unopened) .el-tree-node__expand-icon) {
+    visibility: hidden;
+  }
+
+  :deep(.database-tree .el-tree-node__content:has(.tree-node--database-unopened) .el-tree-node__expand-icon::before) {
     content: none;
   }
 

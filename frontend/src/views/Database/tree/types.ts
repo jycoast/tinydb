@@ -26,6 +26,7 @@ export interface TreeNode {
   rawData?: any;
   schemaName?: string;
   pureName?: string;
+  loading?: boolean;
 }
 
 export interface ContextMenuItem {
@@ -54,6 +55,7 @@ export interface NodeHandlerContext {
   bootstrap: any;
   expandedConnections: Ref<string[]>;
   openedConnections: Ref<string[]>;
+  openedDatabases: Ref<string[]>;
   disconnectingConid: Ref<string | null>;
   nextTick: (fn?: () => void) => Promise<void>;
   loadDatabasesForConnection: (connectionNode: TreeNode, conn: IActiveConnection) => Promise<void>;
@@ -65,7 +67,9 @@ export interface NodeHandlerContext {
     database: string;
     keepOpen: boolean;
   }) => Promise<any>;
+  getDatabaseInfo: (opts: { conid: string; database: string }) => Promise<any>;
   getConnectionLabel: (conn: any) => string;
+  structureCache: Ref<Record<string, any>>;
   icons: TreeIcons;
 }
 

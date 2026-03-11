@@ -13,8 +13,9 @@ const DATABASE_MENU_ITEMS: { text: string; command: string; divider?: boolean }[
 ];
 
 export function getIcon(data: TreeNode, ctx: NodeHandlerContext): string {
-  if (data.conid && ctx.openedConnections.value.includes(data.conid))
-    return ctx.icons.databaseConnectedIcon;
+  if (!data.conid || !data.database) return ctx.icons.databaseIcon;
+  const key = `${data.conid}::${data.database}`;
+  if (ctx.openedDatabases.value.includes(key)) return ctx.icons.databaseConnectedIcon;
   return ctx.icons.databaseIcon;
 }
 
@@ -22,33 +23,67 @@ export async function onClick(data: TreeNode, node: any, ctx: NodeHandlerContext
   if (!data.conid || !data.database) return;
   const key = `${data.conid}::${data.database}`;
   const isExpanded = ctx.expandedConnections.value.includes(key);
-  if (!isExpanded) {
-    ctx.bootstrap.updateExpandedConnections((old: string[]) => [...old, key]);
-    try {
-      await ctx.serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true });
-      await ctx.databaseConnectionsRefreshApi({
-        conid: data.conid,
-        database: data.database,
-        keepOpen: true,
-      });
-      if (data.children && data.children.length > 0) {
-        const tablesCategory = data.children.find((c: TreeNode) => c.type === 'tables');
-        if (tablesCategory) {
-          await ctx.loadCategoryObjects(tablesCategory);
-          await ctx.nextTick();
-        }
-      }
-    } catch (e) {
-      console.error('刷新数据库结构失败', e);
-    }
-    node.expanded = true;
-  } else {
+  const isOpened = ctx.openedDatabases.value.includes(key);
+
+  if (isExpanded) {
     ctx.bootstrap.updateExpandedConnections((old: string[]) => old.filter((id) => id !== key));
     node.expanded = false;
+    return;
+  }
+
+  if (!isOpened) {
+    return;
+  }
+
+  ctx.bootstrap.updateExpandedConnections((old: string[]) => [...old, key]);
+  if (data.children && data.children.length > 0) {
+    for (const child of data.children as TreeNode[]) {
+      if (child.type === 'tables' || child.type === 'views' || child.type === 'functions') {
+        await ctx.loadCategoryObjects(child);
+      }
+    }
+    await ctx.nextTick();
+  }
+  node.expanded = true;
+}
+
+export async function onDblClick(data: TreeNode, ctx: NodeHandlerContext): Promise<void> {
+  if (!data.conid || !data.database) return;
+  const key = `${data.conid}::${data.database}`;
+  data.loading = true;
+  try {
+    await ctx.serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true });
+    await ctx.databaseConnectionsRefreshApi({
+      conid: data.conid,
+      database: data.database,
+      keepOpen: true,
+    });
+    const info = (await ctx.getDatabaseInfo({ conid: data.conid, database: data.database })) as Record<string, unknown>;
+    const cacheData = info && typeof info === 'object' ? info : {};
+    ctx.structureCache.value[key] = cacheData;
+
+    if (data.children && data.children.length > 0) {
+      for (const child of data.children as TreeNode[]) {
+        if (child.type === 'tables' || child.type === 'views' || child.type === 'functions') {
+          await ctx.loadCategoryObjects(child);
+        }
+      }
+    }
+
+    await ctx.nextTick();
+    ctx.bootstrap.updateOpenedDatabases((old: string[]) => (old.includes(key) ? old : [...old, key]));
+    ctx.bootstrap.updateExpandedConnections((old: string[]) => (old.includes(key) ? old : [...old, key]));
+    await ctx.nextTick();
+    const treeNode = ctx.treeRef.value?.getNode?.(data.id);
+    if (treeNode) treeNode.expanded = true;
+  } catch (e) {
+    console.error('连接数据库失败', e);
+  } finally {
+    data.loading = false;
   }
 }
 
-export function getContextMenuItems(data: TreeNode, _ctx: NodeHandlerContext): ContextMenuItem[] {
+export function getContextMenuItems(_data: TreeNode, _ctx: NodeHandlerContext): ContextMenuItem[] {
   return DATABASE_MENU_ITEMS.map((item) => ({
     label: item.text,
     command: item.command || undefined,

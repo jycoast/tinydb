@@ -21,6 +21,7 @@ interface IVariableBasic {
   databases: []
   openedSingleDatabaseConnections: string[]
   expandedConnections: string[]
+  openedDatabases: string[]
 }
 
 export interface TabDefinition {
@@ -50,6 +51,7 @@ export const useBootstrapStore = defineStore({
     openedConnections: [],
     openedSingleDatabaseConnections: [],
     expandedConnections: [],
+    openedDatabases: [],
     extensions: null,
     currentDropDownMenu: null,
     commands: {},
@@ -114,6 +116,9 @@ export const useBootstrapStore = defineStore({
     },
     updateExpandedConnections(updater) {
       this.expandedConnections = updater(this.expandedConnections)
+    },
+    updateOpenedDatabases(updater: (list: string[]) => string[]) {
+      this.openedDatabases = updater(this.openedDatabases)
     },
     updateOpenedSingleDatabaseConnections(updater) {
       this.openedSingleDatabaseConnections = updater(this.openedSingleDatabaseConnections)
