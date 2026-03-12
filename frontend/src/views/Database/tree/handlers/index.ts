@@ -10,6 +10,7 @@ import * as column from './column';
 const connectionHandler: NodeTypeHandler = {
   getIcon: connection.getIcon,
   onClick: connection.onClick,
+  onDblClick: connection.onDblClick,
   getContextMenuItems: connection.getContextMenuItems,
 };
 

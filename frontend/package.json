@@ -41,6 +41,7 @@
     "@vue/shared": "^3.2.33",
     "@vueuse/core": "^8.3.0",
     "@vueuse/shared": "^8.3.0",
+    "@wsfe/vue-tree": "^4.1.1",
     "@zxcvbn-ts/core": "^2.0.1",
     "ace-builds": "^1.43.5",
     "any-touch": "^2.2.0",

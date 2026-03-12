@@ -71,6 +71,7 @@ export interface NodeHandlerContext {
   getConnectionLabel: (conn: any) => string;
   structureCache: Ref<Record<string, any>>;
   icons: TreeIcons;
+  safeSetExpand?: (key: string, value: boolean) => void;
 }
 
 export interface NodeTypeHandler {

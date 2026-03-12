@@ -10,7 +10,7 @@ export async function onClick(data: TreeNode, node: any, ctx: NodeHandlerContext
   if (node.expanded && (!data.children || data.children.length === 0)) {
     await ctx.loadCategoryObjects(data);
     await ctx.nextTick();
-    ctx.treeRef.value?.setCurrentKey(node.key);
+    ctx.treeRef.value?.setSelected(data.id, true);
   }
 }
 

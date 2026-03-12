@@ -1,64 +1,65 @@
 <template>
   <div class="database-tree-panel">
     <el-empty v-if="treeData.length === 0 && !loading" description="暂无连接" />
-    <el-tree
+    <v-tree
       v-else
       ref="treeRef"
       :data="filteredTreeData"
-      :props="treeProps"
-      :expand-on-click-node="false"
-      :default-expand-all="false"
-      :filter-node-method="filterNode"
-      node-key="id"
-      :highlight-current="true"
-      :lazy="false"
+      :expanded-keys="expandedKeys"
+      title-field="label"
+      key-field="id"
+      :showLine="true"
+      :selectable="true"
+      :filter-method="(k: string, n: any) => filterNode(k, n as unknown as TreeNode)"
       class="database-tree"
-      @node-click="handleNodeClick"
-      @node-expand="handleNodeExpand"
-      @node-contextmenu="handleContextMenu"
+      @click="(node: any) => onTreeClick(node as unknown as TreeNode)"
+      @node-dblclick="(node: any) => onTreeDblClick(node as unknown as TreeNode)"
+      @node-right-click="(node: any, e: MouseEvent) => onTreeRightClick(node as unknown as TreeNode, e)"
+      @expand="(node: any) => onTreeExpand(node as unknown as TreeNode)"
     >
-      <template #default="{ node, data }">
+      <template #node="{ node }">
         <div
           class="tree-node"
           :class="{
             'tree-node--leaf': node.isLeaf,
             'tree-node--parent': !node.isLeaf,
-            'tree-node--database-unopened': data.type === 'database' && !isDatabaseOpened(data),
+            'tree-node--database-unopened': node.type === 'database' && !isDatabaseOpened(node as unknown as TreeNode),
           }"
-          @dblclick.stop="handleNodeDblClick(data)"
+          :data-database-unopened="node.type === 'database' && !isDatabaseOpened(node as unknown as TreeNode) ? '' : undefined"
+          @dblclick.stop="onTreeDblClick(node as unknown as TreeNode)"
         >
           <img
-            v-if="nodeIcon(data)"
-            :src="nodeIcon(data)"
+            v-if="nodeIcon(node as unknown as TreeNode)"
+            :src="nodeIcon(node as unknown as TreeNode)"
             alt=""
             class="node-icon connection-icon"
           />
           <span class="node-label">{{ node.label }}</span>
-          <span v-if="data.extInfo" class="node-ext-info">{{ data.extInfo }}</span>
+          <span v-if="node.extInfo" class="node-ext-info">{{ node.extInfo }}</span>
           <el-icon
-            v-if="data.type === 'connection' && disconnectingConid === data.conid"
+            v-if="node.type === 'connection' && disconnectingConid === node.conid"
             class="status-icon is-loading"
             title="断开中..."
           >
             <Loading />
           </el-icon>
           <el-icon
-            v-else-if="data.type === 'database' && data.loading"
+            v-else-if="node.type === 'database' && node.loading"
             class="status-icon is-loading"
             title="加载中..."
           >
             <Loading />
           </el-icon>
           <el-icon
-            v-else-if="data.statusIcon"
-            :class="['status-icon', data.statusIcon]"
-            :title="data.statusTitle"
+            v-else-if="node.statusIcon"
+            :class="['status-icon', node.statusIcon]"
+            :title="node.statusTitle"
           >
-            <component :is="getStatusIcon(data.statusIcon)" />
+            <component :is="getStatusIcon(node.statusIcon)" />
           </el-icon>
         </div>
       </template>
-    </el-tree>
+    </v-tree>
   </div>
 </template>
 
@@ -66,6 +67,8 @@
   import { ref, computed, watch, nextTick } from 'vue';
   import { ElMessage, ElMessageBox } from 'element-plus';
   import { CircleCheck, CircleClose, Loading } from '@element-plus/icons-vue';
+  import VTree from '@wsfe/vue-tree';
+  import '@wsfe/vue-tree/style.css';
   import databaseIcon from '/src/assets/svg/database.svg';
   import databaseConnectedIcon from '/@/assets/svg/database-connected.svg';
   import connectionIcon from '/@/assets/svg/connection.svg';
@@ -88,7 +91,6 @@
   import { createContextMenu } from '/@/components/Modals/createContextMenu';
   import type { IActiveConnection } from '/@/types/connections';
   import type { TablesNameSort } from '/@/types/mysql';
-  import type { ElTree } from 'element-plus';
   import type { TreeNode } from './tree/types';
   import { getNodeHandlerKey } from './tree/getNodeHandlerKey';
   import { NODE_HANDLERS } from './tree/handlers';
@@ -120,7 +122,7 @@
   }>();
 
   const treeData = ref<TreeNode[]>([]);
-  const treeRef = ref<InstanceType<typeof ElTree>>();
+  const treeRef = ref<InstanceType<typeof VTree> | null>(null);
   const contextMenuNode = ref<TreeNode | null>(null);
   const disconnectingConid = ref<string | null>(null);
   const structureCache = ref<Record<string, any>>({});
@@ -133,19 +135,16 @@
     return openedDatabases.value.includes(`${data.conid}::${data.database}`);
   }
 
-  const treeProps = { children: 'children', label: 'label' };
+  const expandedKeys = computed(() =>
+    expandedConnections.value.map((x) =>
+      x.includes('::') ? `database_${x.replace('::', '_')}` : `connection_${x}`,
+    ),
+  );
 
   watch(
     () => props.connectionsWithStatus,
     () => buildTreeData(),
     { deep: true, immediate: true },
-  );
-
-  watch(
-    () => props.searchKeyword ?? '',
-    (val) => {
-      treeRef.value?.filter(val);
-    },
   );
 
   const filteredTreeData = computed(() => {
@@ -172,13 +171,67 @@
     return result;
   }
 
-  function filterNode(value: string, data: TreeNode) {
-    if (!value) return true;
-    const keyword = value.toLowerCase();
+  function filterNode(keyword: string, data: TreeNode) {
+    if (!keyword) return true;
+    const k = keyword.toLowerCase();
     return (
-      data.label.toLowerCase().includes(keyword) ||
-      (data.extInfo && data.extInfo.toLowerCase().includes(keyword))
+      data.label.toLowerCase().includes(k) ||
+      (data.extInfo != null && data.extInfo.toLowerCase().includes(k))
     );
+  }
+
+  function safeSetExpand(key: string, value: boolean) {
+    const n = treeRef.value?.getNode?.(key);
+    if (n != null) treeRef.value?.setExpand(key, value);
+  }
+
+  function makeNodeAdapter(node: any) {
+    return {
+      get key() {
+        return node.id;
+      },
+      get expanded() {
+        return node.expand;
+      },
+      set expanded(v: boolean) {
+        safeSetExpand(node.id, v);
+      },
+    };
+  }
+
+  function onTreeClick(node: TreeNode) {
+    handleNodeClick(node, makeNodeAdapter(node));
+  }
+
+  function onTreeDblClick(node: TreeNode) {
+    handleNodeDblClick(node);
+  }
+
+  function onTreeRightClick(_node: TreeNode, event: MouseEvent) {
+    handleContextMenu(event, _node);
+  }
+
+  function onTreeExpand(node: TreeNode & { expand?: boolean }) {
+    if (node.expand) {
+      if (node.type === 'connection' && node.conid) {
+        bootstrap.updateExpandedConnections((list) =>
+          list.includes(node.conid!) ? list : [...list, node.conid!],
+        );
+      }
+      if (node.type === 'database' && node.conid && node.database) {
+        const key = `${node.conid}::${node.database}`;
+        bootstrap.updateExpandedConnections((list) => (list.includes(key) ? list : [...list, key]));
+      }
+    } else {
+      if (node.type === 'connection' && node.conid) {
+        bootstrap.updateExpandedConnections((list) => list.filter((id) => id !== node.conid));
+      }
+      if (node.type === 'database' && node.conid && node.database) {
+        const key = `${node.conid}::${node.database}`;
+        bootstrap.updateExpandedConnections((list) => list.filter((k) => k !== key));
+      }
+    }
+    handleNodeExpand(node);
   }
 
   async function buildTreeData() {
@@ -330,11 +383,22 @@
     return 'table';
   }
 
+  function hasStructureKeys(obj: unknown): boolean {
+    if (!obj || typeof obj !== 'object') return false;
+    const o = obj as Record<string, unknown>;
+    return (
+      Array.isArray(o.tables) ||
+      Array.isArray(o.views) ||
+      Array.isArray(o.matviews) ||
+      Array.isArray(o.functions)
+    );
+  }
+
   async function loadCategoryObjects(node: TreeNode) {
     if (!node.conid || !node.database || !node.category) return;
     const cacheKey = `${node.conid}::${node.database}`;
     const cached = structureCache.value[cacheKey];
-    if (cached && typeof cached === 'object' && Object.keys(cached).length > 0) {
+    if (cached && typeof cached === 'object' && hasStructureKeys(cached)) {
       buildCategoryChildrenFromObjects(node, cached);
       return;
     }
@@ -454,6 +518,7 @@
     getDatabaseInfo,
     getConnectionLabel,
     structureCache,
+    safeSetExpand,
     icons: {
       connectionIcon,
       connectionConnectedIcon,
@@ -478,10 +543,10 @@
     if (handler?.onClick) await handler.onClick(data, node, handlerContext);
   }
 
-  function handleNodeDblClick(data: TreeNode) {
+  async function handleNodeDblClick(data: TreeNode) {
     const key = getNodeHandlerKey(data);
     const handler = NODE_HANDLERS[key];
-    handler?.onDblClick?.(data, handlerContext);
+    await handler?.onDblClick?.(data, handlerContext);
   }
 
   async function handleNodeExpand(data: TreeNode) {
@@ -635,8 +700,7 @@
     const key = `${conid}::${database}`;
     bootstrap.updateExpandedConnections((list) => list.filter((k) => k !== key));
     const nodeId = `database_${conid}_${database}`;
-    const treeNode = treeRef.value?.getNode?.(nodeId);
-    if (treeNode) treeNode.expanded = false;
+    safeSetExpand(nodeId, false);
   }
 
   defineExpose({
@@ -732,42 +796,9 @@
     }
   }
 
-  :deep(.database-tree .el-tree-node__content) {
+  :deep(.database-tree) {
     user-select: none;
     -webkit-user-select: none;
     cursor: default;
-  }
-
-  :deep(
-      .database-tree > .el-tree-node > .el-tree-node__content > .el-tree-node__expand-icon.is-leaf
-    ) {
-    width: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
-    visibility: hidden;
-    overflow: hidden;
-  }
-
-  :deep(
-      .database-tree
-        > .el-tree-node
-        > .el-tree-node__content
-        > .el-tree-node__expand-icon.is-leaf::before
-    ) {
-    content: none;
-  }
-
-  :deep(.database-tree .el-tree-node__content:has(.tree-node--database-unopened) .el-tree-node__expand-icon) {
-    visibility: hidden;
-  }
-
-  :deep(.database-tree .el-tree-node__content:has(.tree-node--database-unopened) .el-tree-node__expand-icon::before) {
-    content: none;
-  }
-
-  :deep(.el-collapse-transition-enter-active),
-  :deep(.el-collapse-transition-leave-active) {
-    transition: none !important;
   }
 </style>

@@ -42,6 +42,7 @@ export async function onClick(data: TreeNode, node: any, ctx: NodeHandlerContext
         await ctx.loadCategoryObjects(child);
       }
     }
+    ctx.treeData.value = [...ctx.treeData.value];
     await ctx.nextTick();
   }
   node.expanded = true;
@@ -58,9 +59,16 @@ export async function onDblClick(data: TreeNode, ctx: NodeHandlerContext): Promi
       database: data.database,
       keepOpen: true,
     });
-    const info = (await ctx.getDatabaseInfo({ conid: data.conid, database: data.database })) as Record<string, unknown>;
+    const info = (await ctx.getDatabaseInfo({
+      conid: data.conid,
+      database: data.database,
+    })) as Record<string, unknown>;
     const cacheData = info && typeof info === 'object' ? info : {};
-    ctx.structureCache.value[key] = cacheData;
+    const hasStructure =
+      Array.isArray(cacheData.tables) ||
+      Array.isArray(cacheData.views) ||
+      Array.isArray(cacheData.functions);
+    if (hasStructure) ctx.structureCache.value[key] = cacheData;
 
     if (data.children && data.children.length > 0) {
       for (const child of data.children as TreeNode[]) {
@@ -68,14 +76,21 @@ export async function onDblClick(data: TreeNode, ctx: NodeHandlerContext): Promi
           await ctx.loadCategoryObjects(child);
         }
       }
+      data.children = [...data.children];
     }
 
+    data.loading = false;
+    ctx.treeData.value = [...ctx.treeData.value];
     await ctx.nextTick();
-    ctx.bootstrap.updateOpenedDatabases((old: string[]) => (old.includes(key) ? old : [...old, key]));
-    ctx.bootstrap.updateExpandedConnections((old: string[]) => (old.includes(key) ? old : [...old, key]));
+    ctx.bootstrap.updateOpenedDatabases((old: string[]) =>
+      old.includes(key) ? old : [...old, key],
+    );
+    ctx.bootstrap.updateExpandedConnections((old: string[]) =>
+      old.includes(key) ? old : [...old, key],
+    );
     await ctx.nextTick();
-    const treeNode = ctx.treeRef.value?.getNode?.(data.id);
-    if (treeNode) treeNode.expanded = true;
+    await new Promise((r) => requestAnimationFrame(r));
+    ctx.safeSetExpand?.(data.id, true);
   } catch (e) {
     console.error('连接数据库失败', e);
   } finally {

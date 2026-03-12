@@ -24,8 +24,10 @@ export async function onClick(data: TreeNode, node: any, ctx: NodeHandlerContext
       const conn = ctx.props.connectionsWithStatus.find((c) => c._id === data.conid);
       if (conn) {
         await ctx.loadDatabasesForConnection(connectionNode, conn);
+        ctx.treeData.value = [...ctx.treeData.value];
         await ctx.nextTick();
-        ctx.treeRef.value?.setCurrentKey(node.key);
+        await new Promise((r) => requestAnimationFrame(r));
+        ctx.treeRef.value?.setSelected(data.id, true);
         node.expanded = true;
       }
     }
@@ -34,6 +36,33 @@ export async function onClick(data: TreeNode, node: any, ctx: NodeHandlerContext
       old.filter((id) => id !== data.conid),
     );
     node.expanded = false;
+  }
+}
+
+export async function onDblClick(data: TreeNode, ctx: NodeHandlerContext): Promise<void> {
+  if (!data.conid) return;
+  const isExpanded = ctx.expandedConnections.value.includes(data.conid);
+  if (isExpanded) return;
+  ctx.bootstrap.updateExpandedConnections((old: string[]) => [...old, data.conid!]);
+  ctx.bootstrap.updateOpenedConnections((old: string[]) =>
+    old.includes(data.conid!) ? old : [...old, data.conid!],
+  );
+  try {
+    await ctx.serverConnectionsRefreshApi({ conid: data.conid, keepOpen: true });
+  } catch (e) {
+    console.error('打开连接失败', e);
+  }
+  const connectionNode = ctx.treeData.value.find((n) => n.id === `connection_${data.conid}`);
+  if (connectionNode) {
+    const conn = ctx.props.connectionsWithStatus.find((c) => c._id === data.conid);
+    if (conn) {
+      await ctx.loadDatabasesForConnection(connectionNode, conn);
+      ctx.treeData.value = [...ctx.treeData.value];
+      await ctx.nextTick();
+      await new Promise((r) => requestAnimationFrame(r));
+      ctx.treeRef.value?.setSelected(data.id, true);
+      ctx.safeSetExpand?.(data.id, true);
+    }
   }
 }
 
