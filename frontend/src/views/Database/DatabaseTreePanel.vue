@@ -181,8 +181,11 @@
   }
 
   function safeSetExpand(key: string, value: boolean) {
-    const n = treeRef.value?.getNode?.(key);
-    if (n != null) treeRef.value?.setExpand(key, value);
+    try {
+      treeRef.value?.setExpand(key, value);
+    } catch {
+      // VTree 内部节点可能尚未同步，忽略
+    }
   }
 
   function makeNodeAdapter(node: any) {
